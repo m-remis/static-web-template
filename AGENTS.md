@@ -67,7 +67,8 @@ let it throw or blank the page. Preserve this fallback behavior.
 - `renderNav()`, `renderContent()`, `cardSection()`, `buildLinkList()`,
   `renderFooter()` — build DOM from `SITE`.
 - `initTheme()` / `applyTheme()` — theme toggle + `localStorage` persistence.
-- `initTabs()` — section-as-tab switching, hash routing, keyboard arrows.
+- `initTabs()` — section-as-tab switching, hash routing, keyboard arrows, and
+  scroll-position control (see the scroll gotcha below).
 - `initMobileMenu()` — mobile drawer (separate from desktop nav).
 - `initBackground()` — picks one random background, fades in, fails silently.
 
@@ -91,6 +92,19 @@ logic and the `aria-labelledby`/panel ids).
   after merging fetched content. Keep it that way.
 - Content with intentional inline markup (e.g. `intro.title` uses `<em>`) is
   injected as HTML. Keep `SITE` values trusted/authored, not user input.
+- **Scroll position on load is handled deliberately — don't "simplify" it.**
+  Because the page is rendered by JS after load, the browser's automatic scroll
+  restoration anchors to a nearby element before the content exists, which on
+  mobile (especially iOS Safari) shows up as a "pre-scroll" to a random card on
+  refresh. Three things work together to prevent this and must be kept:
+  (1) `history.scrollRestoration = "manual"` at the top of `initTabs()`;
+  (2) the `forceTop` branch in `show()`, which re-asserts `scrollTo(0, 0)` across
+  several frames, a `setTimeout`, and the `window` `load` event — iOS Safari
+  restores scroll on a later tick and only partially honors `manual`, so a single
+  top-scroll is not enough; and (3) `overflow-anchor: none` on `body` in
+  `styles.css`, so late-loading content (background image, map iframe) can't pin
+  the viewport and drag it. The initial `show()` call passes `forceTop: true`;
+  normal tab clicks use the plain single top-scroll and should stay that way.
 
 ## How to verify a change
 
@@ -100,6 +114,10 @@ There are no tests and no build. After editing:
 2. Open `index.html` in a browser (or `python3 -m http.server 8000`) and check:
    light/dark toggle, each nav tab, mobile menu (narrow viewport), the 404 page
    (`/404.html`), and that no errors appear in the console.
+3. On mobile (or a touch-emulated narrow viewport, ideally iOS Safari): open a
+   tab other than the first, scroll down, then refresh. The page must land at the
+   top of that tab, not pre-scrolled to a nearby card. This regresses easily —
+   see the scroll gotcha above.
 
 Make the smallest change that satisfies the request, match the existing style,
 and don't reformat unrelated code.

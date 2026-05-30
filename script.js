@@ -493,10 +493,10 @@ function initMobileMenu() {
 ---------------------------------------------------------------------- */
 
 function initTabs() {
-    // The page is rendered by JS after load, so the browser's automatic scroll
-    // restoration runs before the content exists and anchors to whatever element
-    // is nearest — on mobile that looks like a "pre-scroll" to a random item on
-    // refresh. We own scroll position ourselves (show() handles it), so opt out.
+    // Content is rendered by JS after load, so the browser's automatic scroll
+    // restoration runs before the content exists and anchors to a nearby element
+    // — on mobile this looks like a "pre-scroll" to a random item on refresh.
+    // We own scroll position ourselves, so opt out of the browser's restoration.
     if ("scrollRestoration" in history) {
         history.scrollRestoration = "manual";
     }
@@ -525,7 +525,7 @@ function initTabs() {
         }
     };
 
-    const show = (rawId, { focusPanel = false, push = true, scrollTop = true } = {}) => {
+    const show = (rawId, { focusPanel = false, push = true, scrollTop = true, forceTop = false } = {}) => {
         const id = normalize(rawId);
 
         panels.forEach((p) => {
@@ -546,6 +546,18 @@ function initTabs() {
             const toTop = () => window.scrollTo(0, 0);
             toTop();
             requestAnimationFrame(toTop);
+
+            // On initial load, iOS Safari restores its old scroll position on a
+            // later tick — after our render and even after scrollRestoration is
+            // set to "manual", which iOS only partially honors. Re-assert the top
+            // across a few frames and once more after load so its restoration and
+            // any late layout shift (map iframe, background image) can't win.
+            if (forceTop) {
+                requestAnimationFrame(() => requestAnimationFrame(toTop));
+                setTimeout(toTop, 0);
+                setTimeout(toTop, 120);
+                window.addEventListener("load", toTop, { once: true });
+            }
         }
 
         if (focusPanel) {
@@ -608,9 +620,10 @@ function initTabs() {
         show(location.hash.slice(1) || defaultId, { push: false });
     });
 
-    // Initial tab from hash, or default. We disabled scrollRestoration above,
-    // so we land at the top deterministically instead of at a restored position.
-    show(location.hash.slice(1) || defaultId, { push: false });
+    // Initial tab from hash, or default. Force the top on first paint and hold
+    // it across later frames so iOS Safari's scroll restoration can't drag the
+    // page down to a nearby item on refresh.
+    show(location.hash.slice(1) || defaultId, { push: false, forceTop: true });
 }
 
 /* ----------------------------------------------------------------------

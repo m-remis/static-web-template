@@ -127,9 +127,8 @@ body {
     color: var(--text);
     background: var(--bg-base);
     overflow-x: hidden;
-    /* Don't let late-loading content (the map iframe, background image) pin the
-       viewport to a nearby element and drag the scroll position. The tab logic
-       owns scroll position explicitly; anchoring only fights it. */
+    /* Don't let late-loading content (background image, map iframe) pin the
+       viewport to a nearby element and drag the scroll position on refresh. */
     overflow-anchor: none;
     transition: background-color var(--transition), color var(--transition);
 }
