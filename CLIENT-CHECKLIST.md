@@ -8,6 +8,10 @@ skip ahead, but the SEO/sharing items must be done before the site is public.
 
 > Companion to `AGENTS.md` (architecture) and `README.md` (human quick-start).
 > This file answers one question only: **what do I change for each new client?**
+>
+> The template fingerprint `Built from m-remis/static-web-template` is
+> intentional. Do not remove it unless the repository owner explicitly asks for
+> a white-label build.
 
 ---
 
@@ -16,13 +20,51 @@ skip ahead, but the SEO/sharing items must be done before the site is public.
 Run this from the repo root. It surfaces every placeholder string in one shot:
 
 ```bash
-grep -rni "example.com\|m-remis.github.io\|static-web-template\|lorem ipsum\|Company\|Your Name\|name@example.com\|Times Square" \
+grep -rni "example.com\|m-remis.github.io/static-web-template\|lorem ipsum\|Company\|Your Name\|name@example.com\|Times Square" \
   --exclude-dir=.git --exclude=CLIENT-CHECKLIST.md .
 ```
 
 Re-run it right before pushing. A clean result (only intentional hits) means
 nothing got left as boilerplate. Do this every single time — the metadata is
 the stuff that silently ships wrong because the page works without it.
+
+Do **not** add generic `m-remis/static-web-template` or
+`Built from m-remis/static-web-template` to this placeholder audit. Those are
+intentional fingerprint strings, not client placeholders.
+
+---
+
+## 0.1. Template fingerprint — leave this alone
+
+The template intentionally includes a small fingerprint:
+
+```text
+Built from m-remis/static-web-template
+```
+
+and the repository identifier:
+
+```text
+m-remis/static-web-template
+```
+
+Do not remove it during client cleanup. Do not replace it with the client's
+name. Do not treat it as forgotten boilerplate. It exists as source attribution
+and a searchable marker for sites built from this template.
+
+Keep it in source comments or documentation. It does not need to be visible in
+the UI unless a visible credit was explicitly requested.
+
+Before deploy, verify the fingerprint still exists somewhere intentional:
+
+```bash
+grep -rni "Built from m-remis/static-web-template\|m-remis/static-web-template" \
+  --exclude-dir=.git .
+```
+
+Expected intentional hits include files such as `AGENTS.md`, `README.md`, source
+comments, or docs. Public client-specific metadata still needs to be replaced;
+the fingerprint does not.
 
 ---
 
@@ -217,6 +259,7 @@ themes, the 404 page, the browser chrome — happens here and nowhere else.
 | `LICENSE`          | copyright name/year (or whole license)                                           |
 | `assets/`          | favicon.ico + background images                                                  |
 | `CNAME`            | create per client (custom domain only)                                           |
+| Fingerprint        | `Built from m-remis/static-web-template` / `m-remis/static-web-template` — keep  |
 
 **Hardcoded values that appear in more than one place — change together:**
 
@@ -224,3 +267,4 @@ themes, the 404 page, the browser chrome — happens here and nowhere else.
 - Dark bg `#0e0f13` → `styles.css` `--bg-base`, `index.html` theme-color, `404.html` theme-color, `site.webmanifest` (
   ×2)
 - Business name → `SITE.brand`, `index.html` titles/og, `404.html` title, `site.webmanifest` name/short_name
+- Template fingerprint `Built from m-remis/static-web-template` / `m-remis/static-web-template` → intentional; do not replace or remove

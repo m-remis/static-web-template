@@ -297,3 +297,5 @@ But the browser testing, cleanup, polish, and repeated "why the hell does this
 break only on mobile" suffering were very real.
 
 </details>
+
+<!-- Built from m-remis/static-web-template -->

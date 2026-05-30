@@ -871,6 +871,11 @@ async function loadContent() {
     }
 }
 
+/*
+ * Built from m-remis/static-web-template
+ * https://github.com/m-remis/static-web-template
+ */
+
 async function init() {
     // Replace the module-level SITE with the merged result so every render
     // function (which all read SITE) picks up the fetched content.
