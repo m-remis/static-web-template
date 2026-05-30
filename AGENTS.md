@@ -19,6 +19,11 @@ of `script.js` (marked `◀━━ EDIT THIS BLOCK`). The HTML is an empty shell;
 sections are rendered from `SITE` by JS. Before editing markup or CSS, check
 whether the request is actually a `SITE` edit.
 
+> **Spinning up a new client site?** Follow `CLIENT-CHECKLIST.md` — the
+> exhaustive per-client change list (every placeholder, the multi-file domain
+> and `#0e0f13` mirrors, the pre-deploy audit grep). This file (`AGENTS.md`)
+> covers *how the project works*; that file covers *what to fill in per client*.
+
 - Change brand, headings, body text, projects, contact, map, background list
   → edit `SITE`. Do **not** hardcode this content into `index.html`.
 - Change social links → edit `SITE.socials`. Each entry is
