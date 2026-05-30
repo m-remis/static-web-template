@@ -23,11 +23,11 @@ let SITE = {
     brand: "Company",
 
     nav: [
-        {id: "home", label: "Home"},
-        {id: "services", label: "Services"},
-        {id: "find-me", label: "Where to find me"},
-        {id: "projects", label: "Projects"},
-        {id: "contact", label: "Contact"},
+        { id: "home", label: "Home" },
+        { id: "services", label: "Services" },
+        { id: "find-me", label: "Where to find me" },
+        { id: "projects", label: "Projects" },
+        { id: "contact", label: "Contact" },
     ],
 
     intro: {
@@ -40,18 +40,9 @@ let SITE = {
     services: {
         title: "Services",
         items: [
-            {
-                title: "Lorem ipsum",
-                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt."
-            },
-            {
-                title: "Dolor sit amet",
-                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip."
-            },
-            {
-                title: "Consectetur",
-                body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore."
-            },
+            { title: "Lorem ipsum", body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt." },
+            { title: "Dolor sit amet", body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip." },
+            { title: "Consectetur", body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore." },
         ],
     },
 
@@ -59,32 +50,20 @@ let SITE = {
         title: "Where to find me",
         blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
         // Replace with your own location embed URL from Google Maps → Share → Embed a map.
+        // Uses the embed endpoint (stays inside the iframe on mobile instead of
+        // trying to launch the Maps app). For your own location: Google Maps →
+        // Share → Embed a map → copy the src from the generated iframe.
         mapEmbed:
-            "https://www.google.com/maps?q=Times+Square,New+York,NY&output=embed",
+            "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
         mapLabel: "Map showing our location",
     },
 
     projects: {
         title: "Projects",
         items: [
-            {
-                title: "Lorem ipsum",
-                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-                meta: "Lorem",
-                url: "#"
-            },
-            {
-                title: "Dolor sit",
-                body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.",
-                meta: "Ipsum",
-                url: "#"
-            },
-            {
-                title: "Consectetur",
-                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
-                meta: "Dolor",
-                url: "#"
-            },
+            { title: "Lorem ipsum", body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.", meta: "Lorem", url: "#" },
+            { title: "Dolor sit", body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.", meta: "Ipsum", url: "#" },
+            { title: "Consectetur", body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.", meta: "Dolor", url: "#" },
         ],
     },
 
@@ -92,8 +71,8 @@ let SITE = {
         title: "Contact",
         blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         items: [
-            {label: "Email", handle: "name@example.com", url: "mailto:name@example.com"},
-            {label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000"},
+            { label: "Email", handle: "name@example.com", url: "mailto:name@example.com" },
+            { label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000" },
         ],
     },
 
@@ -167,9 +146,9 @@ function renderContent() {
         "aria-labelledby": "tab-home",
     });
     intro.append(
-        el("p", {class: "intro__eyebrow"}, SITE.intro.eyebrow),
-        el("h1", {class: "intro__title"}, SITE.intro.title),
-        el("p", {class: "intro__lead"}, SITE.intro.lead)
+        el("p", { class: "intro__eyebrow" }, SITE.intro.eyebrow),
+        el("h1", { class: "intro__title" }, SITE.intro.title),
+        el("p", { class: "intro__lead" }, SITE.intro.lead)
     );
     main.appendChild(intro);
 
@@ -185,19 +164,22 @@ function renderContent() {
         role: "tabpanel",
         "aria-labelledby": "tab-find-me",
     });
-    findMe.appendChild(el("h2", {class: "section__title"}, SITE.findMe.title));
+    findMe.appendChild(el("h2", { class: "section__title" }, SITE.findMe.title));
     if (SITE.findMe.blurb) {
         findMe.appendChild(
-            el("div", {class: "prose"}, `<p>${SITE.findMe.blurb}</p>`)
+            el("div", { class: "prose" }, `<p>${SITE.findMe.blurb}</p>`)
         );
     }
     if (SITE.findMe.mapEmbed) {
-        const wrap = el("div", {class: "map-embed"});
+        const wrap = el("div", { class: "map-embed" });
         const iframe = el("iframe", {
             src: SITE.findMe.mapEmbed,
             title: SITE.findMe.mapLabel || "Location map",
             loading: "lazy",
             referrerpolicy: "no-referrer-when-downgrade",
+            // Allow the map to render and be interactive, but NOT to navigate the
+            // top-level page (which is what made mobile browsers jump to the Maps app).
+            sandbox: "allow-scripts allow-same-origin allow-popups",
             allowfullscreen: "",
         });
         wrap.appendChild(iframe);
@@ -217,9 +199,9 @@ function renderContent() {
         role: "tabpanel",
         "aria-labelledby": "tab-contact",
     });
-    contact.appendChild(el("h2", {class: "section__title"}, SITE.contact.title));
+    contact.appendChild(el("h2", { class: "section__title" }, SITE.contact.title));
     contact.appendChild(
-        el("div", {class: "prose"}, `<p>${SITE.contact.blurb}</p>`)
+        el("div", { class: "prose" }, `<p>${SITE.contact.blurb}</p>`)
     );
     contact.appendChild(buildLinkList(SITE.contact.items));
     main.appendChild(contact);
@@ -232,8 +214,8 @@ function cardSection(id, title, items, linked = false) {
         role: "tabpanel",
         "aria-labelledby": `tab-${id}`,
     });
-    section.appendChild(el("h2", {class: "section__title"}, title));
-    const grid = el("div", {class: "card-grid"});
+    section.appendChild(el("h2", { class: "section__title" }, title));
+    const grid = el("div", { class: "card-grid" });
 
     items.forEach((it) => {
         const inner = `
@@ -241,10 +223,10 @@ function cardSection(id, title, items, linked = false) {
       <p>${it.body}</p>
       ${it.meta ? `<span class="card__meta">${it.meta}</span>` : ""}`;
         if (linked && it.url) {
-            const a = el("a", {class: "card card__link", href: it.url}, inner);
+            const a = el("a", { class: "card card__link", href: it.url }, inner);
             grid.appendChild(a);
         } else {
-            grid.appendChild(el("article", {class: "card"}, inner));
+            grid.appendChild(el("article", { class: "card" }, inner));
         }
     });
 
@@ -253,10 +235,10 @@ function cardSection(id, title, items, linked = false) {
 }
 
 function buildLinkList(items) {
-    const ul = el("ul", {class: "link-list"});
+    const ul = el("ul", { class: "link-list" });
     items.forEach((it) => {
         const external = /^https?:/.test(it.url);
-        const attrs = {href: it.url};
+        const attrs = { href: it.url };
         if (external) {
             attrs.target = "_blank";
             attrs.rel = "noopener noreferrer";
@@ -352,9 +334,7 @@ function initMobileMenu() {
         toggle.setAttribute("aria-label", "Open menu");
         document.body.classList.remove("menu-open");
         scrim.classList.remove("is-visible");
-        setTimeout(() => {
-            scrim.hidden = true;
-        }, 220);
+        setTimeout(() => { scrim.hidden = true; }, 220);
     };
 
     toggle.addEventListener("click", () =>
@@ -395,7 +375,7 @@ function initTabs() {
     const ids = SITE.nav.map((n) => n.id);
     const defaultId = ids[0];
 
-    const show = (id, {focusPanel = false, push = true} = {}) => {
+    const show = (id, { focusPanel = false, push = true } = {}) => {
         if (!ids.includes(id)) id = defaultId;
 
         panels.forEach((p) => {
@@ -421,12 +401,12 @@ function initTabs() {
 
         // Scroll back to top of content on tab change
         const main = $("#main");
-        if (main) main.scrollIntoView({block: "start", behavior: "auto"});
-        window.scrollTo({top: 0, behavior: "auto"});
+        if (main) main.scrollIntoView({ block: "start", behavior: "auto" });
+        window.scrollTo({ top: 0, behavior: "auto" });
 
         if (focusPanel) {
             const panel = document.getElementById(id);
-            if (panel) panel.focus({preventScroll: true});
+            if (panel) panel.focus({ preventScroll: true });
         }
     };
 
@@ -435,6 +415,9 @@ function initTabs() {
         link.addEventListener("click", (e) => {
             e.preventDefault();
             show(link.getAttribute("data-nav"));
+            // Drop focus after a tap so no focus ring lingers on mobile. Keyboard
+            // users are unaffected (they navigate via the arrow-key handler below).
+            if (e.detail !== 0) link.blur();
         });
     });
 
@@ -463,11 +446,11 @@ function initTabs() {
 
     // React to hash changes (back/forward, manual edits, external links)
     window.addEventListener("hashchange", () => {
-        show(location.hash.slice(1) || defaultId, {push: false});
+        show(location.hash.slice(1) || defaultId, { push: false });
     });
 
     // Initial tab from hash, or default
-    show(location.hash.slice(1) || defaultId, {push: false});
+    show(location.hash.slice(1) || defaultId, { push: false });
 }
 
 /* ----------------------------------------------------------------------
@@ -502,7 +485,7 @@ function deepMerge(base, override) {
     if (Array.isArray(override) || typeof override !== "object" || override === null) {
         return override;
     }
-    const out = {...base};
+    const out = { ...base };
     for (const key of Object.keys(override)) {
         const b = base ? base[key] : undefined;
         const o = override[key];
@@ -521,7 +504,7 @@ function deepMerge(base, override) {
 async function loadContent() {
     if (!SITE.dataUrl) return SITE;
     try {
-        const res = await fetch(SITE.dataUrl, {headers: {Accept: "application/json"}});
+        const res = await fetch(SITE.dataUrl, { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         return deepMerge(SITE, data);

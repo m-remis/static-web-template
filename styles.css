@@ -151,10 +151,22 @@ a {
     text-decoration: none;
 }
 
+/* Show a focus ring only for keyboard navigation, never on touch/mouse tap.
+   This kills the square box that appeared around nav pills/buttons when tapped
+   on mobile Chrome. */
+:focus {
+    outline: none;
+}
+
 :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
     border-radius: 4px;
+}
+
+/* Remove the grey/blue tap-highlight rectangle mobile browsers draw on tap. */
+a, button, [role="tab"], .menu-toggle, .theme-toggle {
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* ---- Background ------------------------------------------------------- */
@@ -396,7 +408,7 @@ a {
     width: 100%;
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: clamp(2rem, 6vw, 4.5rem) var(--gutter) 3rem;
+    padding: clamp(2rem, 6vw, 3rem) var(--gutter) 3rem;
     outline: none;
     flex: 1 0 auto;
 }
