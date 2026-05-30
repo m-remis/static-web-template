@@ -55,12 +55,12 @@ let SITE = {
         title: "Where to find me",
         blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
 
-        // Embedded map. Loaded automatically only on desktop-like devices.
-        // On touch/mobile devices, the user must explicitly tap "Load map" so
-        // mobile Firefox/Android does not try to launch the Maps app on page open.
+        // Embedded map. Displayed on desktop and mobile.
+        // On touch/mobile devices, CSS makes the iframe non-interactive so
+        // Firefox/Android does not hijack taps and open the Maps app randomly.
         mapEmbed: "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
 
-        // Normal map link used by the mobile fallback button.
+        // Normal map link used by the explicit "Open in Maps" button.
         mapUrl: "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
 
         mapLabel: "Map showing our location",
@@ -213,53 +213,26 @@ function renderContent() {
     if (SITE.findMe.mapEmbed) {
         const wrap = el("div", { class: "map-embed" });
 
-        const loadMap = () => {
-            wrap.classList.remove("map-embed--placeholder");
-            wrap.innerHTML = "";
+        const iframe = el("iframe", {
+            src: SITE.findMe.mapEmbed,
+            title: SITE.findMe.mapLabel || "Location map",
+            loading: "lazy",
+            referrerpolicy: "no-referrer-when-downgrade",
+            allowfullscreen: true,
+        });
 
-            const iframe = el("iframe", {
-                src: SITE.findMe.mapEmbed,
-                title: SITE.findMe.mapLabel || "Location map",
-                loading: "lazy",
-                referrerpolicy: "no-referrer-when-downgrade",
-                allowfullscreen: true,
-            });
-
-            wrap.appendChild(iframe);
-        };
-
-        const isDesktopLike = window.matchMedia &&
-            window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-        if (isDesktopLike) {
-            loadMap();
-        } else {
-            wrap.classList.add("map-embed--placeholder");
-
-            const mapHref = SITE.findMe.mapUrl || SITE.findMe.mapEmbed;
-            const placeholder = el(
-                "div",
-                { class: "map-embed__placeholder" },
-                `
-                    <p>Map is not loaded automatically on mobile.</p>
-                    <div class="map-embed__actions">
-                        <button class="map-embed__load" type="button">Load map</button>
-                        <a class="map-embed__open" href="${mapHref}" target="_blank" rel="noopener noreferrer">
-                            Open map
-                        </a>
-                    </div>
-                `
-            );
-
-            placeholder.querySelector(".map-embed__load").addEventListener("click", (e) => {
-                e.currentTarget.blur();
-                loadMap();
-            });
-
-            wrap.appendChild(placeholder);
-        }
-
+        wrap.appendChild(iframe);
         findMe.appendChild(wrap);
+
+        const mapHref = SITE.findMe.mapUrl || SITE.findMe.mapEmbed;
+
+        findMe.appendChild(
+            el(
+                "p",
+                { class: "map-open-row" },
+                `<a href="${mapHref}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
+            )
+        );
     }
 
     main.appendChild(findMe);

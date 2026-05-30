@@ -624,32 +624,11 @@ a.card__link {
     filter: saturate(0.95);
 }
 
-.map-embed--placeholder {
-    display: grid;
-    place-items: center;
-    min-height: 16rem;
-    aspect-ratio: auto;
+.map-open-row {
+    margin: 0.75rem 0 0;
 }
 
-.map-embed__placeholder {
-    padding: 1.5rem;
-    text-align: center;
-    color: var(--text-soft);
-}
-
-.map-embed__placeholder p {
-    margin: 0 0 1rem;
-}
-
-.map-embed__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem;
-}
-
-.map-embed__load,
-.map-embed__open {
+.map-open-row a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -657,20 +636,18 @@ a.card__link {
     padding: 0.65rem 1rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
-    background: var(--bg-panel-solid);
+    background: var(--bg-panel);
     color: var(--text);
     font: inherit;
     line-height: 1;
     transition: border-color var(--transition), transform var(--transition);
 }
 
-.map-embed__load:hover,
-.map-embed__open:hover {
+.map-open-row a:hover {
     border-color: var(--accent);
 }
 
-.map-embed__load:active,
-.map-embed__open:active {
+.map-open-row a:active {
     transform: scale(0.97);
 }
 
@@ -681,8 +658,20 @@ a.card__link {
 }
 
 /* Touch browsers often keep :hover stuck after a tap, especially mobile Firefox.
-   Keep hover polish on desktop, but neutralize sticky hover state on touch. */
+   Keep hover polish on desktop, but neutralize sticky hover state on touch.
+
+   The map iframe is still visible on mobile, but non-interactive on touch.
+   That prevents Firefox/Android from hijacking random taps and opening Maps.
+   Users can intentionally open it via the explicit "Open in Maps" link. */
 @media (hover: none), (pointer: coarse) {
+    .map-embed iframe {
+        pointer-events: none;
+    }
+
+    .map-open-row {
+        text-align: center;
+    }
+
     .brand:hover {
         opacity: 1;
     }
@@ -704,8 +693,7 @@ a.card__link {
 
     .theme-toggle:hover,
     .menu-toggle:hover,
-    .map-embed__load:hover,
-    .map-embed__open:hover {
+    .map-open-row a:hover {
         border-color: var(--border);
     }
 
