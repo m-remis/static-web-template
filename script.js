@@ -399,10 +399,13 @@ function initTabs() {
             history.pushState(null, "", `#${id}`);
         }
 
-        // Scroll back to top of content on tab change
-        const main = $("#main");
-        if (main) main.scrollIntoView({ block: "start", behavior: "auto" });
-        window.scrollTo({ top: 0, behavior: "auto" });
+        // Reset scroll to the very top on tab change. We avoid scrollIntoView()
+        // here: on iOS Safari it aligns to the panel's first focusable child,
+        // which scrolls past the title straight to the items. A plain top scroll,
+        // re-applied after layout settles, lands on the title every time.
+        const toTop = () => window.scrollTo(0, 0);
+        toTop();
+        requestAnimationFrame(toTop);
 
         if (focusPanel) {
             const panel = document.getElementById(id);
