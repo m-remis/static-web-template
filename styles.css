@@ -151,17 +151,32 @@ a {
     text-decoration: none;
 }
 
-/* Show a focus ring only for keyboard navigation, never on touch/mouse tap.
-   This kills the square box that appeared around nav pills/buttons when tapped
-   on mobile Chrome. */
+/* Kill fake mobile/touch focus rings.
+   Focus styling appears only after real keyboard navigation. */
 :focus {
     outline: none;
 }
 
-:focus-visible {
+body.keyboard-nav :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
     border-radius: 4px;
+}
+
+body:not(.keyboard-nav) :focus-visible {
+    outline: none;
+}
+
+/* Extra protection for mobile Firefox / touch browsers. */
+@media (hover: none), (pointer: coarse) {
+    a:focus,
+    button:focus,
+    [role="tab"]:focus,
+    a:focus-visible,
+    button:focus-visible,
+    [role="tab"]:focus-visible {
+        outline: none;
+    }
 }
 
 /* Remove the grey/blue tap-highlight rectangle mobile browsers draw on tap. */
@@ -540,7 +555,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     font-size: 0.95rem;
 }
 
-.card a.card__link {
+a.card__link {
     display: block;
 }
 
@@ -609,9 +624,103 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     filter: saturate(0.95);
 }
 
+.map-embed--placeholder {
+    display: grid;
+    place-items: center;
+    min-height: 16rem;
+    aspect-ratio: auto;
+}
+
+.map-embed__placeholder {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-soft);
+}
+
+.map-embed__placeholder p {
+    margin: 0 0 1rem;
+}
+
+.map-embed__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.map-embed__load,
+.map-embed__open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.6rem;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-panel-solid);
+    color: var(--text);
+    font: inherit;
+    line-height: 1;
+    transition: border-color var(--transition), transform var(--transition);
+}
+
+.map-embed__load:hover,
+.map-embed__open:hover {
+    border-color: var(--accent);
+}
+
+.map-embed__load:active,
+.map-embed__open:active {
+    transform: scale(0.97);
+}
+
 @media (max-width: 640px) {
     .map-embed {
         aspect-ratio: 4 / 5;
+    }
+}
+
+/* Touch browsers often keep :hover stuck after a tap, especially mobile Firefox.
+   Keep hover polish on desktop, but neutralize sticky hover state on touch. */
+@media (hover: none), (pointer: coarse) {
+    .brand:hover {
+        opacity: 1;
+    }
+
+    .nav-desktop a:hover,
+    .nav-mobile a:hover {
+        color: var(--menu-text);
+        background: transparent;
+    }
+
+    .nav-desktop a.is-active,
+    .nav-mobile a.is-active {
+        color: var(--menu-text-active);
+    }
+
+    .nav-mobile a.is-active {
+        background: var(--menu-hover-bg);
+    }
+
+    .theme-toggle:hover,
+    .menu-toggle:hover,
+    .map-embed__load:hover,
+    .map-embed__open:hover {
+        border-color: var(--border);
+    }
+
+    .card:hover {
+        transform: none;
+        border-color: var(--border);
+    }
+
+    .link-list a:hover {
+        transform: none;
+        border-color: var(--border);
+    }
+
+    .site-footer a:hover {
+        color: var(--text-soft);
     }
 }
 

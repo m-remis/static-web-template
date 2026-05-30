@@ -6,13 +6,18 @@
 "use strict";
 
 /* ----------------------------------------------------------------------
-   1. CONTENT  ◀━━ EDIT THIS BLOCK
-   ----------------------------------------------------------------------
+   1. CONTENT ◀━━ EDIT THIS BLOCK
+
    This SITE object is the only thing you need to touch to make the site
    yours: brand name, section text, projects, contact details, the map,
    and the list of background images. Everything below this block is
    layout/logic and can be left alone.
+
+   IMPORTANT: section text intentionally supports small trusted inline HTML,
+   for example <em>…</em> in the hero title. Do not feed this template
+   user-generated or untrusted HTML unless you sanitize it first.
 ---------------------------------------------------------------------- */
+
 let SITE = {
     // OPTIONAL: point this at a JSON endpoint to load content from your own
     // backend instead of editing this file. Any keys the JSON returns override
@@ -32,7 +37,7 @@ let SITE = {
 
     intro: {
         eyebrow: "Company",
-        // <em>…</em> renders in the accent color
+        // <em>…</em> renders in the accent color.
         title: "Lorem ipsum <em>dolor sit</em> amet consectetur.",
         lead: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
     },
@@ -49,12 +54,15 @@ let SITE = {
     findMe: {
         title: "Where to find me",
         blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
-        // Replace with your own location embed URL from Google Maps → Share → Embed a map.
-        // Uses the embed endpoint (stays inside the iframe on mobile instead of
-        // trying to launch the Maps app). For your own location: Google Maps →
-        // Share → Embed a map → copy the src from the generated iframe.
-        mapEmbed:
-            "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+
+        // Embedded map. Loaded automatically only on desktop-like devices.
+        // On touch/mobile devices, the user must explicitly tap "Load map" so
+        // mobile Firefox/Android does not try to launch the Maps app on page open.
+        mapEmbed: "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+
+        // Normal map link used by the mobile fallback button.
+        mapUrl: "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+
         mapLabel: "Map showing our location",
     },
 
@@ -81,7 +89,7 @@ let SITE = {
         year: new Date().getFullYear(),
     },
 
-    /* Background images — just add files here and to assets/background/. */
+    // Background images — just add files here and to assets/background/.
     backgrounds: [
         "assets/background/background.jpg",
         "assets/background/background_2.jpg",
@@ -92,29 +100,42 @@ let SITE = {
 /* ----------------------------------------------------------------------
    2. SMALL HELPERS
 ---------------------------------------------------------------------- */
+
 const $ = (sel, root = document) => root.querySelector(sel);
+
 const el = (tag, attrs = {}, html = "") => {
     const node = document.createElement(tag);
+
     for (const [k, v] of Object.entries(attrs)) {
+        if (v === false || v === null || v === undefined) continue;
         if (k === "class") node.className = v;
-        else node.setAttribute(k, v);
+        else node.setAttribute(k, v === true ? "" : String(v));
     }
+
     if (html) node.innerHTML = html;
     return node;
 };
 
+const isExternalUrl = (url = "") => /^https?:\/\//i.test(url);
+
 /* ----------------------------------------------------------------------
    3. RENDER NAVIGATION
 ---------------------------------------------------------------------- */
+
 function renderNav() {
     const desktop = $("#navDesktop");
     const mobile = $("#navMobile");
-    $("#brand").textContent = SITE.brand;
+    const brand = $("#brand");
 
+    if (!desktop || !mobile || !brand) return;
+
+    brand.textContent = SITE.brand;
     desktop.setAttribute("role", "tablist");
+    desktop.setAttribute("aria-label", "Main sections");
 
     SITE.nav.forEach((item) => {
-        const make = () =>
+        // Desktop nav is the real ARIA tablist. These IDs are unique.
+        desktop.appendChild(
             el(
                 "a",
                 {
@@ -124,19 +145,35 @@ function renderNav() {
                     id: `tab-${item.id}`,
                     "aria-controls": item.id,
                     "aria-selected": "false",
+                    tabindex: "-1",
                 },
                 item.label
-            );
-        desktop.appendChild(make());
-        mobile.appendChild(make());
+            )
+        );
+
+        // Mobile nav is plain navigation. Do not duplicate desktop tab IDs.
+        mobile.appendChild(
+            el(
+                "a",
+                {
+                    href: `#${item.id}`,
+                    "data-nav": item.id,
+                },
+                item.label
+            )
+        );
     });
 }
 
 /* ----------------------------------------------------------------------
    4. RENDER CONTENT SECTIONS
 ---------------------------------------------------------------------- */
+
 function renderContent() {
     const main = $("#main");
+    if (!main) return;
+
+    main.innerHTML = "";
 
     // Intro
     const intro = el("section", {
@@ -144,18 +181,19 @@ function renderContent() {
         class: "section intro",
         role: "tabpanel",
         "aria-labelledby": "tab-home",
+        tabindex: "-1",
     });
+
     intro.append(
         el("p", { class: "intro__eyebrow" }, SITE.intro.eyebrow),
         el("h1", { class: "intro__title" }, SITE.intro.title),
         el("p", { class: "intro__lead" }, SITE.intro.lead)
     );
+
     main.appendChild(intro);
 
     // Services
-    main.appendChild(
-        cardSection("services", SITE.services.title, SITE.services.items)
-    );
+    main.appendChild(cardSection("services", SITE.services.title, SITE.services.items));
 
     // Where to find me
     const findMe = el("section", {
@@ -163,34 +201,71 @@ function renderContent() {
         class: "section",
         role: "tabpanel",
         "aria-labelledby": "tab-find-me",
+        tabindex: "-1",
     });
+
     findMe.appendChild(el("h2", { class: "section__title" }, SITE.findMe.title));
+
     if (SITE.findMe.blurb) {
-        findMe.appendChild(
-            el("div", { class: "prose" }, `<p>${SITE.findMe.blurb}</p>`)
-        );
+        findMe.appendChild(el("div", { class: "prose" }, `<p>${SITE.findMe.blurb}</p>`));
     }
+
     if (SITE.findMe.mapEmbed) {
         const wrap = el("div", { class: "map-embed" });
-        const iframe = el("iframe", {
-            src: SITE.findMe.mapEmbed,
-            title: SITE.findMe.mapLabel || "Location map",
-            loading: "lazy",
-            referrerpolicy: "no-referrer-when-downgrade",
-            // Allow the map to render and be interactive, but NOT to navigate the
-            // top-level page (which is what made mobile browsers jump to the Maps app).
-            sandbox: "allow-scripts allow-same-origin allow-popups",
-            allowfullscreen: "",
-        });
-        wrap.appendChild(iframe);
+
+        const loadMap = () => {
+            wrap.classList.remove("map-embed--placeholder");
+            wrap.innerHTML = "";
+
+            const iframe = el("iframe", {
+                src: SITE.findMe.mapEmbed,
+                title: SITE.findMe.mapLabel || "Location map",
+                loading: "lazy",
+                referrerpolicy: "no-referrer-when-downgrade",
+                allowfullscreen: true,
+            });
+
+            wrap.appendChild(iframe);
+        };
+
+        const isDesktopLike = window.matchMedia &&
+            window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+        if (isDesktopLike) {
+            loadMap();
+        } else {
+            wrap.classList.add("map-embed--placeholder");
+
+            const mapHref = SITE.findMe.mapUrl || SITE.findMe.mapEmbed;
+            const placeholder = el(
+                "div",
+                { class: "map-embed__placeholder" },
+                `
+                    <p>Map is not loaded automatically on mobile.</p>
+                    <div class="map-embed__actions">
+                        <button class="map-embed__load" type="button">Load map</button>
+                        <a class="map-embed__open" href="${mapHref}" target="_blank" rel="noopener noreferrer">
+                            Open map
+                        </a>
+                    </div>
+                `
+            );
+
+            placeholder.querySelector(".map-embed__load").addEventListener("click", (e) => {
+                e.currentTarget.blur();
+                loadMap();
+            });
+
+            wrap.appendChild(placeholder);
+        }
+
         findMe.appendChild(wrap);
     }
+
     main.appendChild(findMe);
 
     // Projects
-    main.appendChild(
-        cardSection("projects", SITE.projects.title, SITE.projects.items, true)
-    );
+    main.appendChild(cardSection("projects", SITE.projects.title, SITE.projects.items, true));
 
     // Contact
     const contact = el("section", {
@@ -198,11 +273,15 @@ function renderContent() {
         class: "section",
         role: "tabpanel",
         "aria-labelledby": "tab-contact",
+        tabindex: "-1",
     });
+
     contact.appendChild(el("h2", { class: "section__title" }, SITE.contact.title));
-    contact.appendChild(
-        el("div", { class: "prose" }, `<p>${SITE.contact.blurb}</p>`)
-    );
+
+    if (SITE.contact.blurb) {
+        contact.appendChild(el("div", { class: "prose" }, `<p>${SITE.contact.blurb}</p>`));
+    }
+
     contact.appendChild(buildLinkList(SITE.contact.items));
     main.appendChild(contact);
 }
@@ -213,18 +292,29 @@ function cardSection(id, title, items, linked = false) {
         class: "section",
         role: "tabpanel",
         "aria-labelledby": `tab-${id}`,
+        tabindex: "-1",
     });
+
     section.appendChild(el("h2", { class: "section__title" }, title));
+
     const grid = el("div", { class: "card-grid" });
 
     items.forEach((it) => {
         const inner = `
-      <h3>${it.title}</h3>
-      <p>${it.body}</p>
-      ${it.meta ? `<span class="card__meta">${it.meta}</span>` : ""}`;
+            <h3>${it.title}</h3>
+            <p>${it.body}</p>
+            ${it.meta ? `<span class="card__meta">${it.meta}</span>` : ""}
+        `;
+
         if (linked && it.url) {
-            const a = el("a", { class: "card card__link", href: it.url }, inner);
-            grid.appendChild(a);
+            const attrs = { class: "card card__link", href: it.url };
+
+            if (isExternalUrl(it.url)) {
+                attrs.target = "_blank";
+                attrs.rel = "noopener noreferrer";
+            }
+
+            grid.appendChild(el("a", attrs, inner));
         } else {
             grid.appendChild(el("article", { class: "card" }, inner));
         }
@@ -236,27 +326,34 @@ function cardSection(id, title, items, linked = false) {
 
 function buildLinkList(items) {
     const ul = el("ul", { class: "link-list" });
+
     items.forEach((it) => {
-        const external = /^https?:/.test(it.url);
         const attrs = { href: it.url };
-        if (external) {
+
+        if (isExternalUrl(it.url)) {
             attrs.target = "_blank";
             attrs.rel = "noopener noreferrer";
         }
+
         const a = el(
             "a",
             attrs,
             `<span class="label">${it.label}</span><span class="handle">${it.handle}</span>`
         );
+
         const li = el("li");
         li.appendChild(a);
         ul.appendChild(li);
     });
+
     return ul;
 }
 
 function renderFooter() {
     const f = $("#siteFooter");
+    if (!f) return;
+
+    f.innerHTML = "";
     f.append(
         el("span", {}, `© ${SITE.footer.year} ${SITE.brand}`),
         el("span", {}, SITE.footer.note)
@@ -264,8 +361,45 @@ function renderFooter() {
 }
 
 /* ----------------------------------------------------------------------
+   5A. INPUT MODE
+
+   Mobile Firefox can keep tapped links/buttons in a fake focused/hovered
+   state. We only show focus rings after real keyboard navigation.
+---------------------------------------------------------------------- */
+
+function initInputMode() {
+    const keyboardKeys = new Set([
+        "Tab",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "Home",
+        "End",
+        "Enter",
+        " ",
+    ]);
+
+    const enableKeyboardMode = (e) => {
+        if (keyboardKeys.has(e.key)) {
+            document.body.classList.add("keyboard-nav");
+        }
+    };
+
+    const disableKeyboardMode = () => {
+        document.body.classList.remove("keyboard-nav");
+    };
+
+    window.addEventListener("keydown", enableKeyboardMode, true);
+    window.addEventListener("pointerdown", disableKeyboardMode, true);
+    window.addEventListener("mousedown", disableKeyboardMode, true);
+    window.addEventListener("touchstart", disableKeyboardMode, true);
+}
+
+/* ----------------------------------------------------------------------
    5. THEME (light / dark + localStorage)
 ---------------------------------------------------------------------- */
+
 const THEME_KEY = "theme-preference";
 
 function getStoredTheme() {
@@ -278,33 +412,37 @@ function getStoredTheme() {
 
 function applyTheme(theme) {
     document.body.setAttribute("data-theme", theme);
+
     const toggle = $("#themeToggle");
-    toggle.setAttribute("aria-pressed", String(theme === "light"));
+    if (toggle) toggle.setAttribute("aria-pressed", String(theme === "light"));
+
     const meta = $('meta[name="theme-color"]');
     if (meta) {
         // Pull the browser-chrome color straight from the active theme's tokens,
         // so there's nothing to keep in sync if you re-theme styles.css.
-        const bg = getComputedStyle(document.body)
-            .getPropertyValue("--bg-base")
-            .trim();
+        const bg = getComputedStyle(document.body).getPropertyValue("--bg-base").trim();
         if (bg) meta.setAttribute("content", bg);
     }
 }
 
 function initTheme() {
+    const toggle = $("#themeToggle");
+    if (!toggle) return;
+
     const stored = getStoredTheme();
-    const prefersLight =
-        window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
     const theme = stored || (prefersLight ? "light" : "dark");
+
     applyTheme(theme);
 
-    $("#themeToggle").addEventListener("click", () => {
+    toggle.addEventListener("click", () => {
         const next = document.body.getAttribute("data-theme") === "light" ? "dark" : "light";
         applyTheme(next);
+
         try {
             localStorage.setItem(THEME_KEY, next);
         } catch {
-            /* storage unavailable — fail silently */
+            // storage unavailable — fail silently
         }
     });
 }
@@ -312,17 +450,25 @@ function initTheme() {
 /* ----------------------------------------------------------------------
    6. MOBILE MENU
 ---------------------------------------------------------------------- */
+
 function initMobileMenu() {
     const toggle = $("#menuToggle");
     const nav = $("#navMobile");
     const scrim = $("#navScrim");
 
+    if (!toggle || !nav || !scrim) return;
+
+    let closeTimer = null;
+
     const open = () => {
+        if (closeTimer) clearTimeout(closeTimer);
+
         nav.classList.add("is-open");
         nav.setAttribute("aria-hidden", "false");
         toggle.setAttribute("aria-expanded", "true");
         toggle.setAttribute("aria-label", "Close menu");
         document.body.classList.add("menu-open");
+
         scrim.hidden = false;
         requestAnimationFrame(() => scrim.classList.add("is-visible"));
     };
@@ -333,21 +479,22 @@ function initMobileMenu() {
         toggle.setAttribute("aria-expanded", "false");
         toggle.setAttribute("aria-label", "Open menu");
         document.body.classList.remove("menu-open");
+
         scrim.classList.remove("is-visible");
-        setTimeout(() => { scrim.hidden = true; }, 220);
+        closeTimer = setTimeout(() => {
+            scrim.hidden = true;
+        }, 220);
     };
 
-    toggle.addEventListener("click", () =>
-        nav.classList.contains("is-open") ? close() : open()
-    );
+    toggle.addEventListener("click", () => (nav.classList.contains("is-open") ? close() : open()));
     scrim.addEventListener("click", close);
 
-    // Close on link tap
+    // Close on link tap.
     nav.addEventListener("click", (e) => {
         if (e.target.closest("a")) close();
     });
 
-    // Close on Escape
+    // Close on Escape.
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && nav.classList.contains("is-open")) {
             close();
@@ -355,57 +502,70 @@ function initMobileMenu() {
         }
     });
 
-    // If resized up to desktop, make sure menu is closed
-    window.matchMedia("(min-width: 641px)").addEventListener("change", (e) => {
+    // If resized up to desktop, make sure menu is closed.
+    const mq = window.matchMedia("(min-width: 641px)");
+    const onDesktop = (e) => {
         if (e.matches) close();
-    });
+    };
+
+    if (mq.addEventListener) mq.addEventListener("change", onDesktop);
+    else mq.addListener(onDesktop);
 }
 
 /* ----------------------------------------------------------------------
    7. TABS
+
    Each section is a tab panel; only one is shown at a time. The URL hash
-   drives the active tab, so back/forward and direct links work.
+   drives the active tab, so direct links and browser navigation work.
 ---------------------------------------------------------------------- */
+
 function initTabs() {
     const links = Array.from(document.querySelectorAll("[data-nav]"));
-    const panels = SITE.nav
-        .map((n) => document.getElementById(n.id))
-        .filter(Boolean);
-
+    const desktopTabs = Array.from(document.querySelectorAll("#navDesktop [role='tab']"));
+    const panels = SITE.nav.map((n) => document.getElementById(n.id)).filter(Boolean);
     const ids = SITE.nav.map((n) => n.id);
     const defaultId = ids[0];
 
-    const show = (id, { focusPanel = false, push = true } = {}) => {
-        if (!ids.includes(id)) id = defaultId;
+    const normalize = (id) => (ids.includes(id) ? id : defaultId);
+
+    const setActiveLink = (link, id) => {
+        const active = link.getAttribute("data-nav") === id;
+        const isTab = link.getAttribute("role") === "tab";
+
+        link.classList.toggle("is-active", active);
+
+        if (isTab) {
+            link.setAttribute("aria-selected", String(active));
+            link.tabIndex = active ? 0 : -1;
+        } else if (active) {
+            link.setAttribute("aria-current", "page");
+        } else {
+            link.removeAttribute("aria-current");
+        }
+    };
+
+    const show = (rawId, { focusPanel = false, push = true, scrollTop = true } = {}) => {
+        const id = normalize(rawId);
 
         panels.forEach((p) => {
             const active = p.id === id;
             p.hidden = !active;
-            if (active) p.classList.add("section--active");
-            else p.classList.remove("section--active");
+            p.classList.toggle("section--active", active);
         });
 
-        links.forEach((l) => {
-            const active = l.getAttribute("data-nav") === id;
-            l.classList.toggle("is-active", active);
-            l.setAttribute("aria-selected", String(active));
-            // Only the active desktop tab is in the tab order (roving tabindex)
-            if (l.getAttribute("role") === "tab") {
-                l.tabIndex = active ? 0 : -1;
-            }
-        });
+        links.forEach((link) => setActiveLink(link, id));
 
         if (push && location.hash.slice(1) !== id) {
             history.pushState(null, "", `#${id}`);
         }
 
-        // Reset scroll to the very top on tab change. We avoid scrollIntoView()
-        // here: on iOS Safari it aligns to the panel's first focusable child,
-        // which scrolls past the title straight to the items. A plain top scroll,
-        // re-applied after layout settles, lands on the title every time.
-        const toTop = () => window.scrollTo(0, 0);
-        toTop();
-        requestAnimationFrame(toTop);
+        if (scrollTop) {
+            // Avoid scrollIntoView(): on iOS Safari it can align to a child and
+            // skip past the title. A plain top scroll is more predictable.
+            const toTop = () => window.scrollTo(0, 0);
+            toTop();
+            requestAnimationFrame(toTop);
+        }
 
         if (focusPanel) {
             const panel = document.getElementById(id);
@@ -413,68 +573,89 @@ function initTabs() {
         }
     };
 
-    // Click / tap
+    // Click / tap.
     links.forEach((link) => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
             show(link.getAttribute("data-nav"));
-            // Drop focus after a tap so no focus ring lingers on mobile. Keyboard
-            // users are unaffected (they navigate via the arrow-key handler below).
+
+            // Drop focus after a tap so no focus ring lingers on mobile.
+            // Keyboard users are unaffected.
             if (e.detail !== 0) link.blur();
         });
     });
 
-    // Keyboard arrows on the desktop tablist (roving focus)
-    const desktopTabs = links.filter((l) => l.getAttribute("role") === "tab");
-    $("#navDesktop").addEventListener("keydown", (e) => {
-        const current = desktopTabs.findIndex((t) => t === document.activeElement);
-        if (current === -1) return;
-        let next = null;
-        if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (current + 1) % desktopTabs.length;
-        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (current - 1 + desktopTabs.length) % desktopTabs.length;
-        else if (e.key === "Home") next = 0;
-        else if (e.key === "End") next = desktopTabs.length - 1;
-        if (next === null) return;
-        e.preventDefault();
-        const tab = desktopTabs[next];
-        tab.focus();
-        show(tab.getAttribute("data-nav"));
-    });
+    // Keyboard arrows on the desktop tablist only.
+    const desktop = $("#navDesktop");
+    if (desktop) {
+        desktop.addEventListener("keydown", (e) => {
+            const current = desktopTabs.findIndex((t) => t === document.activeElement);
+            if (current === -1) return;
 
-    // Brand click → home tab
-    $("#brand").addEventListener("click", (e) => {
-        e.preventDefault();
-        show("home");
-    });
+            let next = null;
 
-    // React to hash changes (back/forward, manual edits, external links)
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (current + 1) % desktopTabs.length;
+            else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (current - 1 + desktopTabs.length) % desktopTabs.length;
+            else if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = desktopTabs.length - 1;
+
+            if (next === null) return;
+
+            e.preventDefault();
+
+            const tab = desktopTabs[next];
+            tab.focus();
+            show(tab.getAttribute("data-nav"));
+        });
+    }
+
+    // Brand click → home tab.
+    const brand = $("#brand");
+    if (brand) {
+        brand.addEventListener("click", (e) => {
+            e.preventDefault();
+            show(defaultId);
+        });
+    }
+
+    // React to manual hash edits and browser back/forward.
     window.addEventListener("hashchange", () => {
         show(location.hash.slice(1) || defaultId, { push: false });
     });
 
-    // Initial tab from hash, or default
-    show(location.hash.slice(1) || defaultId, { push: false });
+    window.addEventListener("popstate", () => {
+        show(location.hash.slice(1) || defaultId, { push: false });
+    });
+
+    // Initial tab from hash, or default. Do not force-scroll on first paint.
+    show(location.hash.slice(1) || defaultId, { push: false, scrollTop: false });
 }
 
 /* ----------------------------------------------------------------------
    8. BACKGROUND
-   Picks one image at random, preloads, fades in. Falls back gracefully
-   if no image is present (overlay + base color still look fine).
+
+   Picks one image at random, preloads it, then fades it in. Falls back
+   gracefully if no image is present.
 ---------------------------------------------------------------------- */
+
 function initBackground() {
     const bg = $("#bg");
     const list = SITE.backgrounds;
-    if (!list || !list.length) return;
+
+    if (!bg || !list || !list.length) return;
 
     const src = list[Math.floor(Math.random() * list.length)];
     const img = new Image();
+
     img.onload = () => {
         bg.style.backgroundImage = `url("${src}")`;
         bg.classList.add("is-loaded");
     };
+
     img.onerror = () => {
-        /* image missing — leave plain background, no error shown */
+        // image missing — leave plain background, no error shown
     };
+
     img.src = src;
 }
 
@@ -488,16 +669,19 @@ function deepMerge(base, override) {
     if (Array.isArray(override) || typeof override !== "object" || override === null) {
         return override;
     }
+
     const out = { ...base };
+
     for (const key of Object.keys(override)) {
         const b = base ? base[key] : undefined;
         const o = override[key];
-        out[key] =
-            b && typeof b === "object" && !Array.isArray(b) &&
-            o && typeof o === "object" && !Array.isArray(o)
-                ? deepMerge(b, o)
-                : o;
+
+        out[key] = b && typeof b === "object" && !Array.isArray(b) &&
+        o && typeof o === "object" && !Array.isArray(o)
+            ? deepMerge(b, o)
+            : o;
     }
+
     return out;
 }
 
@@ -506,9 +690,14 @@ function deepMerge(base, override) {
    never breaks just because the backend is down. */
 async function loadContent() {
     if (!SITE.dataUrl) return SITE;
+
     try {
-        const res = await fetch(SITE.dataUrl, { headers: { Accept: "application/json" } });
+        const res = await fetch(SITE.dataUrl, {
+            headers: { Accept: "application/json" },
+        });
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
         return deepMerge(SITE, data);
     } catch (err) {
@@ -525,6 +714,7 @@ async function init() {
     renderNav();
     renderContent();
     renderFooter();
+    initInputMode();
     initTheme();
     initMobileMenu();
     initTabs();
