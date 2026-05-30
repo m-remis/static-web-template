@@ -24,7 +24,8 @@ text, drop in a couple of images, and deploy.
 5. **Update the metadata (for SEO/sharing).** Search the project for
    `example.com` and replace it with your real domain in three places:
    `index.html` (look for the `TODO` comment), `sitemap.xml`, and `robots.txt`.
-   Also update `site.webmanifest` (name/description). The site works fine before you do this — it only affects
+   Also update `site.webmanifest` (name/description) and the `LICENSE`
+   copyright line. The site works fine before you do this — it only affects
    search engines and social link previews.
 
 That's it. Open `index.html` in a browser, or serve it:
