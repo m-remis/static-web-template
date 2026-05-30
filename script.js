@@ -493,6 +493,14 @@ function initMobileMenu() {
 ---------------------------------------------------------------------- */
 
 function initTabs() {
+    // The page is rendered by JS after load, so the browser's automatic scroll
+    // restoration runs before the content exists and anchors to whatever element
+    // is nearest — on mobile that looks like a "pre-scroll" to a random item on
+    // refresh. We own scroll position ourselves (show() handles it), so opt out.
+    if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+    }
+
     const links = Array.from(document.querySelectorAll("[data-nav]"));
     const desktopTabs = Array.from(document.querySelectorAll("#navDesktop [role='tab']"));
     const panels = SITE.nav.map((n) => document.getElementById(n.id)).filter(Boolean);
@@ -600,8 +608,9 @@ function initTabs() {
         show(location.hash.slice(1) || defaultId, { push: false });
     });
 
-    // Initial tab from hash, or default. Do not force-scroll on first paint.
-    show(location.hash.slice(1) || defaultId, { push: false, scrollTop: false });
+    // Initial tab from hash, or default. We disabled scrollRestoration above,
+    // so we land at the top deterministically instead of at a restored position.
+    show(location.hash.slice(1) || defaultId, { push: false });
 }
 
 /* ----------------------------------------------------------------------
