@@ -9,22 +9,17 @@
     <meta name="theme-color" content="#0e0f13" id="themeColorMeta"/>
 
     <!--
-      Base path for assets on the 404 page.
-
-      Use "/" when the site is deployed at the domain root, for example:
-      - https://example.com/
-      - https://username.github.io/
-      - a GitHub Pages custom domain
-
-      Use "/repo-name/" when deployed as a GitHub Pages project site, for example:
-      - https://username.github.io/static-web-template/
+      No <base> tag: all asset paths below are relative, so they resolve
+      correctly whether the site is deployed at the domain root
+      (https://example.com/404.html) or as a GitHub Pages project site
+      (https://username.github.io/repo/404.html). GitHub Pages serves this
+      page from the site root in both cases, so nothing needs editing per deploy.
     -->
-    <base href="/"/>
 
     <link rel="icon" href="assets/favicon.ico" sizes="any"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
           rel="stylesheet"/>
     <link rel="stylesheet" href="styles.css"/>
     <link rel="stylesheet" href="404.css"/>
@@ -34,7 +29,7 @@
     <p class="error__code">404</p>
     <h1 class="error__title">This page wandered off.</h1>
     <p class="error__lead">The link is broken, the page moved, or it never existed. Either way — let's get you back.</p>
-    <a class="error__home" href="">← Back to home</a>
+    <a class="error__home" href=".">← Back to home</a>
 </main>
 
 <script>

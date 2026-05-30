@@ -86,23 +86,19 @@
     box-sizing: border-box;
 }
 
-/* No text I-beam anywhere — mouse stays a normal arrow over text.
-   Interactive elements still get the pointer hand below. */
+/* No text I-beam and no blinking caret on non-editable content. The mouse stays
+   a normal arrow over text; clicking text focuses the <main> container (focusable
+   so the skip-link can target it), which would otherwise show an editing caret.
+   Interactive elements get the pointer hand; real form fields get a caret + I-beam. */
 * {
     cursor: default;
+    caret-color: transparent;
 }
 
 a, button, [role="tab"], label, summary,
 input[type="checkbox"], input[type="radio"],
 .menu-toggle, .theme-toggle {
     cursor: pointer;
-}
-
-/* No blinking text caret on non-editable content. Clicking text focuses the
-   <main> container (it's focusable so the skip-link can target it), which would
-   otherwise show an editing caret. Real form fields keep a normal caret + cursor. */
-* {
-    caret-color: transparent;
 }
 
 input, textarea, [contenteditable] {
@@ -607,6 +603,7 @@ a.card__link {
 
 /* Map embed (Where to find me) */
 .map-embed {
+    position: relative;
     margin-top: 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -660,12 +657,18 @@ a.card__link {
 /* Touch browsers often keep :hover stuck after a tap, especially mobile Firefox.
    Keep hover polish on desktop, but neutralize sticky hover state on touch.
 
-   The map iframe is still visible on mobile, but non-interactive on touch.
-   That prevents Firefox/Android from hijacking random taps and opening Maps.
-   Users can intentionally open it via the explicit "Open in Maps" link. */
+   For the map: on touch we lay a transparent overlay (::after) ON TOP of the
+   iframe, inside our own document. This physically intercepts taps before they
+   can reach the embedded Maps page. We do this instead of `pointer-events: none`
+   on the iframe, because that is unreliable on a cross-origin iframe in mobile
+   Firefox — the tap still reaches the embed and opens the Maps app.
+   Users open the map intentionally via the explicit "Open in Maps" link. */
 @media (hover: none), (pointer: coarse) {
-    .map-embed iframe {
-        pointer-events: none;
+    .map-embed::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
     }
 
     .map-open-row {
