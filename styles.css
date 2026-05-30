@@ -59,7 +59,7 @@
     /* — Text — */
     --text: #15161a; /* headings + body */
     --text-soft: #4b4d55; /* secondary / lead text */
-    --text-faint: #8a8c95; /* footer / captions */
+    --text-faint: #212123; /* footer / captions */
 
     /* — Menu / nav — */
     --menu-text: #4b4d55; /* idle nav link */
@@ -73,7 +73,7 @@
 
     /* — Background-image overlay & header (advanced) — */
     --overlay: rgba(255, 255, 255, 0.32);
-    --overlay-top: rgba(255, 255, 255, 0.52);
+    --overlay-top: rgba(255, 255, 255, 0.77);
     --overlay-bottom: rgba(255, 255, 255, 0.72);
     --header-bg: rgba(255, 255, 255, 0.82);
     --panel-blur: 14px;
