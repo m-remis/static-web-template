@@ -21,6 +21,11 @@ whether the request is actually a `SITE` edit.
 
 - Change brand, headings, body text, projects, contact, map, background list
   → edit `SITE`. Do **not** hardcode this content into `index.html`.
+- Change social links → edit `SITE.socials`. Each entry is
+  `{ label, icon, url }`; `icon` must match a key in the `SOCIAL_ICONS` map in
+  `script.js`. To add a new platform, add an inline SVG to `SOCIAL_ICONS` and a
+  matching color rule in `styles.css` (`.socials__link--<icon> svg`), then
+  reference the key from a `SITE.socials` entry. See "Socials" below.
 - Change colors/theme → edit the token blocks in `styles.css` (see below).
 - Change layout/behavior → edit the relevant render/init function in
   `script.js` or the matching CSS rule.
@@ -53,6 +58,12 @@ When adding a color, add a named CSS variable to **both** theme blocks rather
 than inlining a hex value in a rule. If a thing can't be restyled without
 touching multiple selectors, that's a signal to introduce a new variable.
 
+**Exception — social brand colors.** The social icons are deliberately tinted
+with each platform's brand color (e.g. Instagram pink, YouTube red) via
+`.socials__link--<icon> svg { color: … }`. These are brand colors, not theme
+tokens, so they are intentionally the same in light and dark mode and are *not*
+in the theme blocks. Keep them as per-platform rules.
+
 ## Content loading
 
 `SITE.dataUrl` (top of `script.js`) is `null` by default → inline content is
@@ -65,12 +76,58 @@ let it throw or blank the page. Preserve this fallback behavior.
 
 - `init()` (async) — boot: merges content, then renders + wires everything.
 - `renderNav()`, `renderContent()`, `cardSection()`, `buildLinkList()`,
-  `renderFooter()` — build DOM from `SITE`.
+  `buildSocials()`, `renderFooter()` — build DOM from `SITE`.
 - `initTheme()` / `applyTheme()` — theme toggle + `localStorage` persistence.
 - `initTabs()` — section-as-tab switching, hash routing, keyboard arrows, and
   scroll-position control (see the scroll gotcha below).
 - `initMobileMenu()` — mobile drawer (separate from desktop nav).
+- `initHeaderFit()` — measures the header row and switches to mobile mode when
+  the nav and socials would touch (see the header-fit gotcha below).
 - `initBackground()` — picks one random background, fades in, fails silently.
+
+## Socials
+
+Social links render in two places from the single `SITE.socials` array:
+
+- **Header** (desktop): a colored icon + visible label next to the brand,
+  built by `buildSocials()` and placed inside `.brand-wrap` in `renderNav()`.
+- **Mobile drawer**: a second `buildSocials()` call appends the same links to
+  the bottom of `#navMobile`, stacked one per row (icon + label), styled to
+  match the nav links above them.
+
+Icons are inline SVGs in the `SOCIAL_ICONS` map (no icon library — that would
+break the no-deps rule). Each SVG uses `fill="currentColor"`; the per-platform
+`.socials__link--<icon> svg { color: … }` rule sets the brand tint while the
+label text stays in the readable menu color. `label` is also the accessible
+name (`aria-label`), so give each entry a distinct label.
+
+## Header fit (nav ↔ socials collision) — don't "simplify" this
+
+The header packs brand + socials, the desktop nav, and the toggles onto one
+row. CSS alone can't detect when two flex items are about to touch, so
+`initHeaderFit()` measures it: it reads the rendered gap between the rightmost
+social link's right edge and the first nav tab's left edge
+(`getBoundingClientRect()`), and when that gap drops below a small buffer it
+adds `.force-mobile-nav` to the header. That class hides **both** the desktop
+nav and the header socials and shows the hamburger; the socials remain
+reachable in the drawer. Growing the window back removes the class.
+
+Things that must stay consistent or this breaks:
+
+- The header socials must keep their natural width — `.brand-wrap` is
+  `flex: none` and `.socials` has **no** `overflow: hidden` or shrink. An
+  earlier version clipped/shrank them "to prevent overlap"; that hid the
+  collision from the measurement so the switch never fired. Do not re-add
+  shrinking or clipping to the header socials.
+- `.force-mobile-nav` and the `@media (max-width: 640px)` block are parallel
+  triggers for the same mobile mode (CSS can't `@media` on a class). Both hide
+  `.nav-desktop` and `.brand-wrap .socials` and show `.menu-toggle` — keep them
+  in sync.
+- The buffer (the `BUFFER` constant in `initHeaderFit`) is the one dial for how
+  early/late the switch fires. Lower → they nearly touch first; higher → more
+  cushion. Don't replace the geometry measurement with a guessed pixel
+  breakpoint; the whole point is that it reacts to real layout (font loading,
+  label lengths, nav contents).
 
 ## Sections are semi-generic
 
@@ -90,8 +147,9 @@ logic and the `aria-labelledby`/panel ids).
   server-side assumptions.
 - `SITE` is declared with `let` (not `const`) because `init()` reassigns it
   after merging fetched content. Keep it that way.
-- Content with intentional inline markup (e.g. `intro.title` uses `<em>`) is
-  injected as HTML. Keep `SITE` values trusted/authored, not user input.
+- Content with intentional inline markup (e.g. `intro.title` uses `<em>`, and
+  `intro.lead` contains an `<a>`) is injected as HTML. Keep `SITE` values
+  trusted/authored, not user input.
 - **Scroll position on load is handled deliberately — don't "simplify" it.**
   Because the page is rendered by JS after load, the browser's automatic scroll
   restoration anchors to a nearby element before the content exists, which on
@@ -118,6 +176,11 @@ There are no tests and no build. After editing:
    tab other than the first, scroll down, then refresh. The page must land at the
    top of that tab, not pre-scrolled to a nearby card. This regresses easily —
    see the scroll gotcha above.
+4. Drag the window slowly across the mid-widths (roughly 640px up to wide
+   desktop): the header must switch to the hamburger the instant the nav and
+   the social links approach each other, with no overlap frame, and switch back
+   when widened. Confirm the socials appear (stacked, with labels) in the
+   drawer in that mode. See the header-fit gotcha above.
 
 Make the smallest change that satisfies the request, match the existing style,
 and don't reformat unrelated code.

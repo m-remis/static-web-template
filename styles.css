@@ -43,8 +43,8 @@
 
     /* — Background-image overlay & header (advanced) — */
     --overlay: rgba(10, 11, 14, 0.40);
-    --overlay-top: rgba(14, 15, 19, 0.48);
-    --overlay-bottom: rgba(14, 15, 19, 0.66);
+    --overlay-top: rgba(14, 15, 19, 0.79);
+    --overlay-bottom: rgba(14, 15, 19, 0.98);
     --header-bg: rgba(14, 15, 19, 0.82);
     --panel-blur: 14px;
 }
@@ -264,6 +264,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 .nav-desktop {
     display: flex;
     gap: 0.35rem;
+    flex: none;
 }
 
 .nav-desktop a {
@@ -299,6 +300,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: none;
 }
 
 /* Theme toggle */
@@ -370,6 +372,69 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     transform: translateY(-6px) rotate(-45deg);
 }
 
+/* ---- Brand + socials (header) ----------------------------------------- */
+/* The brand anchor is wrapped in .brand-wrap by JS so social icons can sit
+   right beside it. The wrapper takes over the brand's auto-margin so the
+   header layout (nav + actions pushed right) is unchanged. */
+.brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-right: auto;
+    /* Hold natural width (don't shrink or clip): the socials keep their real
+       size so they genuinely approach the nav as the window narrows. JS
+       (initHeaderFit) watches that gap and switches to the hamburger before
+       they touch, hiding both the nav and these socials. */
+    flex: none;
+}
+
+.brand-wrap .brand {
+    margin-right: 0;
+    flex: none;
+}
+
+/* ---- Socials ---------------------------------------------------------- */
+.socials {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.socials__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--menu-text);
+    transition: color var(--transition), background var(--transition);
+}
+
+.socials__link:hover {
+    color: var(--menu-text-active);
+    background: var(--menu-hover-bg);
+}
+
+.socials__label {
+    line-height: 1;
+}
+
+/* Icon takes its brand color; the label stays in the readable menu color.
+   The svg uses fill="currentColor", so we set color only on the svg here. */
+.socials__link svg {
+    display: block;
+    flex: none;
+}
+
+.socials__link--instagram svg {
+    color: #e1306c;
+}
+
+.socials__link--youtube svg {
+    color: #ff0000;
+}
+
 /* ---- Mobile nav ------------------------------------------------------- */
 .nav-mobile {
     position: fixed;
@@ -406,6 +471,25 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 .nav-mobile a.is-active {
     color: var(--menu-text-active);
     background: var(--menu-hover-bg);
+}
+
+/* Social links sit at the bottom of the drawer, stacked one per row, styled
+   exactly like the header version (colored icon + visible label). The generic
+   ".nav-mobile a" rule above sets the row padding/size; these just lay them out
+   vertically and restore the inline icon+label gap. */
+.nav-mobile .socials {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.nav-mobile .socials .socials__link {
+    gap: 0.6rem;
+    font-size: 1.1rem;
 }
 
 .nav-mobile__scrim {
@@ -713,6 +797,12 @@ a.card__link {
     .site-footer a:hover {
         color: var(--text-soft);
     }
+
+    /* Socials: neutralize sticky hover on touch (matches the rest of the site) */
+    .socials__link:hover {
+        color: var(--menu-text);
+        background: transparent;
+    }
 }
 
 /* ---- Footer ----------------------------------------------------------- */
@@ -741,8 +831,34 @@ a.card__link {
 }
 
 /* ---- Responsive ------------------------------------------------------- */
+
+/* Mobile nav mode, triggered two ways that behave identically:
+   (1) genuinely small screens via the media query below;
+   (2) the .force-mobile-nav class, added by JS (initHeaderFit) the instant the
+       desktop nav and the header socials would touch. In that mode the desktop
+       nav AND the header socials are both hidden and the hamburger takes over —
+       the socials still live in the mobile drawer, so nothing is lost.
+   CSS can't @media on a class, so the two triggers are kept as parallel rules. */
+.site-header.force-mobile-nav .nav-desktop {
+    display: none;
+}
+
+.site-header.force-mobile-nav .brand-wrap .socials {
+    display: none;
+}
+
+.site-header.force-mobile-nav .menu-toggle {
+    display: inline-flex;
+}
+
 @media (max-width: 640px) {
     .nav-desktop {
+        display: none;
+    }
+
+    /* On small screens the header socials are hidden too; they appear in the
+       drawer instead. */
+    .brand-wrap .socials {
         display: none;
     }
 

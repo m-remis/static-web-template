@@ -10,8 +10,8 @@
 
    This SITE object is the only thing you need to touch to make the site
    yours: brand name, section text, projects, contact details, the map,
-   and the list of background images. Everything below this block is
-   layout/logic and can be left alone.
+   social links, and the list of background images. Everything below this
+   block is layout/logic and can be left alone.
 
    IMPORTANT: section text intentionally supports small trusted inline HTML,
    for example <em>…</em> in the hero title. Do not feed this template
@@ -28,26 +28,35 @@ let SITE = {
     brand: "Company",
 
     nav: [
-        { id: "home", label: "Home" },
-        { id: "services", label: "Services" },
-        { id: "find-me", label: "Where to find me" },
-        { id: "projects", label: "Projects" },
-        { id: "contact", label: "Contact" },
+        {id: "home", label: "Home"},
+        {id: "services", label: "Services"},
+        {id: "find-me", label: "Where to find me"},
+        {id: "projects", label: "Projects"},
+        {id: "contact", label: "Contact"},
     ],
 
     intro: {
         eyebrow: "Company",
         // <em>…</em> renders in the accent color.
         title: "Lorem ipsum <em>dolor sit</em> amet consectetur.",
-        lead: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
+        lead: "This is just a simple demo for a template I created — it should work on desktop and mobile. Tested on Chromium, Firefox and Safari. Want a website? Contact me at <a href=\"https://michal-remis.com/\" target=\"_blank\" rel=\"noopener noreferrer\">michal-remis.com</a>.",
     },
 
     services: {
         title: "Services",
         items: [
-            { title: "Lorem ipsum", body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt." },
-            { title: "Dolor sit amet", body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip." },
-            { title: "Consectetur", body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore." },
+            {
+                title: "Lorem ipsum",
+                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt."
+            },
+            {
+                title: "Dolor sit amet",
+                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip."
+            },
+            {
+                title: "Consectetur",
+                body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore."
+            },
         ],
     },
 
@@ -69,9 +78,24 @@ let SITE = {
     projects: {
         title: "Projects",
         items: [
-            { title: "Lorem ipsum", body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.", meta: "Lorem", url: "#" },
-            { title: "Dolor sit", body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.", meta: "Ipsum", url: "#" },
-            { title: "Consectetur", body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.", meta: "Dolor", url: "#" },
+            {
+                title: "Lorem ipsum",
+                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                meta: "Lorem",
+                url: "#"
+            },
+            {
+                title: "Dolor sit",
+                body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.",
+                meta: "Ipsum",
+                url: "#"
+            },
+            {
+                title: "Consectetur",
+                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
+                meta: "Dolor",
+                url: "#"
+            },
         ],
     },
 
@@ -79,8 +103,8 @@ let SITE = {
         title: "Contact",
         blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         items: [
-            { label: "Email", handle: "name@example.com", url: "mailto:name@example.com" },
-            { label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000" },
+            {label: "Email", handle: "name@example.com", url: "mailto:name@example.com"},
+            {label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000"},
         ],
     },
 
@@ -88,6 +112,17 @@ let SITE = {
         note: "Lorem ipsum dolor sit amet.",
         year: new Date().getFullYear(),
     },
+
+    // Social links, shown next to the brand in the header as a colored icon
+    // plus a visible label. Swap these URLs and labels for your real ones.
+    // `icon` must match a key in the SOCIAL_ICONS map further down; to add a
+    // new platform, add an SVG there and a matching color rule in styles.css
+    // (.socials__link--<icon> svg), then reference the key here.
+    socials: [
+        {label: "Instagram 1", icon: "instagram", url: "https://instagram.com/"},
+        {label: "Instagram 2", icon: "instagram", url: "https://instagram.com/"},
+        {label: "YouTube 1", icon: "youtube", url: "https://youtube.com/"},
+    ],
 
     // Background images — just add files here and to assets/background/.
     backgrounds: [
@@ -118,6 +153,48 @@ const el = (tag, attrs = {}, html = "") => {
 
 const isExternalUrl = (url = "") => /^https?:\/\//i.test(url);
 
+/* Inline SVG icons — no icon library (keeps the no-deps rule). Each uses
+   fill="currentColor" so it inherits the surrounding text color and re-themes
+   automatically. Add a new key here to support a new social platform. */
+const SOCIAL_ICONS = {
+    instagram:
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">' +
+        '<path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 1.62c-3.15 0-3.52.01-4.76.07-.9.04-1.39.19-1.71.32-.43.17-.74.37-1.06.69-.32.32-.52.63-.69 1.06-.13.32-.28.81-.32 1.71-.06 1.24-.07 1.61-.07 4.76s.01 3.52.07 4.76c.04.9.19 1.39.32 1.71.17.43.37.74.69 1.06.32.32.63.52 1.06.69.32.13.81.28 1.71.32 1.24.06 1.61.07 4.76.07s3.52-.01 4.76-.07c.9-.04 1.39-.19 1.71-.32.43-.17.74-.37 1.06-.69.32-.32.52-.63.69-1.06.13-.32.28-.81.32-1.71.06-1.24.07-1.61.07-4.76s-.01-3.52-.07-4.76c-.04-.9-.19-1.39-.32-1.71a2.85 2.85 0 0 0-.69-1.06 2.85 2.85 0 0 0-1.06-.69c-.32-.13-.81-.28-1.71-.32-1.24-.06-1.61-.07-4.76-.07zm0 2.76a5.3 5.3 0 1 1 0 10.6 5.3 5.3 0 0 1 0-10.6zm0 1.62a3.68 3.68 0 1 0 0 7.36 3.68 3.68 0 0 0 0-7.36zm5.48-2.96a1.24 1.24 0 1 1 0 2.48 1.24 1.24 0 0 1 0-2.48z"/>' +
+        "</svg>",
+    youtube:
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">' +
+        '<path d="M23.5 6.5a3 3 0 0 0-2.11-2.12C19.5 3.87 12 3.87 12 3.87s-7.5 0-9.39.51A3 3 0 0 0 .5 6.5C0 8.4 0 12 0 12s0 3.6.5 5.5a3 3 0 0 0 2.11 2.12c1.89.51 9.39.51 9.39.51s7.5 0 9.39-.51A3 3 0 0 0 23.5 17.5C24 15.6 24 12 24 12s0-3.6-.5-5.5zM9.6 15.6V8.4l6.27 3.6-6.27 3.6z"/>' +
+        "</svg>",
+};
+
+/* Build the row of social links shown next to the brand: a colored icon plus
+   its visible label. Routes through el() and isExternalUrl() so external links
+   get target=_blank + rel=noopener for free, same as every other link. */
+function buildSocials(items) {
+    const wrap = el("div", {class: "socials"});
+
+    items.forEach((it) => {
+        const icon = SOCIAL_ICONS[it.icon] || "";
+
+        const attrs = {
+            class: `socials__link socials__link--${it.icon}`,
+            href: it.url,
+            "aria-label": it.label,
+        };
+
+        if (isExternalUrl(it.url)) {
+            attrs.target = "_blank";
+            attrs.rel = "noopener noreferrer";
+        }
+
+        wrap.appendChild(
+            el("a", attrs, `${icon}<span class="socials__label">${it.label}</span>`)
+        );
+    });
+
+    return wrap;
+}
+
 /* ----------------------------------------------------------------------
    3. RENDER NAVIGATION
 ---------------------------------------------------------------------- */
@@ -130,6 +207,19 @@ function renderNav() {
     if (!desktop || !mobile || !brand) return;
 
     brand.textContent = SITE.brand;
+
+    // Social links next to the brand in the header. Shown on desktop; below the
+    // mobile breakpoint the whole header row collapses to the hamburger and a
+    // copy of these links is placed inside the mobile drawer instead (below).
+    // The #brand element keeps its id and click handler — it's just moved into
+    // a flex wrapper alongside the links.
+    if (SITE.socials && SITE.socials.length) {
+        const brandWrap = el("div", {class: "brand-wrap"});
+        brand.replaceWith(brandWrap);
+        brandWrap.appendChild(brand);
+        brandWrap.appendChild(buildSocials(SITE.socials));
+    }
+
     desktop.setAttribute("role", "tablist");
     desktop.setAttribute("aria-label", "Main sections");
 
@@ -163,6 +253,12 @@ function renderNav() {
             )
         );
     });
+
+    // A copy of the social links at the bottom of the mobile drawer, so they're
+    // reachable when the header collapses to the hamburger on narrow screens.
+    if (SITE.socials && SITE.socials.length) {
+        mobile.appendChild(buildSocials(SITE.socials));
+    }
 }
 
 /* ----------------------------------------------------------------------
@@ -185,9 +281,9 @@ function renderContent() {
     });
 
     intro.append(
-        el("p", { class: "intro__eyebrow" }, SITE.intro.eyebrow),
-        el("h1", { class: "intro__title" }, SITE.intro.title),
-        el("p", { class: "intro__lead" }, SITE.intro.lead)
+        el("p", {class: "intro__eyebrow"}, SITE.intro.eyebrow),
+        el("h1", {class: "intro__title"}, SITE.intro.title),
+        el("p", {class: "intro__lead"}, SITE.intro.lead)
     );
 
     main.appendChild(intro);
@@ -204,14 +300,14 @@ function renderContent() {
         tabindex: "-1",
     });
 
-    findMe.appendChild(el("h2", { class: "section__title" }, SITE.findMe.title));
+    findMe.appendChild(el("h2", {class: "section__title"}, SITE.findMe.title));
 
     if (SITE.findMe.blurb) {
-        findMe.appendChild(el("div", { class: "prose" }, `<p>${SITE.findMe.blurb}</p>`));
+        findMe.appendChild(el("div", {class: "prose"}, `<p>${SITE.findMe.blurb}</p>`));
     }
 
     if (SITE.findMe.mapEmbed) {
-        const wrap = el("div", { class: "map-embed" });
+        const wrap = el("div", {class: "map-embed"});
 
         const iframe = el("iframe", {
             src: SITE.findMe.mapEmbed,
@@ -229,7 +325,7 @@ function renderContent() {
         findMe.appendChild(
             el(
                 "p",
-                { class: "map-open-row" },
+                {class: "map-open-row"},
                 `<a href="${mapHref}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
             )
         );
@@ -249,10 +345,10 @@ function renderContent() {
         tabindex: "-1",
     });
 
-    contact.appendChild(el("h2", { class: "section__title" }, SITE.contact.title));
+    contact.appendChild(el("h2", {class: "section__title"}, SITE.contact.title));
 
     if (SITE.contact.blurb) {
-        contact.appendChild(el("div", { class: "prose" }, `<p>${SITE.contact.blurb}</p>`));
+        contact.appendChild(el("div", {class: "prose"}, `<p>${SITE.contact.blurb}</p>`));
     }
 
     contact.appendChild(buildLinkList(SITE.contact.items));
@@ -268,9 +364,9 @@ function cardSection(id, title, items, linked = false) {
         tabindex: "-1",
     });
 
-    section.appendChild(el("h2", { class: "section__title" }, title));
+    section.appendChild(el("h2", {class: "section__title"}, title));
 
-    const grid = el("div", { class: "card-grid" });
+    const grid = el("div", {class: "card-grid"});
 
     items.forEach((it) => {
         const inner = `
@@ -280,7 +376,7 @@ function cardSection(id, title, items, linked = false) {
         `;
 
         if (linked && it.url) {
-            const attrs = { class: "card card__link", href: it.url };
+            const attrs = {class: "card card__link", href: it.url};
 
             if (isExternalUrl(it.url)) {
                 attrs.target = "_blank";
@@ -289,7 +385,7 @@ function cardSection(id, title, items, linked = false) {
 
             grid.appendChild(el("a", attrs, inner));
         } else {
-            grid.appendChild(el("article", { class: "card" }, inner));
+            grid.appendChild(el("article", {class: "card"}, inner));
         }
     });
 
@@ -298,10 +394,10 @@ function cardSection(id, title, items, linked = false) {
 }
 
 function buildLinkList(items) {
-    const ul = el("ul", { class: "link-list" });
+    const ul = el("ul", {class: "link-list"});
 
     items.forEach((it) => {
-        const attrs = { href: it.url };
+        const attrs = {href: it.url};
 
         if (isExternalUrl(it.url)) {
             attrs.target = "_blank";
@@ -525,7 +621,7 @@ function initTabs() {
         }
     };
 
-    const show = (rawId, { focusPanel = false, push = true, scrollTop = true, forceTop = false } = {}) => {
+    const show = (rawId, {focusPanel = false, push = true, scrollTop = true, forceTop = false} = {}) => {
         const id = normalize(rawId);
 
         panels.forEach((p) => {
@@ -556,13 +652,13 @@ function initTabs() {
                 requestAnimationFrame(() => requestAnimationFrame(toTop));
                 setTimeout(toTop, 0);
                 setTimeout(toTop, 120);
-                window.addEventListener("load", toTop, { once: true });
+                window.addEventListener("load", toTop, {once: true});
             }
         }
 
         if (focusPanel) {
             const panel = document.getElementById(id);
-            if (panel) panel.focus({ preventScroll: true });
+            if (panel) panel.focus({preventScroll: true});
         }
     };
 
@@ -613,17 +709,91 @@ function initTabs() {
 
     // React to manual hash edits and browser back/forward.
     window.addEventListener("hashchange", () => {
-        show(location.hash.slice(1) || defaultId, { push: false });
+        show(location.hash.slice(1) || defaultId, {push: false});
     });
 
     window.addEventListener("popstate", () => {
-        show(location.hash.slice(1) || defaultId, { push: false });
+        show(location.hash.slice(1) || defaultId, {push: false});
     });
 
     // Initial tab from hash, or default. Force the top on first paint and hold
     // it across later frames so iOS Safari's scroll restoration can't drag the
     // page down to a nearby item on refresh.
-    show(location.hash.slice(1) || defaultId, { push: false, forceTop: true });
+    show(location.hash.slice(1) || defaultId, {push: false, forceTop: true});
+}
+
+/* ----------------------------------------------------------------------
+   8B. HEADER FIT
+
+   CSS can't detect when two flex items are about to touch, so we measure it.
+   If the desktop nav + brand/socials + toggles don't fit the header on one
+   row, add .force-mobile-nav (which hides the nav and the header socials and
+   shows the hamburger). Re-checked on resize. Simple and reversible: when the
+   window grows back, the class comes off and the desktop layout returns.
+---------------------------------------------------------------------- */
+
+function initHeaderFit() {
+    const header = $(".site-header");
+    const brandWrap = $(".brand-wrap");
+    const nav = $("#navDesktop");
+
+    if (!header || !brandWrap || !nav) return;
+
+    // Switch to mobile once the gap between the rightmost social and the first
+    // tab shrinks below this many pixels. Bump it up for more breathing room.
+    const BUFFER = 24;
+
+    const apply = () => {
+        // Measure with the desktop layout shown, so the nav and socials are in
+        // their real positions. (force-mobile-nav hides them, so drop it first.)
+        header.classList.remove("force-mobile-nav");
+
+        // Below the CSS breakpoint the media query already owns mobile mode.
+        if (window.innerWidth <= 640) return;
+
+        // The rightmost social link (the last one in the row) and the first tab.
+        const socials = brandWrap.querySelectorAll(".socials__link");
+        const firstTab = nav.querySelector("a");
+
+        if (!socials.length || !firstTab) return;
+
+        const socialRight = socials[socials.length - 1].getBoundingClientRect().right;
+        const tabLeft = firstTab.getBoundingClientRect().left;
+
+        // gap = horizontal space between the socials and the nav.
+        const gap = tabLeft - socialRight;
+
+        if (gap < BUFFER) {
+            header.classList.add("force-mobile-nav");
+        } else {
+            // Back to desktop layout: close any drawer left open in mobile mode.
+            const mobileNav = $("#navMobile");
+            if (mobileNav && mobileNav.classList.contains("is-open")) {
+                const menuToggle = $("#menuToggle");
+                const scrim = $("#navScrim");
+                mobileNav.classList.remove("is-open");
+                mobileNav.setAttribute("aria-hidden", "true");
+                document.body.classList.remove("menu-open");
+                if (menuToggle) {
+                    menuToggle.setAttribute("aria-expanded", "false");
+                    menuToggle.setAttribute("aria-label", "Open menu");
+                }
+                if (scrim) {
+                    scrim.classList.remove("is-visible");
+                    scrim.hidden = true;
+                }
+            }
+        }
+    };
+
+    apply();
+    window.addEventListener("resize", apply);
+
+    // Re-measure once web fonts load, since text widths shift when they swap in.
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(apply).catch(() => {
+        });
+    }
 }
 
 /* ----------------------------------------------------------------------
@@ -665,7 +835,7 @@ function deepMerge(base, override) {
         return override;
     }
 
-    const out = { ...base };
+    const out = {...base};
 
     for (const key of Object.keys(override)) {
         const b = base ? base[key] : undefined;
@@ -688,7 +858,7 @@ async function loadContent() {
 
     try {
         const res = await fetch(SITE.dataUrl, {
-            headers: { Accept: "application/json" },
+            headers: {Accept: "application/json"},
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -712,6 +882,7 @@ async function init() {
     initInputMode();
     initTheme();
     initMobileMenu();
+    initHeaderFit();
     initTabs();
     initBackground();
 }
