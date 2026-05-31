@@ -47,6 +47,11 @@
     --overlay-bottom: rgba(14, 15, 19, 0.98);
     --header-bg: rgba(14, 15, 19, 0.82);
     --panel-blur: 14px;
+
+    /* — Carousel (uses the tokens above; these are the only extras) — */
+    --carousel-scrim: rgba(0, 0, 0, 0.55); /* caption gradient over image */
+    --carousel-chip-bg: rgba(0, 0, 0, 0.45); /* "n / total" counter chip */
+    --carousel-chip-text: #f4f5f8;
 }
 
 /* Light */
@@ -77,6 +82,11 @@
     --overlay-bottom: rgba(255, 255, 255, 0.72);
     --header-bg: rgba(255, 255, 255, 0.82);
     --panel-blur: 14px;
+
+    /* — Carousel (caption scrim/chip stay dark for legibility over photos) — */
+    --carousel-scrim: rgba(0, 0, 0, 0.50);
+    --carousel-chip-bg: rgba(0, 0, 0, 0.45);
+    --carousel-chip-text: #f4f5f8;
 }
 
 /* ---- Reset-ish -------------------------------------------------------- */
@@ -113,6 +123,21 @@ input, textarea, [contenteditable] {
 html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+
+    /* Reserve vertical scrollbar space even on tabs that do not need scrolling.
+       Without this, switching from a short tab to a tall tab makes the browser
+       add the right scrollbar, shrink the layout viewport, and visually squish
+       / shift the centered content by the scrollbar width. */
+    scrollbar-gutter: stable;
+}
+
+/* Fallback for older browsers that do not support scrollbar-gutter.
+   Keep this on the root scroll container, not body, so the page layout width
+   stays consistent between short and long tabs. */
+@supports not (scrollbar-gutter: stable) {
+    html {
+        overflow-y: scroll;
+    }
 }
 
 body {
@@ -599,6 +624,18 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     flex: none;
 }
 
+/* A `text` block placed anywhere in a section. .prose handles the color;
+   this just sets even vertical rhythm between it and the blocks around it. */
+.section__text {
+    margin-top: 1.5rem;
+}
+
+/* The first block in a section shouldn't push down from the title/top. */
+.section > .section__text:first-child,
+.section__title + .section__text {
+    margin-top: 0;
+}
+
 /* Generic prose */
 .prose p {
     color: var(--text-soft);
@@ -614,6 +651,14 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: 1rem;
+}
+
+/* When a card grid follows other content in a block list, give it air. */
+.section__text + .card-grid,
+.carousel-block + .card-grid,
+.map-open-row + .card-grid,
+.link-list + .card-grid {
+    margin-top: 1.5rem;
 }
 
 .card {
@@ -662,6 +707,14 @@ a.card__link {
     padding: 0;
     display: grid;
     gap: 0.4rem;
+}
+
+/* Give the link list air when it follows other content in a block list. */
+.section__text + .link-list,
+.carousel-block + .link-list,
+.card-grid + .link-list,
+.map-open-row + .link-list {
+    margin-top: 1.5rem;
 }
 
 .link-list a {
@@ -744,6 +797,268 @@ a.card__link {
     }
 }
 
+/* ---- Carousel / slideshow --------------------------------------------- */
+/* Reusable image slideshow rendered by buildCarousel() in script.js. Used by
+   a `slideshow` block. One slide = a plain framed image (.carousel--single, no
+   controls); two or more = manual carousel with prev/next buttons, dots, and an
+   "n / total" chip. Colors come from the theme tokens above so it re-themes and
+   matches cards/map automatically. */
+
+/* Wrapper around an optional name heading + blurb + the carousel, so a section
+   can stack several named slideshows cleanly. */
+.carousel-block {
+    margin-top: 1.5rem;
+}
+
+/* Optional slideshow name (a `slideshow` block's `name`). */
+.carousel__name {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 1.25rem;
+    margin: 0 0 0.6rem;
+    color: var(--text);
+}
+
+/* Optional blurb under a slideshow name (a `slideshow` block's `blurb`). */
+.carousel__blurb {
+    margin: 0 0 0.75rem;
+}
+
+/* The carousel sits inside .carousel-block; it no longer needs its own top
+   margin (the block provides spacing between stacked slideshows). */
+.carousel-block .carousel {
+    margin-top: 0;
+}
+
+.carousel {
+    position: relative;
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-panel);
+    backdrop-filter: blur(var(--panel-blur));
+
+    /* One canonical slideshow shape.
+       All slideshows use this frame size, and changing slides can no longer
+       resize the page based on image dimensions or caption length. */
+    --carousel-ratio: 16 / 10;
+    --carousel-caption-height: clamp(4.4rem, 11vw, 5.75rem);
+}
+
+.carousel__viewport {
+    position: relative;
+    /* Fixed frame. The slide content must fit inside this, not resize it. */
+    aspect-ratio: var(--carousel-ratio);
+    background: var(--bg-panel-solid);
+    overflow: hidden;
+}
+
+/* Slides stack inside one fixed frame; only the active one shows.
+   Important: active/single slides stay absolute too. If they become relative,
+   their caption/image content can resize the viewport and the whole slideshow
+   starts jumping again. */
+.carousel__slide {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    margin: 0;
+
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition);
+}
+
+.carousel__slide.is-active,
+.carousel--single .carousel__slide {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .carousel__slide {
+        transition: none;
+    }
+}
+
+.carousel__img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+    display: block;
+}
+
+/* If a slide image 404s, hide the broken-image glyph; the panel background
+   shows through instead (silent fail, like the page background). */
+.carousel__img.is-broken {
+    visibility: hidden;
+}
+
+/* Number counter hidden: dots are the indicator. Keeping both is visual noise
+   and increases the chance of overlapping real image content. */
+.carousel__counter {
+    display: none;
+}
+
+/* Caption / chin.
+   Uses normal site theme tokens, not hardcoded photo-overlay colors. */
+.carousel__caption {
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+
+    height: var(--carousel-caption-height);
+    min-height: var(--carousel-caption-height);
+    max-height: var(--carousel-caption-height);
+
+    padding: 0.7rem 0.85rem;
+    overflow: hidden;
+
+    background: var(--bg-panel);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+
+    -webkit-backdrop-filter: blur(var(--panel-blur));
+    backdrop-filter: blur(var(--panel-blur));
+}
+
+.carousel__title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    line-height: 1.2;
+    color: var(--text);
+}
+
+.carousel__text {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--text-soft);
+}
+
+.carousel__subtext {
+    font-size: 0.85rem;
+    line-height: 1.35;
+    color: var(--text-faint);
+}
+
+/* Fixed-size carousel means captions cannot be allowed to grow forever.
+   Long text is clipped inside the reserved chin instead of resizing the frame. */
+.carousel__title,
+.carousel__text,
+.carousel__subtext {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+.carousel__title {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+}
+
+.carousel__text,
+.carousel__subtext {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+/* Prev / next buttons, vertically centered on each edge. */
+.carousel__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg-panel-solid);
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1;
+    transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.carousel__nav--prev {
+    left: 0.6rem;
+}
+
+.carousel__nav--next {
+    right: 0.6rem;
+}
+
+.carousel__nav:hover {
+    border-color: var(--accent);
+    background: var(--menu-hover-bg);
+}
+
+.carousel__nav:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+/* Dots indicator, floating inside the image without sitting on captions. */
+.carousel__dots {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 4;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem;
+
+    padding: 0.35rem 0.5rem;
+    border-radius: 999px;
+
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+.carousel__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 50%;
+    background: transparent;
+    transition: background var(--transition), transform var(--transition);
+}
+
+.carousel__dot:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.carousel__dot.is-active {
+    background: #fff;
+    transform: scale(1.15);
+}
+
+@media (max-width: 640px) {
+    .carousel {
+        --carousel-ratio: 4 / 3;
+        --carousel-caption-height: clamp(4.75rem, 22vw, 6.25rem);
+    }
+
+    .carousel__nav {
+        width: 2.1rem;
+        height: 2.1rem;
+    }
+}
+
 /* Touch browsers often keep :hover stuck after a tap, especially mobile Firefox.
    Keep hover polish on desktop, but neutralize sticky hover state on touch.
 
@@ -803,15 +1118,28 @@ a.card__link {
         color: var(--menu-text);
         background: transparent;
     }
+
+    /* Carousel: keep buttons usable but drop sticky hover styling on touch. */
+    .carousel__nav:hover {
+        border-color: var(--border);
+        background: var(--bg-panel-solid);
+    }
+
+    .carousel__dot:hover {
+        background: transparent;
+    }
+
+    .carousel__dot.is-active:hover {
+        background: #fff;
+    }
 }
 
 /* ---- Footer ----------------------------------------------------------- */
 .site-footer {
     width: 100%;
-    max-width: var(--max-width);
-    margin: 0 auto;
+    max-width: none;
     flex-shrink: 0;
-    padding: 2rem var(--gutter) 3rem;
+    padding: 1rem clamp(1.5rem, 5vw, 4rem) 1rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
@@ -871,9 +1199,15 @@ a.card__link {
     }
 }
 
-/* Lock scroll when mobile menu open */
+/* Mobile drawer is fixed/overlayed.
+   Do NOT lock vertical body scroll here. On some mobile browsers / scrollbar
+   setups, changing body overflow while the drawer is open changes the viewport
+   calculation and makes the centered content look pushed or narrower.
+
+   Keep the same horizontal overflow behavior as the normal body state so opening
+   the menu does not change layout width. */
 body.menu-open {
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 /*

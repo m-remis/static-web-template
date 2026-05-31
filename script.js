@@ -9,13 +9,53 @@
    1. CONTENT ◀━━ EDIT THIS BLOCK
 
    This SITE object is the only thing you need to touch to make the site
-   yours: brand name, section text, projects, contact details, the map,
-   social links, and the list of background images. Everything below this
-   block is layout/logic and can be left alone.
+   yours: brand name, navigation, every section's content, social links,
+   and the list of background images. Everything below this block is
+   layout/logic and can be left alone.
 
-   IMPORTANT: section text intentionally supports small trusted inline HTML,
-   for example <em>…</em> in the hero title. Do not feed this template
-   user-generated or untrusted HTML unless you sanitize it first.
+   HOW SECTIONS WORK — THE BLOCK ENGINE
+   ------------------------------------
+   `nav` is the list of tabs (each { id, label }). `sections` is keyed by
+   those same ids. Each section is:
+
+       <id>: {
+           title: "Heading shown at the top of the section" (optional),
+           blocks: [ ...an ordered list of content blocks... ],
+       }
+
+   A section is just an ordered list of blocks. To rearrange a section,
+   reorder its `blocks` — move a slideshow above the cards, drop text
+   between two card grids, whatever. No fixed per-section recipe.
+
+   BLOCK TYPES (each block is an object with a `type`):
+
+     { type: "text", text: "A paragraph. Inline <em>…</em> and <a …> ok." }
+
+     { type: "cards", linked: false, items: [
+         { title, body, meta }                      // plain card
+         { title, body, meta, url }                 // linked card if linked:true
+     ] }
+
+     { type: "links", items: [
+         { label, handle, url }                     // e.g. email / phone rows
+     ] }
+
+     { type: "map", embed: "<google embed src>", url: "<share link>",
+       label: "Accessible label for the map" }
+
+     { type: "slideshow", name: "Optional heading", blurb: "Optional text",
+       slides: [
+           { src, title, caption, text }            // only `src` is required
+       ] }
+       → 1 slide  = a plain framed image
+       → 2+ slides = carousel with prev/next, dots, and an "n / total" counter
+
+   IMPORTANT: block text (text/blurb/title/etc.) intentionally supports small
+   trusted inline HTML, e.g. <em> and <a>. Keep these values authored by you,
+   never user-supplied raw input, unless you sanitize first.
+
+   Adding a brand-new block type is a small edit to BLOCK_RENDERERS further
+   down — see the comment there.
 ---------------------------------------------------------------------- */
 
 let SITE = {
@@ -27,6 +67,7 @@ let SITE = {
 
     brand: "Company",
 
+    // The tabs, in order. `id` ties each one to a key in `sections` below.
     nav: [
         {id: "home", label: "Home"},
         {id: "services", label: "Services"},
@@ -35,81 +76,166 @@ let SITE = {
         {id: "contact", label: "Contact"},
     ],
 
-    intro: {
-        eyebrow: "Company",
-        // <em>…</em> renders in the accent color.
-        title: "Lorem ipsum <em>dolor sit</em> amet consectetur.",
-        lead: "This is just a simple demo for a template I created — it should work on desktop and mobile. Tested on Chromium, Firefox and Safari. Want a website? Contact me at <a href=\"https://michal-remis.com/\" target=\"_blank\" rel=\"noopener noreferrer\">michal-remis.com</a>.",
-    },
+    // Every section, keyed by the nav id. Each is { title?, blocks: [...] }.
+    sections: {
+        home: {
+            // No title here — the hero block carries its own big headline.
+            blocks: [
+                {
+                    type: "hero",
+                    eyebrow: "Company",
+                    // <em>…</em> renders in the accent color.
+                    title: "Demo for <em>static site micro-engine</em> I've been working on.",
+                    lead: "This is just a simple demo for a template I created — it should work on desktop and mobile. Tested on Chromium, Firefox and Safari. Want a website? Contact me at <a href=\"https://michal-remis.com/?utm_campaign=visitor_origin&utm_source=static_web_example/\" target=\"_blank\" rel=\"noopener noreferrer\">michal-remis.com</a>. <div>Zero-dependency static site micro-engine for building polished responsive websites from reusable config-driven sections.</div>",
+                },
+                {
+                    type: "slideshow",
+                    slides: [
+                        {
+                            src: "assets/slides/mountains.jpg",
+                            title: "Lorem ipsum",
+                            caption: "First slide caption",
+                            text: "Optional smaller line of supporting text.",
+                        },
+                        {
+                            src: "assets/slides/church.jpg",
+                            title: "Dolor sit amet",
+                            caption: "Second slide caption",
+                        },
+                        {
+                            src: "assets/slides/lake.jpg",
+                            caption: "Third slide caption",
+                        },
+                    ],
+                },
+            ],
+        },
 
-    services: {
-        title: "Services",
-        items: [
-            {
-                title: "Lorem ipsum",
-                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt."
-            },
-            {
-                title: "Dolor sit amet",
-                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip."
-            },
-            {
-                title: "Consectetur",
-                body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore."
-            },
-        ],
-    },
+        services: {
+            title: "Services",
+            blocks: [
+                {
+                    type: "cards",
+                    items: [
+                        {
+                            title: "Lorem ipsum",
+                            body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+                        },
+                        {
+                            title: "Dolor sit amet",
+                            body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+                        },
+                        {
+                            title: "Consectetur",
+                            body: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.",
+                        },
+                    ],
+                },
+            ],
+        },
 
-    findMe: {
-        title: "Where to find me",
-        blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
+        "find-me": {
+            title: "Where to find me",
+            blocks: [
+                {
+                    type: "text",
+                    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
+                },
+                {
+                    type: "map",
+                    // Google Maps → Share → Embed a map → copy the src.
+                    embed: "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+                    // Normal share link used by the "Open in Maps" button.
+                    url: "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+                    label: "Map showing our location",
+                },
+                {
+                    type: "slideshow",
+                    name: "My place",
+                    slides: [
+                        {src: "assets/slides/nature.jpg",
+                            title: "Lorem ipsum",
+                            caption: "First slide caption",
+                            text: "Optional smaller line of supporting text.",
+                        },
+                    ],
+                },
+            ],
+        },
 
-        // Embedded map. Displayed on desktop and mobile.
-        // On touch/mobile devices, CSS makes the iframe non-interactive so
-        // Firefox/Android does not hijack taps and open the Maps app randomly.
-        mapEmbed: "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+        projects: {
+            title: "Projects",
+            // Reorder these blocks to rearrange the section. Right now: a blurb,
+            // then the project cards, then two slideshows. Move any block up or
+            // down — e.g. put a slideshow first — just by moving it in this list.
+            blocks: [
+                {
+                    type: "text",
+                    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.",
+                },
+                {
+                    type: "cards",
+                    linked: true,
+                    items: [
+                        {
+                            title: "Lorem ipsum",
+                            body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                            meta: "Lorem",
+                            url: "#",
+                        },
+                        {
+                            title: "Dolor sit",
+                            body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.",
+                            meta: "Ipsum",
+                            url: "#",
+                        },
+                        {
+                            title: "Consectetur",
+                            body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
+                            meta: "Dolor",
+                            url: "#",
+                        },
+                    ],
+                },
+                {
+                    type: "slideshow",
+                    name: "Slideshow",
+                    blurb: "An optional line of text under the slideshow name.",
+                    slides: [
+                        {src: "assets/slides/mountains.jpg", caption: "Lorem ipsum"},
+                        {src: "assets/slides/lake.jpg", caption: "Dolor sit amet"},
+                    ],
+                },
+                {
+                    type: "slideshow",
+                    name: "Picture",
+                    slides: [
+                        {src: "assets/slides/nature.jpg", caption: "Consectetur"},
+                    ],
+                },
+            ],
+        },
 
-        // Normal map link used by the explicit "Open in Maps" button.
-        mapUrl: "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
-
-        mapLabel: "Map showing our location",
-    },
-
-    projects: {
-        title: "Projects",
-        items: [
-            {
-                title: "Lorem ipsum",
-                body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-                meta: "Lorem",
-                url: "#"
-            },
-            {
-                title: "Dolor sit",
-                body: "Sed do eiusmod tempor incididunt ut labore et dolore magna.",
-                meta: "Ipsum",
-                url: "#"
-            },
-            {
-                title: "Consectetur",
-                body: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
-                meta: "Dolor",
-                url: "#"
-            },
-        ],
-    },
-
-    contact: {
-        title: "Contact",
-        blurb: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        items: [
-            {label: "Email", handle: "name@example.com", url: "mailto:name@example.com"},
-            {label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000"},
-        ],
+        contact: {
+            title: "Contact",
+            blocks: [
+                {
+                    type: "text",
+                    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+                },
+                {
+                    type: "links",
+                    items: [
+                        {label: "Email", handle: "name@example.com", url: "mailto:name@example.com"},
+                        {label: "Phone", handle: "+1 (000) 000-0000", url: "tel:+10000000000"},
+                    ],
+                },
+            ],
+        },
     },
 
     footer: {
-        note: "Lorem ipsum dolor sit amet.",
+        note: "Created and maintained by <a href=\"https://michal-remis.com/?utm_campaign=visitor_origin&utm_source=static_web_example/\" target=\"_blank\" rel=\"noopener noreferrer\">Michal</a>.",
         year: new Date().getFullYear(),
     },
 
@@ -153,6 +279,16 @@ const el = (tag, attrs = {}, html = "") => {
 
 const isExternalUrl = (url = "") => /^https?:\/\//i.test(url);
 
+/* Escape text destined for an attribute (e.g. alt=""). Slide captions/titles
+   come from the trusted SITE object, but image alt text is built from them and
+   stray quotes would break the attribute, so escape defensively. */
+const escapeAttr = (str = "") =>
+    String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
 /* Inline SVG icons — no icon library (keeps the no-deps rule). Each uses
    fill="currentColor" so it inherits the surrounding text color and re-themes
    automatically. Add a new key here to support a new social platform. */
@@ -193,6 +329,348 @@ function buildSocials(items) {
     });
 
     return wrap;
+}
+
+/* ----------------------------------------------------------------------
+   2B. BLOCK BUILDERS
+
+   Small functions that each turn one block's data into a DOM node. They're
+   pure builders (no SITE access), so they can be reused and tested. The
+   BLOCK_RENDERERS map at the end wires a `type` string to one of these.
+---------------------------------------------------------------------- */
+
+/* hero — the big intro/landing block: eyebrow + headline + lead paragraph. */
+function buildHero(block) {
+    const wrap = el("div", {class: "intro"});
+    if (block.eyebrow) wrap.appendChild(el("p", {class: "intro__eyebrow"}, block.eyebrow));
+    if (block.title) wrap.appendChild(el("h1", {class: "intro__title"}, block.title));
+    if (block.lead) wrap.appendChild(el("p", {class: "intro__lead"}, block.lead));
+    return wrap;
+}
+
+/* text — a prose paragraph. Inline HTML (<em>, <a>) is allowed (trusted). */
+function buildText(block) {
+    if (!block.text) return null;
+    return el("div", {class: "prose section__text"}, `<p>${block.text}</p>`);
+}
+
+/* cards — a responsive card grid. `linked: true` + an item `url` makes the
+   whole card a link. */
+function buildCards(block) {
+    const items = block.items || [];
+    if (!items.length) return null;
+
+    const linked = !!block.linked;
+    const grid = el("div", {class: "card-grid"});
+
+    items.forEach((it) => {
+        const inner = `
+            <h3>${it.title}</h3>
+            <p>${it.body}</p>
+            ${it.meta ? `<span class="card__meta">${it.meta}</span>` : ""}
+        `;
+
+        if (linked && it.url) {
+            const attrs = {class: "card card__link", href: it.url};
+            if (isExternalUrl(it.url)) {
+                attrs.target = "_blank";
+                attrs.rel = "noopener noreferrer";
+            }
+            grid.appendChild(el("a", attrs, inner));
+        } else {
+            grid.appendChild(el("article", {class: "card"}, inner));
+        }
+    });
+
+    return grid;
+}
+
+/* links — the label/handle link list (e.g. contact rows). */
+function buildLinks(block) {
+    const items = block.items || [];
+    if (!items.length) return null;
+
+    const ul = el("ul", {class: "link-list"});
+
+    items.forEach((it) => {
+        const attrs = {href: it.url};
+        if (isExternalUrl(it.url)) {
+            attrs.target = "_blank";
+            attrs.rel = "noopener noreferrer";
+        }
+
+        const a = el(
+            "a",
+            attrs,
+            `<span class="label">${it.label}</span><span class="handle">${it.handle}</span>`
+        );
+
+        const li = el("li");
+        li.appendChild(a);
+        ul.appendChild(li);
+    });
+
+    return ul;
+}
+
+/* map — the embedded Google map + an explicit "Open in Maps" button. */
+function buildMap(block) {
+    if (!block.embed) return null;
+
+    const frag = document.createDocumentFragment();
+
+    const wrap = el("div", {class: "map-embed"});
+    wrap.appendChild(
+        el("iframe", {
+            src: block.embed,
+            title: block.label || "Location map",
+            loading: "lazy",
+            referrerpolicy: "no-referrer-when-downgrade",
+            allowfullscreen: true,
+        })
+    );
+    frag.appendChild(wrap);
+
+    const href = block.url || block.embed;
+    frag.appendChild(
+        el(
+            "p",
+            {class: "map-open-row"},
+            `<a href="${href}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
+        )
+    );
+
+    return frag;
+}
+
+/* ----------------------------------------------------------------------
+   2C. SLIDESHOW / CAROUSEL (reusable)
+
+   buildCarousel(block) returns a self-contained carousel node for a slideshow
+   block: { name?, blurb?, slides: [ {src, title, caption, text}, ... ] }
+   (only `src` is required per slide).
+
+   Behavior:
+   - 1 slide  → a single framed image + its caption block, no controls.
+   - 2+ slides → manual carousel: prev/next buttons, a dot per slide, and an
+     "n / total" counter. Wrapping (last → first) like the W3Schools example,
+     but with real <button>s, ARIA, and keyboard arrow support so it matches
+     the rest of the template's accessibility. No autoplay (manual only);
+     honors prefers-reduced-motion via CSS.
+
+   Each carousel keeps its own `index` in closure scope, so multiple carousels
+   on the page never interfere with one another.
+---------------------------------------------------------------------- */
+
+let carouselSeq = 0;
+
+function buildCarousel(block) {
+    block = block || {};
+    const list = (block.slides || []).filter((s) => s && s.src);
+    if (!list.length) return null;
+
+    const name = block.name;
+    const blurb = block.blurb;
+    const multi = list.length > 1;
+    const uid = `carousel-${++carouselSeq}`;
+
+    // An optional name lets several carousels sit in one section, each labelled
+    // (e.g. "Mountains", then "Cars"). It also becomes the accessible label.
+    const baseLabel = multi ? `Image carousel, ${list.length} slides` : "Image";
+
+    // Wrapper so the optional name heading + blurb + carousel stay one unit.
+    const wrapper = el("div", {class: "carousel-block"});
+
+    if (name) {
+        wrapper.appendChild(el("h3", {class: "carousel__name", id: `${uid}-name`}, name));
+    }
+    if (blurb) {
+        wrapper.appendChild(el("div", {class: "prose carousel__blurb"}, `<p>${blurb}</p>`));
+    }
+
+    const root = el("div", {
+        class: "carousel" + (multi ? "" : " carousel--single"),
+        role: "group",
+        "aria-roledescription": "carousel",
+        "aria-label": name ? `${name}: ${baseLabel}` : baseLabel,
+        "aria-labelledby": name ? `${uid}-name` : null,
+    });
+
+    // Viewport holds the stacked slides; only the active one is shown (CSS).
+    const viewport = el("div", {class: "carousel__viewport"});
+
+    const slideNodes = list.map((s, i) => {
+        const slide = el("figure", {
+            class: "carousel__slide",
+            role: "group",
+            "aria-roledescription": multi ? "slide" : null,
+            "aria-label": multi ? `${i + 1} of ${list.length}` : null,
+            "aria-hidden": multi && i !== 0 ? "true" : null,
+            id: `${uid}-slide-${i}`,
+        });
+
+        const altText = s.title || s.caption || `Slide ${i + 1}`;
+
+        // Counter chip ("n / total"), top-left, multi only — mirrors W3Schools.
+        if (multi) {
+            slide.appendChild(
+                el("span", {class: "carousel__counter", "aria-hidden": "true"},
+                    `${i + 1} / ${list.length}`)
+            );
+        }
+
+        const img = el("img", {
+            class: "carousel__img",
+            src: s.src,
+            alt: escapeAttr(altText),
+            loading: i === 0 ? "eager" : "lazy",
+            decoding: "async",
+        });
+
+        // If an image path is wrong, hide that slide's broken-image icon and
+        // fall back to a neutral frame — consistent with the background's
+        // silent-fail behavior elsewhere in the template.
+        img.addEventListener("error", () => {
+            img.classList.add("is-broken");
+        });
+
+        slide.appendChild(img);
+
+        // Caption block: title + caption + smaller text, any subset present.
+        if (s.title || s.caption || s.text) {
+            const cap = el("figcaption", {class: "carousel__caption"});
+            if (s.title) cap.appendChild(el("span", {class: "carousel__title"}, s.title));
+            if (s.caption) cap.appendChild(el("span", {class: "carousel__text"}, s.caption));
+            if (s.text) cap.appendChild(el("span", {class: "carousel__subtext"}, s.text));
+            slide.appendChild(cap);
+        }
+
+        viewport.appendChild(slide);
+        return slide;
+    });
+
+    root.appendChild(viewport);
+
+    // Single slide: nothing more to wire up.
+    if (!multi) {
+        wrapper.appendChild(root);
+        return wrapper;
+    }
+
+    // ---- Multi-slide controls ----
+    let index = 0;
+    let dots = [];
+
+    const setActive = (next) => {
+        index = (next + list.length) % list.length;
+
+        slideNodes.forEach((node, i) => {
+            const active = i === index;
+            node.classList.toggle("is-active", active);
+            node.setAttribute("aria-hidden", active ? "false" : "true");
+        });
+
+        dots.forEach((dot, i) => {
+            const active = i === index;
+            dot.classList.toggle("is-active", active);
+            dot.setAttribute("aria-selected", String(active));
+            dot.tabIndex = active ? 0 : -1;
+        });
+    };
+
+    const prevBtn = el("button", {
+        type: "button",
+        class: "carousel__nav carousel__nav--prev",
+        "aria-label": "Previous slide",
+    }, "&#10094;"); // ❮
+
+    const nextBtn = el("button", {
+        type: "button",
+        class: "carousel__nav carousel__nav--next",
+        "aria-label": "Next slide",
+    }, "&#10095;"); // ❯
+
+    prevBtn.addEventListener("click", () => setActive(index - 1));
+    nextBtn.addEventListener("click", () => setActive(index + 1));
+
+    root.appendChild(prevBtn);
+    root.appendChild(nextBtn);
+
+    // Dots — a real tablist so keyboard arrows move between slides.
+    const dotWrap = el("div", {
+        class: "carousel__dots",
+        role: "tablist",
+        "aria-label": "Choose slide",
+    });
+
+    dots = list.map((s, i) => {
+        const dot = el("button", {
+            type: "button",
+            class: "carousel__dot",
+            role: "tab",
+            "aria-label": `Go to slide ${i + 1}`,
+            "aria-selected": i === 0 ? "true" : "false",
+            "aria-controls": `${uid}-slide-${i}`,
+            tabindex: i === 0 ? "0" : "-1",
+        });
+        dot.addEventListener("click", () => setActive(i));
+        dotWrap.appendChild(dot);
+        return dot;
+    });
+
+    // Left/right arrows on the dot tablist cycle slides + move focus.
+    dotWrap.addEventListener("keydown", (e) => {
+        let next = null;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") next = index + 1;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = index - 1;
+        else if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = list.length - 1;
+
+        if (next === null) return;
+
+        e.preventDefault();
+        setActive(next);
+        dots[index].focus();
+    });
+
+    root.appendChild(dotWrap);
+
+    setActive(0);
+    wrapper.appendChild(root);
+    return wrapper;
+}
+
+/* ----------------------------------------------------------------------
+   2D. BLOCK DISPATCH
+
+   Map a block `type` → its builder. To add a NEW block type:
+     1. write a buildX(block) that returns a DOM node (or null/fragment), and
+     2. add a `yourtype: buildX` line here.
+   Then use { type: "yourtype", ... } in any section's `blocks` array.
+---------------------------------------------------------------------- */
+
+const BLOCK_RENDERERS = {
+    hero: buildHero,
+    text: buildText,
+    cards: buildCards,
+    links: buildLinks,
+    map: buildMap,
+    slideshow: buildCarousel,
+};
+
+/* Render one block to a node, or null if the type is unknown / it produced
+   nothing. Unknown types are skipped with a console warning rather than
+   throwing, so a typo never blanks the whole page. */
+function renderBlock(block) {
+    if (!block || !block.type) return null;
+
+    const builder = BLOCK_RENDERERS[block.type];
+    if (!builder) {
+        console.warn(`Unknown block type: "${block.type}" — skipped.`);
+        return null;
+    }
+
+    return builder(block);
 }
 
 /* ----------------------------------------------------------------------
@@ -263,100 +741,14 @@ function renderNav() {
 
 /* ----------------------------------------------------------------------
    4. RENDER CONTENT SECTIONS
+
+   Each nav entry maps to a section in SITE.sections. A section is rendered as
+   its optional title followed by its blocks, in order — there is no
+   per-section special-casing. Reorder a section by reordering its `blocks`.
 ---------------------------------------------------------------------- */
 
-function renderContent() {
-    const main = $("#main");
-    if (!main) return;
-
-    main.innerHTML = "";
-
-    // Intro
-    const intro = el("section", {
-        id: "home",
-        class: "section intro",
-        role: "tabpanel",
-        "aria-labelledby": "tab-home",
-        tabindex: "-1",
-    });
-
-    intro.append(
-        el("p", {class: "intro__eyebrow"}, SITE.intro.eyebrow),
-        el("h1", {class: "intro__title"}, SITE.intro.title),
-        el("p", {class: "intro__lead"}, SITE.intro.lead)
-    );
-
-    main.appendChild(intro);
-
-    // Services
-    main.appendChild(cardSection("services", SITE.services.title, SITE.services.items));
-
-    // Where to find me
-    const findMe = el("section", {
-        id: "find-me",
-        class: "section",
-        role: "tabpanel",
-        "aria-labelledby": "tab-find-me",
-        tabindex: "-1",
-    });
-
-    findMe.appendChild(el("h2", {class: "section__title"}, SITE.findMe.title));
-
-    if (SITE.findMe.blurb) {
-        findMe.appendChild(el("div", {class: "prose"}, `<p>${SITE.findMe.blurb}</p>`));
-    }
-
-    if (SITE.findMe.mapEmbed) {
-        const wrap = el("div", {class: "map-embed"});
-
-        const iframe = el("iframe", {
-            src: SITE.findMe.mapEmbed,
-            title: SITE.findMe.mapLabel || "Location map",
-            loading: "lazy",
-            referrerpolicy: "no-referrer-when-downgrade",
-            allowfullscreen: true,
-        });
-
-        wrap.appendChild(iframe);
-        findMe.appendChild(wrap);
-
-        const mapHref = SITE.findMe.mapUrl || SITE.findMe.mapEmbed;
-
-        findMe.appendChild(
-            el(
-                "p",
-                {class: "map-open-row"},
-                `<a href="${mapHref}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
-            )
-        );
-    }
-
-    main.appendChild(findMe);
-
-    // Projects
-    main.appendChild(cardSection("projects", SITE.projects.title, SITE.projects.items, true));
-
-    // Contact
-    const contact = el("section", {
-        id: "contact",
-        class: "section",
-        role: "tabpanel",
-        "aria-labelledby": "tab-contact",
-        tabindex: "-1",
-    });
-
-    contact.appendChild(el("h2", {class: "section__title"}, SITE.contact.title));
-
-    if (SITE.contact.blurb) {
-        contact.appendChild(el("div", {class: "prose"}, `<p>${SITE.contact.blurb}</p>`));
-    }
-
-    contact.appendChild(buildLinkList(SITE.contact.items));
-    main.appendChild(contact);
-}
-
-function cardSection(id, title, items, linked = false) {
-    const section = el("section", {
+function buildSection(id, section) {
+    const node = el("section", {
         id,
         class: "section",
         role: "tabpanel",
@@ -364,58 +756,33 @@ function cardSection(id, title, items, linked = false) {
         tabindex: "-1",
     });
 
-    section.appendChild(el("h2", {class: "section__title"}, title));
+    // Optional section heading. The hero block carries its own headline, so a
+    // section that leads with hero usually omits `title`.
+    if (section && section.title) {
+        node.appendChild(el("h2", {class: "section__title"}, section.title));
+    }
 
-    const grid = el("div", {class: "card-grid"});
-
-    items.forEach((it) => {
-        const inner = `
-            <h3>${it.title}</h3>
-            <p>${it.body}</p>
-            ${it.meta ? `<span class="card__meta">${it.meta}</span>` : ""}
-        `;
-
-        if (linked && it.url) {
-            const attrs = {class: "card card__link", href: it.url};
-
-            if (isExternalUrl(it.url)) {
-                attrs.target = "_blank";
-                attrs.rel = "noopener noreferrer";
-            }
-
-            grid.appendChild(el("a", attrs, inner));
-        } else {
-            grid.appendChild(el("article", {class: "card"}, inner));
-        }
+    const blocks = (section && section.blocks) || [];
+    blocks.forEach((block) => {
+        const rendered = renderBlock(block);
+        if (rendered) node.appendChild(rendered);
     });
 
-    section.appendChild(grid);
-    return section;
+    return node;
 }
 
-function buildLinkList(items) {
-    const ul = el("ul", {class: "link-list"});
+function renderContent() {
+    const main = $("#main");
+    if (!main) return;
 
-    items.forEach((it) => {
-        const attrs = {href: it.url};
+    main.innerHTML = "";
 
-        if (isExternalUrl(it.url)) {
-            attrs.target = "_blank";
-            attrs.rel = "noopener noreferrer";
-        }
-
-        const a = el(
-            "a",
-            attrs,
-            `<span class="label">${it.label}</span><span class="handle">${it.handle}</span>`
-        );
-
-        const li = el("li");
-        li.appendChild(a);
-        ul.appendChild(li);
+    // One section per nav entry, in nav order. Missing section data just
+    // renders an empty panel rather than crashing.
+    SITE.nav.forEach((item) => {
+        const section = SITE.sections ? SITE.sections[item.id] : null;
+        main.appendChild(buildSection(item.id, section));
     });
-
-    return ul;
 }
 
 function renderFooter() {
