@@ -8,7 +8,19 @@
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
 
-    --max-width: 46rem;
+    /* Content width tiers. Blocks sit in one of these two columns:
+       narrow keeps prose readable; wide gives visual blocks (cards, slideshow,
+       map, table) a little more room. The page gutter still applies, so on
+       small screens both collapse to the available width. */
+    --content-narrow: 46rem;
+    --content-wide: 56rem;
+
+    /* Back-compat alias: some rules / older edits referenced --max-width. */
+    --max-width: var(--content-narrow);
+
+    /* Uniform vertical rhythm between consecutive blocks in a section. */
+    --block-gap: 1.5rem;
+
     --gutter: clamp(1.25rem, 4vw, 2.5rem);
     --radius: 14px;
     --radius-sm: 10px;
@@ -58,7 +70,9 @@
 [data-theme="light"] {
     /* — Backgrounds — */
     --bg-base: #ffffff; /* page background */
-    --bg-panel: rgba(244, 244, 246, 0.78); /* cards / link rows (translucent) */
+    /* Cards/rows are more opaque in light mode so text sits on a near-solid
+       surface instead of letting the background photo bleed through. */
+    --bg-panel: rgba(248, 248, 250, 0.90); /* cards / link rows */
     --bg-panel-solid: #f1f1f4; /* mobile drawer, buttons (opaque) */
 
     /* — Text — */
@@ -77,10 +91,13 @@
     --border: rgba(0, 0, 0, 0.12);
 
     /* — Background-image overlay & header (advanced) — */
-    --overlay: rgba(255, 255, 255, 0.32);
-    --overlay-top: rgba(255, 255, 255, 0.77);
-    --overlay-bottom: rgba(255, 255, 255, 0.72);
-    --header-bg: rgba(255, 255, 255, 0.82);
+    /* Stronger than before: in light mode the background photo was competing
+       with content (washed-glass look). These heavier overlays push the photo
+       back so cards/text read cleanly while still showing the image. */
+    --overlay: rgba(255, 255, 255, 0.55);
+    --overlay-top: rgba(255, 255, 255, 0.90);
+    --overlay-bottom: rgba(255, 255, 255, 0.88);
+    --header-bg: rgba(255, 255, 255, 0.90);
     --panel-blur: 14px;
 
     /* — Carousel (caption scrim/chip stay dark for legibility over photos) — */
@@ -531,9 +548,12 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 }
 
 /* ---- Content ---------------------------------------------------------- */
+/* The content column is sized to the WIDE tier; narrow blocks center a
+   smaller column inside it (see .block--narrow). This way wide blocks fill
+   the column and narrow blocks sit centered within the same gutters. */
 .content {
     width: 100%;
-    max-width: var(--max-width);
+    max-width: var(--content-wide);
     margin: 0 auto;
     padding: clamp(2rem, 6vw, 3rem) var(--gutter) 3rem;
     outline: none;
@@ -574,6 +594,42 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     }
 }
 
+/* ---- Block layout: width tiers + uniform spacing ---------------------- */
+/* Every rendered block is wrapped by JS in a .block element carrying a width
+   tier. This is the single source of truth for (a) how wide each block is and
+   (b) the vertical rhythm between blocks. Adding a new block type needs no new
+   spacing CSS — it inherits .block + .block automatically.
+
+   narrow = readable prose column; wide = visual blocks given more room. Both
+   are centered inside the content column. On small screens the gutter makes
+   them collapse to the same available width, so the tiers only diverge once
+   there's room. */
+.block {
+    width: 100%;
+    margin-inline: auto;
+}
+
+.block--narrow {
+    max-width: var(--content-narrow);
+}
+
+.block--wide {
+    max-width: var(--content-wide);
+}
+
+/* Uniform gap between consecutive blocks. Replaces the old per-pair adjacency
+   rules (.section__text + .card-grid, etc.) with one rule that covers every
+   combination, present and future. */
+.block + .block {
+    margin-top: var(--block-gap);
+}
+
+/* A section title sits above the first block; give the first block air below
+   the title without needing the block to know about it. */
+.section__title + .block {
+    margin-top: 0;
+}
+
 /* Intro / hero */
 .intro__eyebrow {
     font-size: 0.85rem;
@@ -600,7 +656,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 .intro__lead {
     font-size: clamp(1.1rem, 1rem + 0.6vw, 1.3rem);
     color: var(--text-soft);
-    max-width: 34rem;
     margin: 0;
 }
 
@@ -624,18 +679,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     flex: none;
 }
 
-/* A `text` block placed anywhere in a section. .prose handles the color;
-   this just sets even vertical rhythm between it and the blocks around it. */
-.section__text {
-    margin-top: 1.5rem;
-}
-
-/* The first block in a section shouldn't push down from the title/top. */
-.section > .section__text:first-child,
-.section__title + .section__text {
-    margin-top: 0;
-}
-
 /* Generic prose */
 .prose p {
     color: var(--text-soft);
@@ -651,14 +694,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: 1rem;
-}
-
-/* When a card grid follows other content in a block list, give it air. */
-.section__text + .card-grid,
-.carousel-block + .card-grid,
-.map-open-row + .card-grid,
-.link-list + .card-grid {
-    margin-top: 1.5rem;
 }
 
 .card {
@@ -709,14 +744,6 @@ a.card__link {
     gap: 0.4rem;
 }
 
-/* Give the link list air when it follows other content in a block list. */
-.section__text + .link-list,
-.carousel-block + .link-list,
-.card-grid + .link-list,
-.map-open-row + .link-list {
-    margin-top: 1.5rem;
-}
-
 .link-list a {
     display: flex;
     align-items: center;
@@ -745,14 +772,98 @@ a.card__link {
     font-size: 0.9rem;
 }
 
-/* Map embed (Where to find me) */
+/* ---- Table (price list / structured rows) ----------------------------- */
+/* A structured table rendered by buildTable() in script.js from a `table`
+   block: an optional name + blurb, then `headings` (the columns) and `rows`
+   (arrays of cells in heading order). Colors come from the same theme tokens
+   as cards and the link list, so it re-themes automatically. The .table-scroll
+   wrapper lets a wide table scroll sideways on narrow screens instead of
+   squashing columns or forcing the whole page wider. */
+
+/* Optional table name (a `table` block's `name`). Matches .carousel__name. */
+.table__name {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 1.25rem;
+    margin: 0 0 0.6rem;
+    color: var(--text);
+}
+
+/* Optional blurb under a table name (a `table` block's `blurb`). */
+.table__blurb {
+    margin: 0 0 0.75rem;
+}
+
+/* Scroll container: holds the panel frame and clips the corners; scrolls
+   horizontally if the table is wider than the column. */
+.table-scroll {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    background: var(--bg-panel);
+    backdrop-filter: blur(var(--panel-blur));
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.85rem 1.1rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Header row: serif heading style, consistent with section/slideshow names. */
+.data-table thead th {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 1.05rem;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+/* Body cells default to the softer body text color, like card/prose copy. */
+.data-table tbody td {
+    color: var(--text-soft);
+}
+
+/* Last column reads as a price/value: right-aligned, accented, won't wrap. */
+.data-table__value {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.data-table td.data-table__value {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Final row sits flush with the frame — no dangling divider. */
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Gentle row highlight on hover, matching the link-list/card feel. */
+.data-table tbody tr {
+    transition: background var(--transition);
+}
+
+.data-table tbody tr:hover {
+    background: var(--menu-hover-bg);
+}
+
+/* ---- Map: embed mode (live Google iframe) ----------------------------- */
 .map-embed {
-    margin-top: 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-panel);
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 21 / 9; /* wider, shorter — more of a rectangle */
 }
 
 .map-embed iframe {
@@ -764,8 +875,40 @@ a.card__link {
     filter: saturate(0.95);
 }
 
+/* ---- Map: static mode (no iframe, clean themed card) ------------------ */
+/* Rendered when a `map` block sets mode: "static". A lightweight panel that
+   matches cards/table — location name, optional address, and the Open-in-Maps
+   button — instead of the noisier live iframe. */
+.map-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-panel);
+    backdrop-filter: blur(var(--panel-blur));
+    padding: 1.35rem 1.4rem;
+}
+
+.map-card__name {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: var(--text);
+}
+
+.map-card__address {
+    margin: 0.4rem 0 0;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+}
+
+/* The Open-in-Maps button row is shared by both map modes. */
 .map-open-row {
     margin: 0.75rem 0 0;
+}
+
+/* In embed mode the row sits just under the framed map. */
+.map-embed + .map-open-row {
+    margin-top: 0.75rem;
 }
 
 .map-open-row a {
@@ -804,12 +947,6 @@ a.card__link {
    "n / total" chip. Colors come from the theme tokens above so it re-themes and
    matches cards/map automatically. */
 
-/* Wrapper around an optional name heading + blurb + the carousel, so a section
-   can stack several named slideshows cleanly. */
-.carousel-block {
-    margin-top: 1.5rem;
-}
-
 /* Optional slideshow name (a `slideshow` block's `name`). */
 .carousel__name {
     font-family: var(--font-serif);
@@ -824,15 +961,8 @@ a.card__link {
     margin: 0 0 0.75rem;
 }
 
-/* The carousel sits inside .carousel-block; it no longer needs its own top
-   margin (the block provides spacing between stacked slideshows). */
-.carousel-block .carousel {
-    margin-top: 0;
-}
-
 .carousel {
     position: relative;
-    margin-top: 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
@@ -1109,6 +1239,11 @@ a.card__link {
         border-color: var(--border);
     }
 
+    /* Table: drop the sticky row highlight on touch (matches the rest). */
+    .data-table tbody tr:hover {
+        background: transparent;
+    }
+
     .site-footer a:hover {
         color: var(--text-soft);
     }
@@ -1196,6 +1331,12 @@ a.card__link {
 
     .link-list a {
         padding: 1rem 1.1rem;
+    }
+
+    /* Tighten table cell padding a touch on small screens. */
+    .data-table th,
+    .data-table td {
+        padding: 0.75rem 0.85rem;
     }
 }
 

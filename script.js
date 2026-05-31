@@ -27,6 +27,15 @@
    reorder its `blocks` — move a slideshow above the cards, drop text
    between two card grids, whatever. No fixed per-section recipe.
 
+   BLOCK WIDTH
+   -----------
+   Every block sits in one of two width tiers, set automatically by type:
+     - narrow (~46rem): text and hero — kept readable, never full-bleed.
+     - wide   (~56rem): cards, slideshow, map, table — given room to breathe.
+   Override per block with `width: "narrow"` or `width: "wide"` on any block,
+   e.g. force a slideshow narrow to sit tight under a paragraph. See
+   BLOCK_WIDTHS further down.
+
    BLOCK TYPES (each block is an object with a `type`):
 
      { type: "text", text: "A paragraph. Inline <em>…</em> and <a …> ok." }
@@ -40,8 +49,14 @@
          { label, handle, url }                     // e.g. email / phone rows
      ] }
 
-     { type: "map", embed: "<google embed src>", url: "<share link>",
-       label: "Accessible label for the map" }
+     { type: "map", mode: "embed", embed: "<google embed src>",
+       url: "<share link>", label: "Accessible label / location name",
+       address: "Optional street address" }
+       → mode: "embed" (default) shows the live Google Maps iframe + an
+         "Open in Maps" button.
+       → mode: "static" shows a clean themed card (no iframe): the label, an
+         optional address line if you provide one, and the button. Prettier and
+         lighter — good when the live map looks too noisy.
 
      { type: "slideshow", name: "Optional heading", blurb: "Optional text",
        slides: [
@@ -49,6 +64,29 @@
        ] }
        → 1 slide  = a plain framed image
        → 2+ slides = carousel with prev/next, dots, and an "n / total" counter
+
+     { type: "table", name: "Optional heading", blurb: "Optional text",
+       headings: ["Service", "Duration", "Price"],   // any number of columns
+       rows: [
+           ["Basic tune-up", "30 min", "€25"],       // cells, in heading order
+           ["Full service",  "2 hr",   "€60"],
+       ] }
+       → A structured table (e.g. a price list). `headings` defines the
+         columns; each row is an array of cells in the same order. Short rows
+         pad with empty cells, extra cells are ignored, so a ragged row never
+         breaks the layout. The last column is right-aligned + accented, which
+         reads well for a price/value column. Cell text allows the same trusted
+         inline HTML (<em>, <a>) as other blocks.
+
+   CONTENT LENGTH GUIDANCE (hero especially)
+   -----------------------------------------
+   The hero is the first thing on the page; keep it tight or it becomes a wall
+   on mobile:
+     - hero title: short and punchy (a line or two).
+     - hero lead: one or two short sentences. It is width-capped for
+       readability and will wrap; long copy looks cramped, not premium.
+     - extra explanation belongs in a separate `text` block below the hero,
+       not stuffed into the lead.
 
    IMPORTANT: block text (text/blurb/title/etc.) intentionally supports small
    trusted inline HTML, e.g. <em> and <a>. Keep these values authored by you,
@@ -83,10 +121,24 @@ let SITE = {
             blocks: [
                 {
                     type: "hero",
+                    // Wide so the hero aligns with the slideshow below it
+                    // (same left edge / column width) instead of sitting in
+                    // the narrower centered prose column.
+                    width: "wide",
                     eyebrow: "Company",
-                    // <em>…</em> renders in the accent color.
-                    title: "Demo for <em>static site micro-engine</em> I've been working on.",
-                    lead: "This is just a simple demo for a template I created — it should work on desktop and mobile. Tested on Chromium, Firefox and Safari. Want a website? Contact me at <a href=\"https://michal-remis.com/?utm_campaign=visitor_origin&utm_source=static_web_example/\" target=\"_blank\" rel=\"noopener noreferrer\">michal-remis.com</a>. <div>Zero-dependency static site micro-engine for building polished responsive websites from reusable config-driven sections.</div>",
+                    // <em>…</em> renders in the accent color. Keep the title
+                    // short and the lead to a sentence or two — see the content
+                    // length guidance above.
+                    title: "A demo for the <em>static site micro-engine</em>.",
+                    lead: "A zero-dependency template for polished, responsive sites built from reusable config-driven blocks.",
+                },
+                {
+                    // Longer explanation lives in its own text block, not the
+                    // hero lead — so the hero stays tight on mobile. Wide to
+                    // match the hero + slideshow column above and below it.
+                    type: "text",
+                    width: "wide",
+                    text: "Want a website? Contact me at <a href=\"https://michal-remis.com/?utm_campaign=visitor_origin&utm_source=static_web_example/\" target=\"_blank\" rel=\"noopener noreferrer\">michal-remis.com</a>. Tested on Chromium, Firefox and Safari, on desktop and mobile.",
                 },
                 {
                     type: "slideshow",
@@ -131,6 +183,17 @@ let SITE = {
                         },
                     ],
                 },
+                {
+                    type: "table",
+                    name: "Pricing",
+                    blurb: "An optional line of text under the table name.",
+                    headings: ["Service", "Duration", "Price"],
+                    rows: [
+                        ["Lorem ipsum", "30 min", "€25"],
+                        ["Dolor sit amet", "2 hr", "€60"],
+                        ["Consectetur", "15 min", "€10"],
+                    ],
+                },
             ],
         },
 
@@ -143,11 +206,19 @@ let SITE = {
                 },
                 {
                     type: "map",
+                    // mode "embed" (default) = live Google iframe; "static" =
+                    // clean card with no iframe (label + optional address +
+                    // button). Switch by setting mode: "static".
+                    mode: "embed",
                     // Google Maps → Share → Embed a map → copy the src.
                     embed: "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
                     // Normal share link used by the "Open in Maps" button.
                     url: "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
-                    label: "Map showing our location",
+                    // Used as the iframe's accessible title and, in static mode,
+                    // as the card's location name.
+                    label: "Times Square, New York",
+                    // Optional: shown as an address line in static mode only.
+                    address: "Manhattan, NY 10036, USA",
                 },
                 {
                     type: "slideshow",
@@ -413,8 +484,37 @@ function buildLinks(block) {
     return ul;
 }
 
-/* map — the embedded Google map + an explicit "Open in Maps" button. */
+/* map — location block with two modes:
+   - "embed" (default): the live Google Maps iframe + an "Open in Maps" button.
+   - "static": a clean themed card with no iframe — the location name, an
+     optional address line (only if `address` is set), and the button. Lighter
+     and prettier when the live map looks too noisy.
+   Falls back to embed if mode is "static" but no embed/url is usable, and to
+   nothing only if there's neither an embed nor a url to point at. */
 function buildMap(block) {
+    const mode = block.mode === "static" ? "static" : "embed";
+    const href = block.url || block.embed;
+
+    // ---- Static card mode (no iframe) ----
+    if (mode === "static") {
+        if (!href) return null; // nothing to point at — skip silently.
+
+        const card = el("div", {class: "map-card"});
+        if (block.label) card.appendChild(el("p", {class: "map-card__name"}, block.label));
+        if (block.address) card.appendChild(el("p", {class: "map-card__address"}, block.address));
+
+        card.appendChild(
+            el(
+                "p",
+                {class: "map-open-row"},
+                `<a href="${href}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
+            )
+        );
+
+        return card;
+    }
+
+    // ---- Embed mode (live iframe), the default ----
     if (!block.embed) return null;
 
     const frag = document.createDocumentFragment();
@@ -431,16 +531,82 @@ function buildMap(block) {
     );
     frag.appendChild(wrap);
 
-    const href = block.url || block.embed;
     frag.appendChild(
         el(
             "p",
             {class: "map-open-row"},
-            `<a href="${href}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
+            `<a href="${href || block.embed}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
         )
     );
 
     return frag;
+}
+
+/* table — a structured table (e.g. a price list).
+   Block shape: { name?, blurb?, headings: [...], rows: [[...], ...] }
+   - `headings` defines the columns (any number).
+   - each entry in `rows` is an array of cells, in heading order.
+   Short rows are padded with empty cells and extra cells are ignored, so a
+   ragged row never breaks the grid. The optional name/blurb mirror the
+   slideshow block, so several named tables can stack cleanly in one section.
+   Cell text allows the same trusted inline HTML (<em>, <a>) as other blocks —
+   keep it authored by you, not user input. The last column is right-aligned
+   and accent-colored, which reads naturally as a price/value column. */
+function buildTable(block) {
+    const headings = block.headings || [];
+    const rows = block.rows || [];
+    if (!headings.length || !rows.length) return null;
+
+    const name = block.name;
+    const blurb = block.blurb;
+    const lastCol = headings.length - 1;
+
+    // Wrapper so the optional name + blurb + table stay one unit, matching the
+    // slideshow block's structure.
+    const wrapper = el("div", {class: "table-block"});
+
+    if (name) {
+        wrapper.appendChild(el("h3", {class: "table__name"}, name));
+    }
+    if (blurb) {
+        wrapper.appendChild(el("div", {class: "prose table__blurb"}, `<p>${blurb}</p>`));
+    }
+
+    // Scroll wrapper: on a narrow screen the table scrolls sideways instead of
+    // squashing its columns or forcing the page wider.
+    const scroll = el("div", {class: "table-scroll"});
+    const table = el("table", {class: "data-table"});
+
+    // Head.
+    const thead = el("thead");
+    const headRow = el("tr");
+    headings.forEach((h, i) => {
+        headRow.appendChild(
+            el("th", {scope: "col", class: i === lastCol ? "data-table__value" : null}, String(h))
+        );
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    // Body. One <tr> per row; cells are read positionally against headings, so
+    // a short row pads with blanks and a long row is truncated to the columns.
+    const tbody = el("tbody");
+    rows.forEach((row) => {
+        const cells = Array.isArray(row) ? row : [row];
+        const tr = el("tr");
+        for (let i = 0; i < headings.length; i++) {
+            const value = cells[i] == null ? "" : String(cells[i]);
+            tr.appendChild(
+                el("td", {class: i === lastCol ? "data-table__value" : null}, value)
+            );
+        }
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    scroll.appendChild(table);
+    wrapper.appendChild(scroll);
+    return wrapper;
 }
 
 /* ----------------------------------------------------------------------
@@ -656,7 +822,37 @@ const BLOCK_RENDERERS = {
     links: buildLinks,
     map: buildMap,
     slideshow: buildCarousel,
+    table: buildTable,
 };
+
+/* Default width tier per block type. "narrow" keeps a column readable (text,
+   hero); "wide" gives visual blocks room to breathe (cards, slideshow, map,
+   table). Any block can override with its own `width: "narrow" | "wide"`.
+   Unknown types fall back to narrow. The actual rem widths live in styles.css
+   as --content-narrow / --content-wide, applied via the .block--narrow /
+   .block--wide wrapper classes. */
+/* Default width tier per block type. Everything defaults to "wide" so blocks
+   share one consistent left edge / column width across the whole site (hero,
+   text, cards, slideshow, map, table, contact links all line up). Any block can
+   still opt into the narrower readable column with `width: "narrow"` — useful
+   for a long-form paragraph you want kept to a comfortable reading measure. The
+   actual rem widths live in styles.css as --content-narrow / --content-wide,
+   applied via the .block--narrow / .block--wide wrapper classes. */
+const BLOCK_WIDTHS = {
+    hero: "wide",
+    text: "wide",
+    links: "wide",
+    cards: "wide",
+    slideshow: "wide",
+    map: "wide",
+    table: "wide",
+};
+
+function widthFor(block) {
+    const w = block && block.width;
+    if (w === "narrow" || w === "wide") return w; // explicit override wins.
+    return BLOCK_WIDTHS[block && block.type] || "wide";
+}
 
 /* Render one block to a node, or null if the type is unknown / it produced
    nothing. Unknown types are skipped with a console warning rather than
@@ -745,6 +941,11 @@ function renderNav() {
    Each nav entry maps to a section in SITE.sections. A section is rendered as
    its optional title followed by its blocks, in order — there is no
    per-section special-casing. Reorder a section by reordering its `blocks`.
+
+   Each block is wrapped in a .block element that carries the width tier
+   (.block--narrow / .block--wide). The wrapper centers itself and caps its
+   width; the spacing between consecutive blocks is one uniform rule in CSS
+   (.block + .block), so adding a new block type needs no new spacing CSS.
 ---------------------------------------------------------------------- */
 
 function buildSection(id, section) {
@@ -765,7 +966,14 @@ function buildSection(id, section) {
     const blocks = (section && section.blocks) || [];
     blocks.forEach((block) => {
         const rendered = renderBlock(block);
-        if (rendered) node.appendChild(rendered);
+        if (!rendered) return;
+
+        // Wrap every block in a width-tier container. This is what gives the
+        // per-block width rules and the uniform vertical rhythm; the builders
+        // themselves stay width-agnostic.
+        const wrap = el("div", {class: `block block--${widthFor(block)}`});
+        wrap.appendChild(rendered);
+        node.appendChild(wrap);
     });
 
     return node;
