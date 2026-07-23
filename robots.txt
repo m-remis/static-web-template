@@ -1,4 +1,24 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://m-remis.github.io/static-web-template/sitemap.xml
+# Explicit opt-IN for AI crawlers and assistants. The * group above already
+# admits everyone, so these stanzas change nothing functionally — but a bot
+# that finds its own name picks this group over *, and an explicit Allow is
+# a deliberate, legible "yes, ingest this site" (many sites block these
+# agents, so silence reads as ambivalence). Machine-readable content lives
+# at /llms.txt (plain-text summary) and /site-spec.json (full content).
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://example.com/sitemap.xml

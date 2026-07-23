@@ -1,0 +1,484 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/site-spec.schema.json",
+  "title": "Site spec",
+  "description": "Single source of truth for a site rendered by engine.js. Every block has a \"type\" that maps to one builder in BLOCK_RENDERERS. Edit this file, not the engine. Validated at ship time by launch-check.js; this schema gives editing-time validation + autocomplete in the IDE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["brand", "meta", "sections"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path to this schema file (enables IDE validation). Keep as ./site-spec.schema.json."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "description": "Spec format version, e.g. \"1.0.0\".",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Brand / site name. Shown as the header text unless brandImage is set; always used for the footer copyright and as the logo's alt text.",
+      "minLength": 1
+    },
+    "brandImage": {
+      "type": "string",
+      "description": "Optional logo image path (e.g. assets/logo.png) that replaces the header brand text. Monochrome black-on-transparent PNGs are auto-inverted in dark theme. brand stays required as alt text / copyright."
+    },
+    "business": { "$ref": "#/$defs/business" },
+    "meta": { "$ref": "#/$defs/meta" },
+    "theme": { "$ref": "#/$defs/theme" },
+    "sections": {
+      "type": "array",
+      "description": "Top-level sections. Each becomes a nav tab + a tabpanel of blocks.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/section" }
+    },
+    "footer": {
+      "type": "object",
+      "description": "Footer content.",
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "type": "string",
+          "description": "Footer note. Trusted inline HTML allowed (authored content only)."
+        }
+      }
+    },
+    "socials": {
+      "type": "array",
+      "description": "Header/drawer social links.",
+      "items": { "$ref": "#/$defs/social" }
+    },
+    "backgrounds": {
+      "type": "array",
+      "description": "Background image paths; the engine crossfades through them.",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "business": {
+      "type": "object",
+      "description": "Single source of truth for contact + legal data. Blocks reference it by key (e.g. a links block's \"use\": [\"phone\",\"email\"]) instead of restating values.",
+      "additionalProperties": false,
+      "properties": {
+        "legalName": { "type": "string" },
+        "ico": { "type": "string", "description": "IČO (company ID)." },
+        "dic": { "type": "string", "description": "DIČ (tax ID)." },
+        "phone": { "type": "string", "description": "Phone in display form; the engine builds the tel: href." },
+        "email": { "type": "string", "format": "email" },
+        "address": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "street": { "type": "string" },
+            "city": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "country": { "type": "string" },
+            "label": { "type": "string", "description": "One-line address used in static map cards and schema." }
+          }
+        },
+        "mapUrl": { "type": "string", "description": "Public Google Maps link (Open in Maps button)." },
+        "geo": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lat", "lng"],
+          "description": "Exact pin coordinates of the business, emitted as GeoCoordinates in the JSON-LD (local-search queries resolve on these). Get them from the resolved Google Maps place URL (!3d = lat, !4d = lng).",
+          "properties": {
+            "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+            "lng": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "priceRange": { "type": "string", "description": "Relative price bracket for the JSON-LD priceRange property, e.g. \"€€\" or \"12–95 €\"." },
+        "areaServed": { "type": "string", "description": "Human-readable service area for the JSON-LD areaServed property, e.g. \"Greater Anytown\"." },
+        "mapEmbed": { "type": "string", "description": "Google Maps embed URL for the live iframe." },
+        "hours": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Opening hours by weekday. Values are free-form display strings (e.g. \"9:00–17:00\", \"Closed\"). Rendered by the \"hours\" block, which highlights the current day. Missing days render as a dash.",
+          "properties": {
+            "mon": { "type": "string" },
+            "tue": { "type": "string" },
+            "wed": { "type": "string" },
+            "thu": { "type": "string" },
+            "fri": { "type": "string" },
+            "sat": { "type": "string" },
+            "sun": { "type": "string" }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "Document <head> metadata + SEO.",
+      "additionalProperties": false,
+      "required": ["title", "description"],
+      "properties": {
+        "lang": { "type": "string", "description": "Document language, e.g. \"sk\".", "default": "sk" },
+        "domain": { "type": "string", "description": "Canonical site URL with trailing slash." },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "ogDescription": { "type": "string" },
+        "author": { "type": "string" },
+        "themeColor": { "$ref": "#/$defs/hexColor" },
+        "ogType": { "type": "string", "default": "website" },
+        "ogImage": { "type": "string", "description": "Social share image path (relative, e.g. assets/og_image.jpg). og:image + twitter:image are only emitted when set." },
+        "ogImageWidth": { "type": "integer", "description": "Pixel width of ogImage; emitted as og:image:width (needs ogImageHeight too)." },
+        "ogImageHeight": { "type": "integer", "description": "Pixel height of ogImage; emitted as og:image:height (needs ogImageWidth too)." },
+        "twitterCard": { "type": "string", "enum": ["summary", "summary_large_image"] },
+        "analytics": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional analytics (GoatCounter-style).",
+          "properties": {
+            "countUrl": { "type": "string" },
+            "countLabel": { "type": "string" },
+            "dashboardUrl": { "type": "string" }
+          }
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "description": "Theme tokens overriding CSS defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "accent": { "$ref": "#/$defs/hexColor", "description": "Brand accent color." },
+        "rootScale": { "type": "string", "description": "Root font scale, e.g. \"106.25%\"." },
+        "contentWidth": { "type": "string", "description": "Max content column width, e.g. \"56rem\"." },
+        "radius": { "type": "string", "description": "Corner radius token, e.g. \"14px\"." },
+        "fontSans": { "type": "string", "description": "Body font stack (--font-sans)." },
+        "fontHeading": { "type": "string", "description": "Heading font stack (--font-serif)." },
+        "fontBrand": { "type": "string", "description": "Brand font stack." },
+        "socialColors": {
+          "type": "object",
+          "description": "Per-channel accent colors keyed by social/contact key.",
+          "additionalProperties": { "$ref": "#/$defs/hexColor" }
+        }
+      }
+    },
+    "social": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["icon", "url"],
+      "properties": {
+        "label": { "type": "string" },
+        "headerLabel": { "type": "string", "description": "Optional label used only for the header brand cluster and mobile drawer; falls back to `label` when omitted. Lets the header button read differently from the same link in contacts." },
+        "icon": { "type": "string", "description": "Icon key (must match a key in SOCIAL_ICONS in engine.js)." },
+        "url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "blocks"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique section id; used as the anchor (#id) and tab id.",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "label": { "type": "string", "description": "Nav tab label (defaults to id if omitted)." },
+        "title": { "type": "string", "description": "Optional heading rendered at the top of the section." },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/block" }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["hero", "text", "cards", "links", "map", "slideshow", "table", "faq", "gallery", "photo", "hours", "review", "video"]
+        }
+      },
+      "oneOf": [
+        { "$ref": "#/$defs/blockHero" },
+        { "$ref": "#/$defs/blockText" },
+        { "$ref": "#/$defs/blockCards" },
+        { "$ref": "#/$defs/blockLinks" },
+        { "$ref": "#/$defs/blockMap" },
+        { "$ref": "#/$defs/blockSlideshow" },
+        { "$ref": "#/$defs/blockTable" },
+        { "$ref": "#/$defs/blockFaq" },
+        { "$ref": "#/$defs/blockGallery" },
+        { "$ref": "#/$defs/blockPhoto" },
+        { "$ref": "#/$defs/blockHours" },
+        { "$ref": "#/$defs/blockReview" },
+        { "$ref": "#/$defs/blockVideo" }
+      ]
+    },
+    "blockHero": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Landing hero: eyebrow + title + lead.",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "hero" },
+        "eyebrow": { "type": "string" },
+        "title": { "type": "string", "description": "Headline. Trusted inline HTML (<em>, <a>) allowed." },
+        "lead": { "type": "string", "description": "Intro paragraph." }
+      }
+    },
+    "blockText": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Free/rich text paragraph. Trusted inline HTML allowed (authored content only).",
+      "required": ["type", "text"],
+      "properties": {
+        "type": { "const": "text" },
+        "name": { "type": "string", "description": "Optional serif heading above the paragraph (same look as table/faq block names)." },
+        "text": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "enum": ["html", "markdown", "plain"], "default": "html", "description": "How `text` is interpreted: html = sanitized inline HTML (default), markdown = tiny inline subset (**bold**, *em*, [link](url)), plain = everything escaped." }
+      }
+    },
+    "blockCards": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Responsive card grid. linked:true + per-item url makes each card a link.",
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "cards" },
+        "linked": { "type": "boolean", "default": false },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "body": { "type": "string" },
+              "meta": { "type": "string", "description": "Small accent label (shows a go-arrow on linked cards)." },
+              "url": { "type": "string", "description": "Link target; required if the card should be clickable." },
+              "icon": { "type": "string", "description": "Optional monochrome icon shown to the left of the text, vertically centered — a black PNG on a transparent background. Auto-inverted to white in dark theme; one asset works on both themes." }
+            }
+          }
+        }
+      }
+    },
+    "blockLinks": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Contact/social link rows. Prefer \"use\" (SSOT refs into business/socials); \"items\" adds explicit rows after them. At least one of use/items must be non-empty.",
+      "required": ["type"],
+      "anyOf": [
+        { "required": ["use"] },
+        { "required": ["items"] }
+      ],
+      "properties": {
+        "type": { "const": "links" },
+        "layout": { "enum": ["rows", "grid"], "description": "rows (default) = stacked full-width rows; grid = side-by-side tiles (auto-stacks when narrow)." },
+        "use": {
+          "type": "array",
+          "description": "Keys resolved against business/socials, e.g. \"phone\", \"email\", \"instagram\".",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url"],
+            "properties": {
+              "label": { "type": "string" },
+              "handle": { "type": "string" },
+              "url": { "type": "string", "minLength": 1 },
+              "icon": { "type": "string", "description": "Icon key (must match SOCIAL_ICONS in engine.js)." },
+              "kind": { "type": "string", "description": "Small muted line above the value (\"Telefón\", \"Web\", …). Defaults from the icon key for known icons." }
+            }
+          }
+        }
+      }
+    },
+    "blockMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Map block. mode:\"embed\" (default) live iframe, or mode:\"static\" themed address card. url/embed are optional here — when omitted the engine falls back to business.mapUrl / business.mapEmbed (SSOT). launch-check.js flags a map that resolves to nothing.",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "map" },
+        "mode": { "type": "string", "enum": ["embed", "static"], "default": "embed" },
+        "url": { "type": "string", "description": "Open-in-Maps link (overrides business.mapUrl)." },
+        "embed": { "type": "string", "description": "Google Maps embed URL / iframe src (overrides business.mapEmbed)." },
+        "label": { "type": "string" },
+        "address": { "type": "string", "description": "Address line for the static card / accessible fallback." }
+      }
+    },
+    "blockSlideshow": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "1 slide = framed image; 2+ = carousel with prev/next, dots, lightbox.",
+      "required": ["type", "slides"],
+      "properties": {
+        "type": { "const": "slideshow" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "slides": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/imageItem" }
+        }
+      }
+    },
+    "blockTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Responsive table (price list etc.). Rows are arrays of cells in heading order. By default the last column is accent-styled as a price/value; set accentValue: false for prose tables (conditions, company data).",
+      "required": ["type", "headings", "rows"],
+      "properties": {
+        "type": { "const": "table" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "accentValue": { "type": "boolean", "default": true, "description": "false = no accent price styling on the last column (use for prose tables)." },
+        "offerCatalog": { "type": "boolean", "default": false, "description": "true = this table is a price list exported into the JSON-LD as a schema.org OfferCatalog (first cell = service name, last cell = price, middle cells = description). Not rendered by the engine — consumed by business-jsonld.mjs only. Leave off prose tables." },
+        "collapsible": { "type": "boolean", "default": false, "description": "true = the table renders collapsed behind its name as an accordion toggle (same pattern as faq); the blurb collapses with it. Requires `name` — without one the flag is ignored and the table renders expanded. Presentation only: JSON-LD/llms.txt exports are unaffected." },
+        "headings": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "number"] }
+          }
+        }
+      }
+    },
+    "blockFaq": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Accordion of question/answer pairs. q is plain text; a allows trusted inline HTML (authored content only).",
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "faq" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["q", "a"],
+            "properties": {
+              "q": { "type": "string", "minLength": 1, "description": "Question (plain text)." },
+              "a": { "type": "string", "minLength": 1, "description": "Answer. Trusted inline HTML (<em>, <a>) allowed." }
+            }
+          }
+        }
+      }
+    },
+    "blockGallery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Paged responsive image grid sharing the slideshow lightbox. Tiles are image-only; per-image title/caption are NOT shown as visible captions — they feed alt text and the lightbox caption only.",
+      "required": ["type", "images"],
+      "properties": {
+        "type": { "const": "gallery" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "columns": { "type": "integer", "minimum": 2, "maximum": 4, "description": "Optional column count (2–4) — the engine and CSS only honor these values." },
+        "perPage": { "type": "integer", "minimum": 1, "description": "Tiles shown per page before paging. Defaults to 12." },
+        "images": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/imageItem" }
+        }
+      }
+    },
+    "blockPhoto": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Single image; normalizes to a one-image gallery.",
+      "required": ["type", "src"],
+      "properties": {
+        "type": { "const": "photo" },
+        "src": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "caption": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    },
+    "blockHours": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Opening-hours table. Carries no hours data itself — reads SITE.business.hours (single source of truth) and highlights the current day.",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "hours" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" }
+      }
+    },
+    "blockReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Leave-a-review CTA block. Renders outbound buttons to external review pages (Google, Facebook, …). No backend — it does not collect or store reviews.",
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "review" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "url"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "description": "Button text (plain)." },
+              "url": { "type": "string", "minLength": 1, "description": "External review page. Should be an http(s) URL." },
+              "platform": { "type": "string", "enum": ["google", "facebook"], "description": "Optional brand icon/tint. Omit or use an unlisted value for a generic star." }
+            }
+          }
+        }
+      }
+    },
+    "blockVideo": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "YouTube embed via the privacy-enhanced youtube-nocookie.com player (no cookies until play). Give ONE source: `url` pins a specific video; `playlist` auto-plays the playlist's newest entry — point it at the channel's UULF… long-form uploads playlist (channel id with UC→UULF) for an always-current 'latest episode'. If both are set the engine uses `url`.",
+      "required": ["type"],
+      "anyOf": [
+        { "required": ["url"] },
+        { "required": ["playlist"] }
+      ],
+      "properties": {
+        "type": { "const": "video" },
+        "name": { "type": "string" },
+        "blurb": { "type": "string" },
+        "url": { "type": "string", "minLength": 1, "description": "Pinned video: YouTube URL in any share form (watch?v=, youtu.be/, shorts/, live/, embed/). launch-check fails a URL the engine can't extract an id from." },
+        "playlist": { "type": "string", "minLength": 1, "description": "Auto-newest: a playlist id (PL…/UU…/UULF…) or any URL with ?list=. UU… = all uploads incl. Shorts; UULF… = long-form only (usually what you want for episodes)." },
+        "title": { "type": "string", "description": "Accessible iframe title; falls back to `name`, then a generic label." }
+      }
+    },
+    "imageItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "An image with optional title/caption/text. Only src is required.",
+      "required": ["src"],
+      "properties": {
+        "src": { "type": "string", "minLength": 1 },
+        "thumb": { "type": "string", "minLength": 1, "description": "Optional smaller rendition for gallery grid tiles; the lightbox always opens the full src." },
+        "title": { "type": "string" },
+        "caption": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    },
+    "hexColor": {
+      "type": "string",
+      "description": "Hex color, e.g. #8ab4ff.",
+      "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+    }
+  }
+}

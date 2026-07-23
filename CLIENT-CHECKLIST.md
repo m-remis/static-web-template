@@ -3,33 +3,62 @@
 Per-client personalization checklist for spinning up a new site from this
 template. This is the **exhaustive** list — every file that contains a
 placeholder, a hardcoded domain, a stock color, or boilerplate text. Work top
-to bottom; the site renders fine even half-finished, so nothing crashes if you
-skip ahead, but the SEO/sharing items must be done before the site is public.
+to bottom; the site renders fine even half-finished (a bad spec shows a calm
+error screen, never a blank page), so nothing crashes if you skip ahead — but
+the SEO/sharing items must be done before the site is public.
 
-> Companion to `AGENTS.md` (architecture) and `README.md` (human quick-start).
-> This file answers one question only: **what do I change for each new client?**
+> Companion to `AGENTS.md` (architecture: how the engine works) and `README.md`
+> (human quick-start). This file answers one question only: **what do I change
+> for each new client?**
 >
 > The template fingerprint `Built from m-remis/static-web-template` is
 > intentional. Do not remove it unless the repository owner explicitly asks for
-> a white-label build.
+> a white-label build (see §0.1).
 
 ---
 
-## 0. One-line audit before you start (and before you deploy)
+## How content works (read this first)
 
-Run this from the repo root. It surfaces every placeholder string in one shot:
+There is **no content in the HTML or the JS.** Everything the visitor sees is
+rendered at runtime from a single file: **`site-spec.json`**. The engine
+(`engine.js`) fetches it on load and builds the brand, the nav tabs, every
+section, the footer, the socials, the backgrounds, and even the document
+`<head>` metadata from it.
+
+So ~90% of a new client is **one file: `site-spec.json`.** The rest of this
+checklist is the long tail — favicon, manifest, sitemap, robots, colors, deploy
+— the stuff that ships wrong silently because the page works without it.
+
+```text
+edit site-spec.json  →  node launch-check.js  →  fix every error  →  deploy
+```
+
+---
+
+## 0. One-shot audit before you start (and before you deploy)
+
+The real gate is the validator — run it from the repo root:
 
 ```bash
-grep -rni "example.com\|m-remis.github.io/static-web-template\|lorem ipsum\|Company\|Your Name\|name@example.com\|Times Square" \
+node launch-check.js
+```
+
+It catches placeholder text, fake contact data (`r@r.sk`, `+421 000…`, IČO/DIČ
+of `0`), broken/missing asset paths, manifest icon paths, a domain that doesn't
+match across files, and a missing `og:image`. Drive it to `PASS` before
+shipping. Full details (every check, the flags, the error codes) are in
+`LAUNCH-CHECK.md`.
+
+A quick grep is still useful as a second pass for stock strings the validator's
+heuristics might not know:
+
+```bash
+grep -rni "example.com\|m-remis.github.io/static-web-template\|lorem ipsum\|Times Square\|name@example.com" \
   --exclude-dir=.git --exclude=CLIENT-CHECKLIST.md .
 ```
 
-Re-run it right before pushing. A clean result (only intentional hits) means
-nothing got left as boilerplate. Do this every single time — the metadata is
-the stuff that silently ships wrong because the page works without it.
-
-Do **not** add generic `m-remis/static-web-template` or
-`Built from m-remis/static-web-template` to this placeholder audit. Those are
+Re-run both right before pushing. Do **not** add `m-remis/static-web-template`
+or `Built from m-remis/static-web-template` to the audit grep — those are
 intentional fingerprint strings, not client placeholders.
 
 ---
@@ -49,141 +78,278 @@ m-remis/static-web-template
 ```
 
 Do not remove it during client cleanup. Do not replace it with the client's
-name. Do not treat it as forgotten boilerplate. It exists as source attribution
-and a searchable marker for sites built from this template.
+name. Do not treat it as forgotten boilerplate. It is source attribution and a
+searchable marker for sites built from this template. Keep it in source
+comments or documentation; it does not need to be visible in the UI unless a
+visible credit was explicitly requested. It currently lives in `index.html`,
+`engine.js`, `styles.css`, `launch-check.js`, `README.md`, `AGENTS.md`,
+`LAUNCH-CHECK.md`, `_block-template.md`, and this file. (`404.html` does **not**
+carry it directly.) The grep below is the source of truth — run it rather than
+trusting this list.
 
-Keep it in source comments or documentation. It does not need to be visible in
-the UI unless a visible credit was explicitly requested.
-
-Before deploy, verify the fingerprint still exists somewhere intentional:
+Before deploy, verify it still exists somewhere intentional:
 
 ```bash
 grep -rni "Built from m-remis/static-web-template\|m-remis/static-web-template" \
   --exclude-dir=.git .
 ```
 
-Expected intentional hits include files such as `AGENTS.md`, `README.md`, source
-comments, or docs. Public client-specific metadata still needs to be replaced;
-the fingerprint does not.
+---
+
+## 1. Content — `site-spec.json` (the 90%)
+
+This is the bulk of the work and almost the only file you touch for a typical
+client. The full shape and every block type are documented in `AGENTS.md`
+("The block engine") and in the long comment at the top of `engine.js` — keep
+both open while editing. Validate after every change:
+
+```bash
+node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
+```
+
+### 1a. Top-level fields
+
+- [ ] **`brand`** — the business name. Appears in the header and footer and is
+  reused in the metadata strings (§1b). One value, rendered in many places.
+- [ ] **`brandImage`** *(optional)* — path to a logo PNG (e.g.
+  `assets/logo.png`) that replaces the header brand **text**. Keep `brand` set:
+  it becomes the logo's alt text and still drives the footer copyright and
+  metadata. A monochrome black-on-transparent logo is auto-inverted to white in
+  dark theme (same `--mono-icon-filter` as card icons); a colored logo needs
+  that filter overridden for `.brand__img` in `styles.css`.
+- [ ] **`footer.note`** — footer tagline. `footer.year` is optional; the engine
+  fills the current year if you omit it.
+- [ ] **`socials[]`** — array of `{ label, headerLabel?, icon, url }`. Give each
+  a **distinct `label`** (it doubles as the `aria-label`); the optional
+  `headerLabel` replaces it in the header/drawer only. `icon` must match a key
+  in the `SOCIAL_ICONS` map in `engine.js` (currently `instagram`, `youtube`,
+  `spotify`, `email`, `phone`). Remove platforms the client doesn't have.
+  - [ ] **New platform?** Add an inline SVG to `SOCIAL_ICONS` in `engine.js`
+    **and** a `.socials__link--<icon> svg { color: … }` brand-tint rule in
+    `styles.css`, then reference the key here. (See `AGENTS.md` → "Socials".)
+- [ ] **`backgrounds[]`** — paths under `assets/background/`, cycled with a
+  crossfade. Each path must match a file you actually drop in (§4). A missing
+  file fails silently to a plain background — it won't crash, but you get no
+  image.
+
+### 1b. Metadata — `site-spec.json` → `meta` (the SEO single source of truth)
+
+`renderHead()` writes the document `<head>` from `meta` at runtime, so this —
+not `index.html` — is the real source for title/description/OG/canonical. The
+matching tags in `index.html` are only a crawler fallback (§3).
+
+- [ ] **`meta.lang`** — e.g. `"sk"`. Sets `<html lang>`.
+- [ ] **`meta.domain`** — the canonical URL, e.g. `"https://example.com/"`.
+  Drives `og:url` and the canonical link, and `launch-check` makes the sitemap
+  and robots agree with it. **Must be the real domain.**
+- [ ] **`meta.title`** — page title + `og:title`.
+- [ ] **`meta.description`** — meta description + `og:description` fallback.
+- [ ] **`meta.ogDescription`** — optional; only if you want the social text to
+  differ from `description`.
+- [ ] **`meta.author`**.
+- [ ] **`meta.themeColor`** — the **initial** browser chrome color; match your
+  dark `--bg-base` (§5). `applyTheme()` then keeps it in sync with the active
+  theme at runtime.
+- [ ] **`meta.ogType`** — usually `"website"`.
+- [ ] **`meta.ogImage`** — path to the social-share preview image. **Until this
+  is set (or an `og:image` exists in `index.html`), `launch-check` fails** — no
+  share preview is an error, not a warning. Make a real one.
+- [ ] **`meta.twitterCard`** — `"summary"` or `"summary_large_image"`.
+- [ ] **`meta.analytics`** (optional) — the footer visitor count. Shape:
+  `{ countUrl, countLabel?, dashboardUrl? }` (e.g. a GoatCounter
+  `/counter/TOTAL.json` endpoint). Omit the whole object for no count and no
+  request. Note the actual *tracking* script is separate and optional — add it
+  to `index.html` yourself (§3); this object only controls the displayed number.
+
+### 1c. Sections + blocks (`sections[]`)
+
+`sections` is a **top-level** key (a sibling of `brand`, `meta`, `footer`), not
+nested under `meta`. It is an **ordered array** — the order IS the nav order and the page
+order. Each entry is `{ id, label, title?, blocks: [...] }`:
+
+- [ ] **`id`** — unique, URL-hash-friendly (letters/numbers/`-`/`_`). Used as
+  the tab id and the URL hash. There is **no** separate nav list and **no**
+  per-id render branch anymore — renaming an id is safe; just keep it unique.
+- [ ] **`label`** — the nav tab text. Missing label = blank tab (warned).
+- [ ] **`title`** — optional `<h2>` at the top of the section. A section that
+  leads with a `hero` block usually omits it.
+- [ ] **`blocks[]`** — ordered content blocks, each `{ "type": …, … }`.
+  Reorder a section by reordering its blocks. Supported types: `hero`, `text`,
+  `cards`, `links`, `map`, `slideshow`, `table`, `faq`, `gallery`, `photo`,
+  `hours`, `review`, `video` — shapes in `AGENTS.md` and the `engine.js`
+  header comment.
+
+Per-block placeholders to hunt down for a new client:
+
+- [ ] **`hero`** — `eyebrow` / `title` / `lead`. `<em>…</em>` in `title`/`lead`
+  renders in the accent color. Authored HTML only, never client-supplied raw
+  input. Don't leave a stub lead — short hero copy is warned.
+- [ ] **`text`** — replace any template prose. `<em>`/`<a>` allowed. If a `text`
+  block has a real outbound link, make sure it's the client's, not the
+  template author's.
+- [ ] **`cards`** — `items[]` of `{ title, body, meta?, url?, icon? }`. With
+  `linked: true`, each card with a `url` becomes a link; replace `#`/dummy URLs.
+  An `icon` path adds a monochrome icon to the left of the text (vertically centered) — a **black PNG on a
+  transparent background** (black-on-transparent style), pointing at a real file in
+  `assets/`. It is auto-inverted to white in dark theme, so one asset covers
+  both themes. Cards do not take background photos.
+- [ ] **`links`** (contact rows) — prefer **`use`**: a list of keys resolved
+  against `business`/`socials` (e.g. `"use": ["phone","email","instagram"]`),
+  so a number/handle is typed once in `business` and reused. You can also add
+  explicit `items[]` of `{ label, handle, url, icon?, kind? }`. A `use` key that
+  matches nothing is warned (`LINK_USE_UNRESOLVED`). Rows show a small kind
+  label ("Telefón", "Instagram", …) over the value automatically for known
+  icons — set `kind` on inline items to control it. `"layout": "grid"` renders
+  up to a handful of contacts as side-by-side tiles instead of stacked rows.
+  **Replace the template
+  `r@r.sk` / `+421 000 000 00` defaults in `business`** — both are caught as
+  fake by `launch-check`.
+- [ ] **`map`** — `mode: "embed"` (Google Maps → Share → Embed → copy the
+  iframe `src` into `embed`) or `mode: "static"` (themed card, no iframe).
+  `url`/`embed` can be omitted to **fall back to `business.mapUrl`/`mapEmbed`**
+  (the single-source-of-truth path). Set `label`/`address` for the accessible
+  fallback text. **Any template default location must be replaced.**
+- [ ] **`table`** (e.g. a price list) — `headings[]` + `rows[][]`. The last
+  column is right-aligned/accent-styled, which reads as a price column. A
+  pricing-looking section with no price-like content (`€`, `od`, `dohodou`, …)
+  is warned.
+- [ ] **`faq`** (accordion) — `items[]` of `{ q, a }` (both required). `q` is
+  plain text; `a` allows `<em>`/`<a>` (authored only). Optional `name`/`blurb`
+  heading. A short answer (<15 chars) is warned.
+- [ ] **`slideshow`** — `slides[]` of `{ src, title?, caption?, text? }`
+  (`src` required). 1 slide = framed image; 2+ = carousel with lightbox.
+- [ ] **`gallery`** — `images[]` of `{ src, thumb?, title?, caption?, text? }`,
+  optional `columns` (2–4). Grid of tiles sharing the slideshow's lightbox.
+  `thumb` is an optional smaller rendition used for the tile (the lightbox opens
+  the full `src`) — generate one for big photos so the grid loads fast. Give
+  images a `title`/`caption` — a gallery image with no text is flagged for
+  missing alt.
+- [ ] **`photo`** — single-image sugar: `{ src, title?, caption?, text? }`.
+- [ ] **`hours`** — opening-hours table. Carries **no** data of its own; it reads
+  `business.hours` (the single source of truth) and highlights the current day.
+  Optional `name`/`blurb` heading. Make sure `business.hours` is filled in (§1a /
+  the `business` block) — an empty `hours` object renders nothing.
+- [ ] **`review`** — "leave a review" call-to-action. `items[]` of
+  `{ label, url, platform? }`. Each item is an **outbound link** to where reviews
+  actually live (Google, Facebook, …) — it does **not** collect or store reviews
+  (there's no backend). `platform` (`google` / `facebook`) adds a brand icon;
+  any other value renders a generic star. Replace any template URL with the
+  client's real review page (for Google, the direct
+  `https://search.google.com/local/writereview?placeid=…` deep link is best).
 
 ---
 
-## 1. Content — `script.js` → the `SITE` object (the 90%)
+## 2. New block *type* (only if the client needs one)
 
-Everything here is in the block marked `◀━━ EDIT THIS BLOCK` at the top of
-`script.js`. This is the bulk of the work.
+Renaming/reordering sections is just a `site-spec.json` edit — never code. A
+genuinely new **kind** of block (opening hours, FAQ accordion, pricing card,
+class schedule) is the only thing that's ever real code, and it's small:
 
-- [ ] **`dataUrl`** — leave `null` for a static one-and-done client. Set to a
-  JSON endpoint only if the client will self-edit content later.
-- [ ] **`brand`** — the business name. Appears in the header, footer, and is
-  reused in several meta strings you'll set in §3.
-- [ ] **`nav[]`** — the tabs. Relabel freely (`Services`→`Repairs`,
-  `Projects`→`Gallery`). **Keep the `id`s consistent** with the render
-  logic in `renderContent()` and the `aria-labelledby` panel ids — `home`,
-  `services`, `find-me`, `projects`, `contact` are wired by id. Renaming an
-  `id` without updating `renderContent()` breaks that section.
-- [ ] **`intro.eyebrow`** — small uppercase kicker above the hero title.
-- [ ] **`intro.title`** — hero headline. `<em>…</em>` renders in the accent
-  color. Authored HTML only — never client-supplied raw input.
-- [ ] **`intro.lead`** — hero paragraph. Contains a live `<a>` — **replace the
-  `michal-remis.com` link**, it's the template author's contact.
-- [ ] **`services.title`** + **`services.items[]`** — array of `{title, body}`.
-  Add/remove freely; the grid reflows.
-- [ ] **`findMe.title`** + **`findMe.blurb`** — section heading + intro text.
-- [ ] **`findMe.mapEmbed`** — Google Maps → Share → Embed → copy the `src`.
-  **Default is Times Square, NY — must change.**
-- [ ] **`findMe.mapUrl`** — the normal share link for the "Open in Maps" button.
-  **Also defaults to Times Square — change it.**
-- [ ] **`findMe.mapLabel`** — accessible label for the map iframe.
-- [ ] **`projects.title`** + **`projects.items[]`** — `{title, body, meta, url}`.
-  These cards are clickable; `url: "#"` placeholders must be replaced or
-  pointed somewhere real.
-- [ ] **`contact.title`** + **`contact.blurb`** — heading + intro.
-- [ ] **`contact.items[]`** — `{label, handle, url}`. **Defaults are
-  `name@example.com` and `+1 (000) 000-0000`** — both must change. Keep the
-  `mailto:` / `tel:` schemes correct.
-- [ ] **`footer.note`** — footer tagline (currently Lorem). `footer.year` is
-  auto — leave it.
-- [ ] **`socials[]`** — `{label, icon, url}`. Defaults are three dummy
-  Instagram/YouTube links. Replace URLs, give each a **distinct `label`**
-  (it doubles as the `aria-label`). `icon` must match a key in
-  `SOCIAL_ICONS`. Remove entries the client doesn't have.
-    - [ ] **New platform?** Add an inline SVG to the `SOCIAL_ICONS` map in
-      `script.js` **and** a `.socials__link--<icon> svg { color: … }` brand-tint
-      rule in `styles.css`, then reference the key here.
-- [ ] **`backgrounds[]`** — paths under `assets/background/`. Must match the
-  files you actually drop in (§4). Missing files fail silently to a plain
-  background, so a stale path won't crash — but you'll get no image.
+- [ ] Write `buildX(block)` in `engine.js` (pure DOM builder — reads only its
+  `block` arg, never `SITE`), returning a node/fragment/`null`.
+- [ ] Add `yourtype: buildX` to the `BLOCK_RENDERERS` map.
+- [ ] Add the matching CSS in `styles.css`.
+- [ ] Document the block's fields in the top-of-file `BLOCK TYPES` comment in
+  `engine.js`, the block table in `AGENTS.md`, and `BLOCK_RULES` in
+  `launch-check.js` (so the validator doesn't false-fail on the new type).
+- [ ] Use `{ "type": "yourtype", … }` in any section's `blocks`.
+
+Full walkthrough in `AGENTS.md` → "Adding a NEW block type". Once built, the
+block is reusable across all future clients — growing a tested block library is
+the real product value.
 
 ---
 
-## 2. New section *type* (only if the client needs one)
+## 3. Metadata mirrors / SEO files — the easy-to-forget ones
 
-Renaming/reordering existing sections is just a `SITE.nav` edit. But a genuinely
-new **kind** of section (opening hours, price list, class schedule, menu) is the
-only thing that's ever real code:
+`meta` in `site-spec.json` (§1b) is authoritative, but these files carry their
+own copies for crawlers, PWA, and search, and ship wrong if you're not
+deliberate. `launch-check` cross-checks most of them against `meta.domain`.
 
-- [ ] Add a render branch in `renderContent()` in `script.js` (the existing ones
-  are type-specific: `services`/`projects` = card grids, `find-me` = map,
-  `contact` = link list).
-- [ ] Add the matching CSS block in `styles.css`.
-- [ ] Add the `SITE.nav` entry + the `SITE` data for it.
-- Tip: once built, these are reusable across future clients — grow a library.
+### `index.html` (static crawler fallback)
 
----
+The engine overwrites these from `meta` at runtime, but crawlers/scrapers that
+don't run JS see the static values — keep them roughly matching `meta`:
 
-## 3. Metadata / SEO / sharing — the easy-to-forget files
-
-These don't affect the visible page, so they ship wrong if you're not
-deliberate. **All of these need the real domain and business name.**
-
-### `index.html`
-
-- [ ] `<title>` — currently `Company — Name`.
-- [ ] `<meta name="description">` — Lorem ipsum placeholder.
-- [ ] `<meta name="author">` — currently `Name`.
-- [ ] `<meta name="theme-color">` — `#0e0f13`; match your dark `--bg-base` (§5).
-- [ ] `<meta property="og:title">` — `Company — Name`.
-- [ ] `<meta property="og:description">` — Lorem ipsum.
-- [ ] **`<meta property="og:url">`** — `https://m-remis.github.io/static-web-template/`.
-- [ ] **`<link rel="canonical">`** — same template URL; must be the real domain.
+- [ ] `<title>`, `<meta name="description">`, `<meta name="author">`.
+- [ ] `<meta name="theme-color">` — match your dark `--bg-base` (§5).
+- [ ] `<meta property="og:title">` / `og:description` / `og:site_name` /
+  **`og:url`**.
+- [ ] **`og:image` + `twitter:image`** — absolute URLs (crawlers don't reliably
+  resolve relative ones), so they state the domain explicitly; update at
+  domain changes along with the canonical (see `AGENTS.md` Workflow E).
+- [ ] **`<link rel="canonical">`** — must be the real domain.
+- [ ] **Analytics (optional)** — the template ships **without** an analytics
+  script. To add privacy-friendly tracking, drop a GoatCounter
+  `<script ... data-goatcounter="…" src="https://gc.zgo.at/count.js">` into
+  `<head>` (or your provider's equivalent). This is separate from
+  `meta.analytics`, which only renders the visible footer count.
 
 ### `404.html`
 
-- [ ] `<title>` — `404 — Not found · Company`.
-- [ ] `<meta name="theme-color">` — `#0e0f13` (it's also overwritten at runtime
-  from `--bg-base`, but set the static fallback to match anyway).
+- [ ] `<title>` (e.g. `404 — Not found · Brand`).
+- [ ] `<meta name="theme-color">` — also overwritten at runtime from
+  `--bg-base`, but set the static fallback to match.
+- [ ] **Asset links stay root-absolute** (`/styles.css`, `/404.css`, the
+  favicon, and the home link `/`). The page is served for
+  *nested* missing paths too (`/foo/bar`), where a relative `styles.css`
+  resolves to `/foo/styles.css` and the page renders unstyled. Only if the
+  site deploys under a subpath (GitHub Pages project site) do these need
+  that prefix instead.
 
 ### `site.webmanifest`
 
-- [ ] `name` — `Company`.
-- [ ] `short_name` — `Company`.
-- [ ] `description` — Lorem ipsum.
-- [ ] `background_color` — `#0e0f13` → match dark `--bg-base`.
-- [ ] `theme_color` — `#0e0f13` → match dark `--bg-base`.
+- [ ] `name`, `short_name`, `description`.
+- [ ] `background_color`, `theme_color` — match your dark `--bg-base`.
+- [ ] **Icon `src` paths must resolve as written.** They currently point at
+  `assets/web-app-manifest-…png`; a root-absolute `/web-app-manifest-…png` is a
+  common mistake and is a hard `launch-check` failure.
 
 ### `sitemap.xml`
 
-- [ ] **`<loc>`** — `https://m-remis.github.io/static-web-template/`.
+- [ ] **Do not edit by hand — run `node generate-static.mjs`.** The `<loc>`
+  comes from `meta.domain` and `<lastmod>` from the spec file's mtime;
+  `launch-check` still verifies the `<loc>` matches (error on mismatch) and
+  fails `GENERATED_STALE` on a hand edit.
 
 ### `robots.txt`
 
-- [ ] **`Sitemap:`** line — points at the template's sitemap URL.
+- [ ] **`Sitemap:`** line — host must match `meta.domain`'s host.
+- [ ] **AI-crawler stanza** — the explicit `Allow: /` group for AI agents
+  (GPTBot, ClaudeBot, PerplexityBot, …) is an intentional opt-in signal; keep
+  it unless the client wants AI crawlers blocked, in which case flip those
+  groups to `Disallow: /`.
+
+### `llms.txt`
+
+- [ ] **Do not edit by hand — run `node generate-static.mjs`.** This is a
+  plain-markdown summary of the site for LLM crawlers/agents — important here
+  because `index.html` is an empty shell and non-JS crawlers see nothing. It
+  is **generated from `site-spec.json`** (along with `sitemap.xml` and the
+  static JSON-LD tag in `index.html`), and `launch-check` fails with
+  `GENERATED_STALE` if any is out of date, so it can't silently drift.
 
 ### `LICENSE`
 
-- [ ] Copyright line — `Copyright (c) 2026 Your Name`. Update the name (and year
-  if you care). Or swap the whole license if a client site shouldn't be MIT.
+- [ ] Copyright line — update the name/year, or swap the license entirely if a
+  client site shouldn't be MIT.
 
 ---
 
 ## 4. Assets — `assets/`
 
-- [ ] **`assets/favicon.ico`** — replace with the client's favicon. Referenced
-  by `index.html` and `404.html`.
-- [ ] **`assets/background/`** — drop in the client's background image(s).
-- [ ] Make sure every file here is listed in `SITE.backgrounds` (§1) and vice
-  versa — one is picked at random per visit.
+- [ ] **`assets/favicon.ico`** + `favicon-96x96.png` + `apple-touch-icon.png` —
+  replace with the client's. Referenced by `index.html`/`404.html`/manifest.
+- [ ] **`assets/web-app-manifest-192x192.png` / `-512x512.png`** — the PWA
+  icons referenced by `site.webmanifest` (§3).
+- [ ] **`assets/background/`** — the client's background image(s); every file
+  must be listed in the top-level `backgrounds` array and vice versa.
+- [ ] **`assets/slides/`** — slideshow/gallery images referenced by those
+  blocks. Unreferenced files here are warned (`UNUSED_ASSET`); referenced-but-
+  missing files are a hard failure.
+- [ ] **Social-share image** — create the `meta.ogImage` file (§1b).
+- [ ] **Sizes** — `launch-check` warns on images over ~900 KB
+  (`--max-image-kb`). Compress large slides/backgrounds before shipping.
 
 ---
 
@@ -191,22 +357,22 @@ deliberate. **All of these need the real domain and business name.**
 
 All color lives in **two token blocks**: `[data-theme="dark"]` and
 `[data-theme="light"]`, grouped by comment (Backgrounds, Text, Menu/nav,
-Accents & lines, advanced overlay/header). Re-skinning the whole site — both
-themes, the 404 page, the browser chrome — happens here and nowhere else.
+Accents & lines, advanced overlay/header, Carousel). Re-skinning the whole site
+— both themes, the 404 page, the browser chrome — happens here and nowhere else.
 
 - [ ] **`--accent`** + **`--accent-soft`** (both themes) — carries most of the
   brand feel; the fastest high-impact change.
 - [ ] **`--bg-base`** (both themes) — page background. If you change the dark
-  one, also update the three hardcoded `#0e0f13` mirrors in §3
-  (`index.html` theme-color, `404.html` theme-color, manifest ×2).
-- [ ] Remaining tokens (text, menu, border, overlays) — adjust if the brand
-  needs it; defaults are a sane neutral.
-- [ ] **Do NOT** inline hex values into individual CSS rules — add a named
-  variable to **both** theme blocks instead.
-- [ ] **Exception:** social brand colors (`.socials__link--instagram svg`,
-  `--youtube`, etc.) are intentionally the platform's brand color, identical
-  in both themes, and live as per-platform rules — not in the token blocks.
-  Leave them unless adding a new platform (§1).
+  one, update its mirrors: `index.html` theme-color, `404.html` theme-color,
+  and `site.webmanifest` `theme_color` + `background_color` (§3).
+- [ ] Remaining tokens (text, menu, border, overlays) — adjust to taste;
+  defaults are a sane neutral.
+- [ ] **Do NOT** inline hex into individual rules — add a named variable to
+  **both** theme blocks instead.
+- [ ] **Exception:** social brand colors (`.socials__link--instagram svg`, etc.)
+  are intentionally the platform's brand color, identical in both themes, and
+  live as per-platform rules — not in the token blocks. Leave them unless adding
+  a platform (§1a).
 
 ---
 
@@ -214,57 +380,73 @@ themes, the 404 page, the browser chrome — happens here and nowhere else.
 
 - [ ] Push to a repo, enable Pages (Settings → Pages → deploy from branch).
 - [ ] `.nojekyll` is already present — leave it; it makes Pages serve files
-  as-is.
+  as-is (otherwise files/directories beginning with `_` would be
+  Jekyll-processed).
 - [ ] **Custom domain?** Create a `CNAME` file (no extension) in the repo root
-  containing just the domain, e.g. `clientshop.com`. The template ships
-  **without** one on purpose — add it per client.
-- [ ] If using the default `username.github.io/repo` URL instead, the canonical
-  / og:url / sitemap / robots URLs from §3 must reflect *that* path, not a
-  custom domain.
-- [ ] Works identically on Netlify / Vercel / Cloudflare Pages — just point at
-  the folder.
+  containing just the domain, e.g. `example.com`. The template ships **without**
+  one on purpose. `launch-check` warns if the `CNAME` host differs from
+  `meta.domain`'s host (legitimate for www↔apex redirects, so it's a warning).
+- [ ] If using the default `username.github.io/repo` URL instead of a custom
+  domain, `meta.domain` and the §3 mirrors must reflect *that* path.
+- [ ] Works identically on Netlify / Vercel / Cloudflare Pages — point at the
+  folder, no build command.
 
 ---
 
-## 7. Verify (no build, no tests — manual)
+## 7. Verify (no build, no tests — manual + the validator)
 
-- [ ] Open `index.html` (or `python3 -m http.server 8000`) and check: light/dark
-  toggle, every nav tab, mobile menu at a narrow viewport, the 404 page, and
-  a clean console. **A stray comma or missing quote in the `SITE` object
-  silently blanks the page** — there's no build step to catch it, so if the
-  page is blank, open the console: a red `SyntaxError` points at the line.
+- [ ] **Validate + preflight:**
+  `node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"`,
+  `node --check engine.js`, then `node launch-check.js` to `PASS`. Tip: editing
+  `site-spec.json` in VS Code / IntelliJ gives live validation against
+  `site-spec.schema.json` (wrong block type or field shows red as you type) —
+  the fastest way to catch shape mistakes before the preflight.
+- [ ] **Serve and click through** — `python3 -m http.server 8000` (not
+  `file://`, which fails the fetch and shows the error screen). Check: light/dark
+  toggle, every nav tab, each block type renders, the mobile menu at a narrow
+  viewport, the 404 page (`/404.html`), and a clean console.
 - [ ] **Mobile scroll test (iOS Safari especially):** open a tab other than the
   first, scroll down, refresh — it must land at the top of that tab, not
-  pre-scrolled to a card. Don't touch the `forceTop` / `scrollRestoration`
-  logic; it exists for exactly this.
+  pre-scrolled to a card. Don't touch the scroll-restoration logic
+  (`history.scrollRestoration` + the instant top-scroll in `show()`); it
+  exists for exactly this.
 - [ ] **Header-fit test:** drag the window slowly across mid-widths (~640px →
-  wide). The header must flip to the hamburger the instant the nav and
-  socials approach, no overlap frame, and flip back when widened. Confirm the
-  socials show (stacked, with labels) in the drawer in that mode.
-- [ ] Re-run the §0 grep — confirm no boilerplate survived.
+  wide). The header must flip to the hamburger the instant the nav and socials
+  approach, no overlap frame, and flip back when widened. Confirm the socials
+  show (stacked, with labels) in the drawer in that mode.
+- [ ] Re-run the §0 audit — confirm no boilerplate survived.
 
 ---
 
 ## Quick reference — every placeholder, by file
 
-| File               | Placeholder(s) to change                                                         |
-|--------------------|----------------------------------------------------------------------------------|
-| `script.js`        | The entire `SITE` object (§1); `SOCIAL_ICONS` only for new platforms             |
-| `styles.css`       | The two `[data-theme]` token blocks (§5)                                         |
-| `index.html`       | title, description, author, theme-color, og:title/description/**url**, canonical |
-| `404.html`         | title, theme-color                                                               |
-| `site.webmanifest` | name, short_name, description, background_color, theme_color                     |
-| `sitemap.xml`      | `<loc>` URL                                                                      |
-| `robots.txt`       | `Sitemap:` URL                                                                   |
-| `LICENSE`          | copyright name/year (or whole license)                                           |
-| `assets/`          | favicon.ico + background images                                                  |
-| `CNAME`            | create per client (custom domain only)                                           |
-| Fingerprint        | `Built from m-remis/static-web-template` / `m-remis/static-web-template` — keep  |
+| File               | Placeholder(s) to change                                                             |
+|--------------------|--------------------------------------------------------------------------------------|
+| `site-spec.json`   | Everything (§1): `brand`, `meta` (incl. domain/og:image/analytics), `sections`, `socials`, `backgrounds` |
+| `engine.js`        | Only for a new block type (§2) or a new social platform's `SOCIAL_ICONS` entry       |
+| `styles.css`       | The two `[data-theme]` token blocks (§5); a new platform's brand-tint rule           |
+| `index.html`       | Static meta fallback + canonical + optional analytics script (§3)                    |
+| `404.html`         | title, theme-color                                                                   |
+| `site.webmanifest` | name, short_name, description, background_color, theme_color, icon paths             |
+| `sitemap.xml`      | nothing by hand — GENERATED from `meta.domain` by `generate-static.mjs`              |
+| `robots.txt`       | `Sitemap:` URL host (= `meta.domain` host)                                           |
+| `llms.txt`         | whole file — rewrite for the client (plain-text mirror of the spec's content, §3)    |
+| `LICENSE`          | copyright name/year (or whole license)                                               |
+| `assets/`          | favicons, PWA icons, backgrounds, slides/gallery images, the `og:image`              |
+| `CNAME`            | create per client (custom domain only)                                               |
+| Fingerprint        | `Built from m-remis/static-web-template` — keep; do not replace or remove            |
 
 **Hardcoded values that appear in more than one place — change together:**
 
-- Domain `m-remis.github.io/static-web-template` → `index.html` (×2), `sitemap.xml`, `robots.txt`
-- Dark bg `#0e0f13` → `styles.css` `--bg-base`, `index.html` theme-color, `404.html` theme-color, `site.webmanifest` (
-  ×2)
-- Business name → `SITE.brand`, `index.html` titles/og, `404.html` title, `site.webmanifest` name/short_name
-- Template fingerprint `Built from m-remis/static-web-template` / `m-remis/static-web-template` → intentional; do not replace or remove
+- **Domain** → `meta.domain`, `index.html` (canonical + og:url + the absolute
+  og:image/twitter:image URLs), `robots.txt` `Sitemap:`, and `CNAME` if used —
+  plus a `node generate-static.mjs` run for the sitemap `<loc>`.
+  (`launch-check` cross-checks most of these.)
+- **Dark bg `--bg-base`** → `styles.css` (both you change), `index.html`
+  theme-color, `404.html` theme-color, `site.webmanifest` `theme_color` +
+  `background_color`.
+- **Business name** → `brand`, `meta.title`/`meta.description`/og, `404.html`
+  title, `site.webmanifest` `name`/`short_name`.
+- **Template fingerprint** → intentional; do not replace or remove.
+
+<!-- Built from m-remis/static-web-template -->

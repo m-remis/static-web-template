@@ -4,44 +4,45 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <title>404 — Not found · Company</title>
+    <title>404 — Page not found · Company</title>
     <meta name="robots" content="noindex"/>
     <meta name="theme-color" content="#0e0f13" id="themeColorMeta"/>
 
     <!--
-      No <base> tag: all asset paths below are relative, so they resolve
-      correctly whether the site is deployed at the domain root
-      (https://example.com/404.html) or as a GitHub Pages project site
-      (https://username.github.io/repo/404.html). GitHub Pages serves this
-      page from the site root in both cases, so nothing needs editing per deploy.
+      Asset paths here are ROOT-ABSOLUTE on purpose. This page is served for
+      ANY missing URL, including nested ones (/foo/bar) — a relative
+      "styles.css" would resolve against the missing directory (/foo/styles.css),
+      the host would answer that with this 404 page again, and the page would
+      render unstyled. Absolute paths resolve from the domain root at every
+      depth. This site deploys at the domain root; if a client site ever
+      deploys under a subpath (e.g. a GitHub Pages project site, /repo/…),
+      these need that prefix.
     -->
 
-    <link rel="icon" href="assets/favicon.ico" sizes="any"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
-          rel="stylesheet"/>
-    <link rel="stylesheet" href="styles.css"/>
-    <link rel="stylesheet" href="404.css"/>
+    <link rel="icon" href="/assets/favicon.ico" sizes="any"/>
+    <!-- Fonts come self-hosted via the @font-face rules in styles.css — same
+         as index.html; no Google Fonts request chain. -->
+    <link rel="stylesheet" href="/styles.css"/>
+    <link rel="stylesheet" href="/404.css"/>
 </head>
 <body data-theme="dark">
 <main class="error">
     <p class="error__code">404</p>
-    <h1 class="error__title">This page wandered off.</h1>
-    <p class="error__lead">The link is broken, the page moved, or it never existed. Either way — let's get you back.</p>
-    <a class="error__home" href=".">← Back to home</a>
+    <h1 class="error__title">This page went for a walk.</h1>
+    <p class="error__lead">The link is broken, the page moved, or it never existed. Either way — let's get you back home.</p>
+    <a class="error__home" href="/">← Back to home</a>
 </main>
 
 <script>
     // Match the saved theme so the 404 page feels continuous with the site.
+    // Dark is the default; a previously saved choice wins. System setting is ignored.
     (function () {
         var t = "dark";
 
         try {
-            t = localStorage.getItem("theme-preference") ||
-                (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+            t = localStorage.getItem("theme-preference") || "dark";
         } catch (e) {
-            // localStorage or matchMedia can fail in locked-down browsers.
+            // localStorage can fail in locked-down browsers.
         }
 
         document.body.dataset.theme = t;
@@ -55,8 +56,4 @@
     })();
 </script>
 </body>
-<!--
-  Built from m-remis/static-web-template
-  https://github.com/m-remis/static-web-template
--->
 </html>

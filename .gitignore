@@ -33,3 +33,10 @@ build/
 .cache/
 .parcel-cache/
 .tmp/
+
+# Local staging: raw photo originals + source docs (processed into
+# assets/slides/, never deployed).
+ai/
+
+# Claude Code config (incl. machine-local settings).
+.claude/

@@ -1,31 +1,40 @@
-/* 404.css — only the 404-specific layout.
+/* 404.css - only the 404-specific layout.
    Colors, fonts, and theme tokens are inherited from styles.css,
    which this page also loads. Re-theming styles.css updates this page too. */
 
 body {
     display: grid;
     place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 1.5rem;
     text-align: center;
 }
 
 .error {
-    max-width: 30rem;
+    max-width: 32rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .error__code {
     font-family: var(--font-serif);
-    font-style: italic;
+    font-weight: 700;
     font-size: clamp(5rem, 22vw, 9rem);
     line-height: 1;
     margin: 0;
     color: var(--accent);
-    letter-spacing: -0.02em;
+    letter-spacing: 0.02em;
+    /* subtle glow so the giant number feels lit rather than flat */
+    text-shadow: 0 0 40px var(--accent-soft);
 }
 
 .error__title {
     font-family: var(--font-serif);
-    font-weight: 400;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     font-size: clamp(1.6rem, 6vw, 2.2rem);
     margin: 0.5rem 0 0.75rem;
 }
@@ -34,30 +43,38 @@ body {
     color: var(--text-soft);
     margin: 0 auto 2rem;
     max-width: 24rem;
+    line-height: 1.6;
 }
 
 .error__home {
-    display: inline-block;
-    padding: 0.7rem 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     color: var(--text);
     text-decoration: none;
     font-weight: 500;
     background: var(--accent-soft);
-    transition: border-color var(--transition), transform var(--transition);
+    transition: border-color var(--transition), transform var(--transition), background var(--transition);
 }
 
-.error__home:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
+/* Hover gated behind (hover: hover), same policy as styles.css — touch never
+   gets sticky hover; the :active press feedback below still applies. */
+@media (hover: hover) {
+    .error__home:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+}
+
+.error__home:active {
+    transform: translateY(0);
 }
 
 .error__home:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
 }
-/*
-  Built from m-remis/static-web-template
-  https://github.com/m-remis/static-web-template
-*/
+

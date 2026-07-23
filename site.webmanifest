@@ -1,13 +1,17 @@
 {
   "name": "Company",
   "short_name": "Company",
-  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  "description": "A small, fast, static site rendered from a single JSON spec.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0e0f13",
   "theme_color": "#0e0f13",
   "icons": [
-    { "src": "assets/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+    {
+      "src": "assets/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
   ]
 }

@@ -1,53 +1,110 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="site-booting">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <title>Company — Name</title>
-    <meta name="description" content="Lorem ipsum dolor sit amet, consectetur adipiscing elit."/>
-    <meta name="author" content="Name"/>
+    <!-- Metadata below is the SSR fallback for crawlers/scrapers. The engine
+         (renderHead in engine.js) overwrites it from SITE.meta in site-spec.json
+         at load — edit the values THERE, not here, and keep these in sync. -->
+    <title>Static Web Template — a JSON-driven static site engine</title>
+    <meta name="description" content="A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies."/>
+    <meta name="author" content="Static Web Template"/>
     <meta name="theme-color" content="#0e0f13"/>
 
     <!-- Open Graph / social -->
     <meta property="og:type" content="website"/>
-    <meta property="og:title" content="Company — Name"/>
-    <meta property="og:description" content="Lorem ipsum dolor sit amet, consectetur adipiscing elit."/>
-    <meta property="og:url" content="https://m-remis.github.io/static-web-template/"/>
+    <meta property="og:site_name" content="Static Web Template"/>
+    <meta property="og:title" content="Static Web Template — a JSON-driven static site engine"/>
+    <meta property="og:description" content="A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies."/>
+    <meta property="og:url" content="https://example.com/"/>
+    <!-- Add an og:image once you have one (see meta.ogImage in site-spec.json);
+         the engine + generate-static.mjs will stamp og:image/twitter:image then. -->
     <meta name="twitter:card" content="summary"/>
 
-    <link rel="canonical" href="https://m-remis.github.io/static-web-template/"/>
+    <link rel="canonical" href="https://example.com/"/>
     <link rel="icon" href="assets/favicon.ico" sizes="any"/>
     <link rel="manifest" href="site.webmanifest"/>
+    <!-- Non-standard hint at the LLM-readable summary. Discovery is by
+         convention (/llms.txt at the root, like robots.txt) — this link is
+         belt-and-braces for tools that parse HTML for it. -->
+    <link rel="alternate" type="text/markdown" href="llms.txt" title="LLM-friendly content"/>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
-          rel="stylesheet"/>
+    <!-- Fonts are self-hosted variable woff2 (declared in styles.css) — no
+         Google Fonts request chain. Preload latin + latin-ext of both families
+         for the first paint. crossorigin is required on font preloads even
+         same-origin. -->
+    <link rel="preload" href="assets/fonts/oswald-latin.woff2" as="font" type="font/woff2" crossorigin/>
+    <link rel="preload" href="assets/fonts/oswald-latin-ext.woff2" as="font" type="font/woff2" crossorigin/>
+    <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin/>
+    <link rel="preload" href="assets/fonts/inter-latin-ext.woff2" as="font" type="font/woff2" crossorigin/>
 
     <link rel="stylesheet" href="styles.css"/>
+
+    <!-- Parallelize the content waterfall: without these hints the browser
+         only discovers site-spec.json after engine.js has downloaded, parsed,
+         and started executing (loadContent() runs on boot). Preloading both
+         lets them fetch concurrently instead of serially. -->
+    <link rel="modulepreload" href="engine.js"/>
+    <link rel="preload" href="site-spec.json" as="fetch" crossorigin="anonymous"/>
+
+    <!-- Anti-flash safety net: html.site-booting hides the shell until the
+         engine swaps it to site-ready. If JS is off or fails to load, that
+         swap never happens — so force the page visible for no-JS users. -->
+    <noscript>
+        <style>html.site-booting body { opacity: 1 !important; }</style>
+    </noscript>
+
+    <!-- Static mirror of the runtime JSON-LD for crawlers that don't run JS.
+         GENERATED — do not edit: run `node generate-static.mjs`. The engine
+         upserts this same tag (by its data-jsonld marker) at boot. -->
+    <script type="application/ld+json" data-jsonld="business">{"@context":"https://schema.org","@type":"BikeStore","name":"Static Web Template","legalName":"Static Web Template","telephone":"+1 (000) 000-0000","email":"name@example.com","description":"A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.","url":"https://example.com/","address":{"@type":"PostalAddress","streetAddress":"123 Example Street","addressLocality":"Anytown","postalCode":"00000","addressCountry":"Country"},"hasMap":"https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY","sameAs":["https://instagram.com/","https://youtube.com/","https://spotify.com/"],"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":"Monday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Tuesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Wednesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Thursday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"09:00","closes":"17:00"}]}</script>
+    <!-- Preload of the default tab's first image (the likely LCP element),
+         so it downloads in parallel with engine.js instead of waiting for
+         the render. GENERATED — do not edit: run `node generate-static.mjs`. -->
+    <link rel="preload" data-preload="lcp" as="image" href="assets/slides/mountains.jpg" fetchpriority="high"/>
 </head>
 <body data-theme="dark">
+<!-- Keyboard/screen-reader skip link: jumps past the header to the main
+     content. Visually hidden until focused (see .skip-link in styles.css);
+     targets #main, which is tabindex="-1" so it can receive focus. -->
+<a class="skip-link" href="#main">Skip to content</a>
 <!-- Background layer (image + overlay), painted by JS -->
 <div class="bg" id="bg" aria-hidden="true"></div>
+<div class="bg" id="bg2" aria-hidden="true"></div>
 <div class="bg-overlay" aria-hidden="true"></div>
-
-<!-- Skip link for keyboard users -->
-<a class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
     <a class="brand" href="#home" id="brand" aria-label="Home"></a>
 
-    <!-- Desktop navigation -->
     <nav class="nav-desktop" id="navDesktop" aria-label="Primary"></nav>
 
     <div class="header-actions">
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme"
                 aria-pressed="false">
-            <span class="theme-toggle__icon" aria-hidden="true"></span>
+            <svg class="theme-toggle__icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+                <!-- One shape morphs between a crescent moon (dark) and a rayed sun (light).
+                     The bite is a mask circle that slides away in light mode; the rays
+                     fade in. All transitions are CSS, driven by [data-theme] on <body>. -->
+                <mask id="themeToggleMoonCut">
+                    <rect x="0" y="0" width="24" height="24" fill="#fff"/>
+                    <circle class="theme-toggle__cut" cx="18" cy="9" r="9" fill="#000"/>
+                </mask>
+                <circle class="theme-toggle__core" cx="12" cy="12" r="6"
+                        fill="currentColor" mask="url(#themeToggleMoonCut)"/>
+                <g class="theme-toggle__rays" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="12" y1="1" x2="12" y2="3.5"/>
+                    <line x1="12" y1="20.5" x2="12" y2="23"/>
+                    <line x1="1" y1="12" x2="3.5" y2="12"/>
+                    <line x1="20.5" y1="12" x2="23" y2="12"/>
+                    <line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/>
+                    <line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/>
+                    <line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/>
+                    <line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/>
+                </g>
+            </svg>
         </button>
 
-        <!-- Mobile menu trigger -->
         <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false"
                 aria-controls="navMobile">
             <span class="menu-toggle__bar"></span>
@@ -58,14 +115,26 @@
 </header>
 
 <!-- Mobile navigation (separate behavior from desktop) -->
-<nav class="nav-mobile" id="navMobile" aria-label="Mobile" aria-hidden="true"></nav>
+<nav class="nav-mobile" id="navMobile" aria-label="Mobile" aria-hidden="true" inert></nav>
 <div class="nav-mobile__scrim" id="navScrim" hidden></div>
 
-<main id="main" class="content" tabindex="-1"></main>
+<main id="main" class="content" tabindex="-1">
+    <!-- No-JS fallback: the engine renders all content from site-spec.json,
+         so without JavaScript this page is an empty shell. Content-free by
+         design (no contact data duplicated here — the golden rule); it just
+         explains the situation and points at the plain-text mirror. -->
+    <noscript>
+        <div class="block">
+            <h1>Company</h1>
+            <p>This website requires JavaScript for rendering the content.</p>
+            <p><a href="llms.txt">Text version of the site</a></p>
+        </div>
+    </noscript>
+</main>
 
 <footer class="site-footer" id="siteFooter"></footer>
 
-<script src="script.js" defer></script>
+<script type="module" src="engine.js"></script>
 </body>
 <!--
   Built from m-remis/static-web-template

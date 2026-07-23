@@ -1,0 +1,66 @@
+# _headers — Cloudflare Pages
+
+# Security headers, applied to every response. Doesn't affect caching/perf,
+# just cheap hardening while we're in this file.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=()
+
+# Spec + engine + styles: the files you actually edit. Keep them fresh.
+# Browser may cache briefly but revalidates, so a push shows up fast.
+/site-spec.json
+  Cache-Control: public, max-age=0, must-revalidate
+/llms.txt
+  Cache-Control: public, max-age=300, must-revalidate
+/sitemap.xml
+  Cache-Control: public, max-age=300, must-revalidate
+/robots.txt
+  Cache-Control: public, max-age=300, must-revalidate
+/engine.js
+  Cache-Control: public, max-age=300, must-revalidate
+/business-jsonld.mjs
+  Cache-Control: public, max-age=300, must-revalidate
+/styles.css
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Self-hosted webfonts — effectively immutable; a font change should ship
+# under a new filename (see the tradeoff note below).
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Heavy art that rarely changes — cache hard. `immutable` skips revalidation
+# on a manual browser reload; we already accept the tradeoff (rename or purge
+# once if you swap a file under the same name — see repo docs).
+/assets/background/*
+  Cache-Control: public, max-age=2592000, immutable
+/assets/slides/*
+  Cache-Control: public, max-age=2592000, immutable
+
+# Icons / manifest art and any loose photos under /assets/.
+# Three extensions because the slides mix .jpg and .jpeg (see site-spec.json).
+/assets/*.png
+  Cache-Control: public, max-age=2592000, immutable
+/assets/*.jpg
+  Cache-Control: public, max-age=2592000, immutable
+/assets/*.jpeg
+  Cache-Control: public, max-age=2592000, immutable
+
+# HTML stays revalidating so a redeploy is seen immediately.
+# The root path is matched separately from /*.html — Cloudflare Pages matches
+# _headers against the raw request path, and "/" is never rewritten to
+# "/index.html" before that match happens.
+#
+# The Link header lets Cloudflare send a 103 Early Hints response (needs the
+# Early Hints toggle in the dashboard, Speed → Optimization), so the browser
+# starts these downloads DURING the HTML round-trip instead of after it.
+# Only stable, always-needed resources belong here: stylesheets, fonts, the
+# spec. NOT engine.js (a module — `as=script` preload uses a different
+# credential mode and would double-fetch; the <link rel="modulepreload"> in
+# index.html covers it) and NOT the LCP image (spec-derived — it would drift;
+# generate-static.mjs stamps that preload into index.html instead).
+/
+  Cache-Control: public, max-age=0, must-revalidate
+  Link: </styles.css>; rel=preload; as=style, </site-spec.json>; rel=preload; as=fetch; crossorigin,</assets/fonts/oswald-latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/oswald-latin-ext.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/inter-latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/inter-latin-ext.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

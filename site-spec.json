@@ -1,0 +1,383 @@
+{
+  "$schema": "site-spec.schema.json",
+  "brand": "Static Web Template",
+  "meta": {
+    "lang": "en",
+    "domain": "https://example.com/",
+    "title": "Static Web Template — a JSON-driven static site engine",
+    "description": "A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.",
+    "author": "Static Web Template",
+    "themeColor": "#0e0f13",
+    "ogType": "website",
+    "twitterCard": "summary"
+  },
+  "business": {
+    "legalName": "Static Web Template",
+    "phone": "+1 (000) 000-0000",
+    "email": "name@example.com",
+    "address": {
+      "street": "123 Example Street",
+      "city": "Anytown",
+      "postalCode": "00000",
+      "country": "Country",
+      "label": "123 Example Street, Anytown"
+    },
+    "mapUrl": "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+    "mapEmbed": "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+    "hours": {
+      "mon": "9:00–17:00",
+      "tue": "9:00–17:00",
+      "wed": "9:00–17:00",
+      "thu": "9:00–17:00",
+      "fri": "9:00–17:00",
+      "sat": "By appointment",
+      "sun": "Closed"
+    }
+  },
+  "sections": [
+    {
+      "id": "home",
+      "label": "Overview",
+      "blocks": [
+        {
+          "type": "hero",
+          "eyebrow": "Static Web Template",
+          "title": "One <em>JSON file</em>. A whole website.",
+          "lead": "This entire site — every tab, every block, the metadata, even this sentence — is rendered at runtime from a single <strong>site-spec.json</strong>. No framework, no build step, no dependencies."
+        },
+        {
+          "type": "text",
+          "text": "You are looking at the engine documenting itself. Each tab is a <em>section</em>, and each section is an ordered list of typed <em>blocks</em>. Open <strong>Content blocks</strong> and <strong>Media blocks</strong> to see every block type the engine ships, then read <strong>How it works</strong> for the architecture behind it."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "No build step",
+              "body": "Plain HTML, CSS and vanilla JS served as files. Clone it, edit the spec, deploy to any static host.",
+              "meta": "zero deps"
+            },
+            {
+              "title": "Config-driven blocks",
+              "body": "Add a section or rearrange content by editing JSON. Adding a brand-new block type is a small, local code change.",
+              "meta": "one spec"
+            },
+            {
+              "title": "Resilient by design",
+              "body": "A broken or missing spec shows a calm error screen, never a blank page. A typo in one block never blanks the rest.",
+              "meta": "never blank"
+            }
+          ]
+        },
+        {
+          "type": "slideshow",
+          "slides": [
+            {
+              "src": "assets/slides/mountains.jpg",
+              "title": "The slideshow block",
+              "caption": "One slide is a framed image; two or more become a carousel.",
+              "text": "Arrows, dots, swipe gestures and a lightbox are all built in."
+            },
+            {
+              "src": "assets/slides/lake.jpg",
+              "caption": "Every image on the site shares one lightbox overlay."
+            },
+            {
+              "src": "assets/slides/castle.jpg",
+              "caption": "Hidden tabs' images are warmed in the background for instant switches."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "how",
+      "label": "How it works",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "text",
+          "name": "The single source of truth",
+          "text": "Everything the visitor sees lives in <strong>site-spec.json</strong> — the brand, the nav tabs, every section and block, the footer, the socials, the background images, and the document metadata. <strong>index.html</strong> is an almost-empty shell; <strong>engine.js</strong> fetches the spec on load and builds the page from it. To change what the site says, you edit the spec, not the markup."
+        },
+        {
+          "type": "text",
+          "name": "The block engine",
+          "text": "<strong>sections</strong> is an ordered array, and its order is both the nav order and the page order. Each section is a list of typed blocks, and rendering is one generic dispatch: the engine looks up each block's <em>type</em> in a renderer map and calls the matching builder. There is no per-section special-casing anywhere — which is exactly why adding a new kind of content stays a small change."
+        },
+        {
+          "type": "text",
+          "name": "Resilient by design",
+          "text": "Three failure modes — the spec fails to load, fails to parse, or has no usable sections — all land on the same calm <em>temporarily unavailable</em> screen with a contact escape hatch. The page never blanks and never throws. Unknown block types are skipped with a console warning, so one bad block can't take down the rest of the page."
+        },
+        {
+          "type": "text",
+          "name": "Built for machines too",
+          "text": "Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text <strong>llms.txt</strong>, a <strong>sitemap.xml</strong>, and a schema.org <strong>JSON-LD</strong> block — all stamped by <strong>generate-static.mjs</strong> so they can never drift from what visitors actually see. A dev-only <strong>launch-check.js</strong> validator refuses to let an inconsistent site ship."
+        },
+        {
+          "type": "table",
+          "name": "What's in the project",
+          "blurb": "The files you touch, and the ones the engine owns.",
+          "accentValue": false,
+          "headings": ["File", "What it does"],
+          "rows": [
+            ["site-spec.json", "All content and metadata — the single source of truth"],
+            ["engine.js", "The runtime: block builders, rendering and all UI logic"],
+            ["styles.css", "Styling, layout and the two theme token blocks"],
+            ["index.html", "The shell — header skeleton and an empty main, filled by JS"],
+            ["generate-static.mjs", "Stamps llms.txt, sitemap.xml and the static JSON-LD"],
+            ["launch-check.js", "Pre-launch validator — the gate before you deploy"]
+          ]
+        },
+        {
+          "type": "faq",
+          "name": "Architecture FAQ",
+          "items": [
+            {
+              "q": "Do I need Node or a build tool to run the site?",
+              "a": "No. The deployed site is plain static files. Node is only used by the optional dev tools (generate-static and launch-check) — the live site never runs it."
+            },
+            {
+              "q": "Why does the page need a local web server?",
+              "a": "The engine fetches site-spec.json, and browsers block that fetch over file://. Serve the folder with any static server, e.g. python3 -m http.server 8000, then open the localhost URL."
+            },
+            {
+              "q": "How do I add a brand-new kind of block?",
+              "a": "Write a builder in engine.js and register it in the renderer map, add its CSS, document its shape, then add a validator rule and a schema entry. AGENTS.md walks through the full ripple so nothing drifts."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "label": "Content blocks",
+      "title": "Content blocks",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Everything below is a live block defined by a few lines of JSON. The small serif heading above most blocks is an optional <em>name</em> field."
+        },
+        {
+          "type": "hero",
+          "eyebrow": "hero",
+          "title": "A bold <em>headline</em> block.",
+          "lead": "The hero renders an eyebrow, a large headline and a lead paragraph. The first hero on the page becomes the H1; later heroes are H2 with identical styling, so the page keeps a single H1 for SEO."
+        },
+        {
+          "type": "text",
+          "name": "text",
+          "text": "This paragraph is a <strong>text</strong> block. It renders prose with a small set of trusted inline tags — <em>emphasis</em>, <strong>strong</strong>, and <a href=\"#/how\">links</a>. Set <em>format</em> to <strong>markdown</strong> for a tiny markdown subset, or <strong>plain</strong> to escape everything. Every rich-text field is sanitized before it reaches the page."
+        },
+        {
+          "type": "text",
+          "name": "cards",
+          "text": "The <strong>cards</strong> block is a responsive grid. Cards can carry an optional meta line and, with <em>linked</em> set, become clickable."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Grid layout",
+              "body": "Cards reflow from three columns down to one as the viewport narrows.",
+              "meta": "responsive"
+            },
+            {
+              "title": "Optional link",
+              "body": "Set linked: true and give an item a url to make the whole card a link.",
+              "meta": "linked"
+            },
+            {
+              "title": "Optional icon",
+              "body": "An item icon adds a monochrome badge that auto-inverts in dark mode.",
+              "meta": "icon"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "links",
+          "text": "The <strong>links</strong> block renders contact rows — an icon, a label over the value, and an arrow cue. It's the same block that powers the Contact details below the fold."
+        },
+        {
+          "type": "links",
+          "items": [
+            { "label": "Email", "handle": "name@example.com", "url": "mailto:name@example.com", "icon": "email" },
+            { "label": "Phone", "handle": "+1 (000) 000-0000", "url": "tel:+10000000000", "icon": "phone" }
+          ]
+        },
+        {
+          "type": "table",
+          "name": "table",
+          "blurb": "The last column is styled as a price by default; set accentValue: false for prose tables like the one under How it works.",
+          "headings": ["Plan", "Includes", "Price"],
+          "rows": [
+            ["Starter", "One-page site, all blocks", "0 €"],
+            ["Studio", "Custom theme and assets", "on request"]
+          ]
+        },
+        {
+          "type": "faq",
+          "name": "faq",
+          "items": [
+            {
+              "q": "Is this block accessible?",
+              "a": "Yes. It uses native button toggles and is fully ARIA-wired and keyboard operable."
+            },
+            {
+              "q": "Can I reorder blocks?",
+              "a": "Reorder a section by reordering its blocks array — order in the JSON is order on the page."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "label": "Media blocks",
+      "title": "Media blocks",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Blocks that render images, embeds and structured data. All image blocks feed the same lightbox."
+        },
+        {
+          "type": "slideshow",
+          "name": "slideshow",
+          "blurb": "One slide renders a framed image; two or more become a carousel with arrows, dots, swipe and a lightbox.",
+          "slides": [
+            { "src": "assets/slides/mountains.jpg", "caption": "Slide one" },
+            { "src": "assets/slides/church.jpg", "caption": "Slide two" },
+            { "src": "assets/slides/lake.jpg", "caption": "Slide three" }
+          ]
+        },
+        {
+          "type": "gallery",
+          "name": "gallery",
+          "blurb": "A paged, responsive image grid. Tap any tile to open the shared lightbox.",
+          "columns": 3,
+          "images": [
+            { "src": "assets/slides/mountains.jpg", "caption": "Mountains" },
+            { "src": "assets/slides/church.jpg", "caption": "Church" },
+            { "src": "assets/slides/lake.jpg", "caption": "Lake" },
+            { "src": "assets/slides/nature.jpg", "caption": "Nature" },
+            { "src": "assets/slides/castle.jpg", "caption": "Castle" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "photo",
+          "text": "The <strong>photo</strong> block is single-image sugar — it normalizes to a one-image gallery, so a lone picture still gets the frame and lightbox."
+        },
+        {
+          "type": "photo",
+          "src": "assets/slides/nature.jpg",
+          "caption": "A single framed image."
+        },
+        {
+          "type": "text",
+          "name": "map",
+          "text": "The <strong>map</strong> block embeds a live map, or with <em>mode: static</em> renders a clean themed address card instead. Hidden tabs' embeds are warmed in the background so the tab opens instantly."
+        },
+        {
+          "type": "map",
+          "mode": "embed",
+          "embed": "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+          "url": "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+          "label": "Times Square, New York",
+          "address": "Manhattan, NY 10036, USA"
+        },
+        {
+          "type": "hours",
+          "name": "hours",
+          "blurb": "Reads the opening times from business.hours and highlights the current day."
+        },
+        {
+          "type": "review",
+          "name": "review",
+          "blurb": "Outbound call-to-action buttons that send visitors to review platforms — links only, no backend.",
+          "items": [
+            { "label": "Review us on Google", "url": "https://example.com/", "platform": "google" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "video",
+          "text": "The <strong>video</strong> block embeds a privacy-enhanced, lazy-loaded YouTube player. Point it at one video, or at a channel's uploads playlist to always show the newest."
+        },
+        {
+          "type": "video",
+          "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+          "title": "Big Buck Bunny (demo clip)"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "label": "Get started",
+      "title": "Get started",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Getting your own site live takes about five minutes."
+        },
+        {
+          "type": "cards",
+          "items": [
+            { "title": "Edit the spec", "body": "Open site-spec.json and change the brand, tabs, blocks and contact details.", "meta": "1" },
+            { "title": "Add your images", "body": "Drop backgrounds and photos into the assets folder and point the spec at them.", "meta": "2" },
+            { "title": "Refresh the mirrors", "body": "Run node generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.", "meta": "3" },
+            { "title": "Run the gate", "body": "Run node launch-check.js and fix every error it reports — stray demo text, fake contact data, broken assets.", "meta": "4" },
+            { "title": "Deploy", "body": "Push the folder to GitHub Pages, Netlify, Vercel, Cloudflare Pages or any static host.", "meta": "5" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "Theming",
+          "text": "Colors live as CSS custom properties in <strong>styles.css</strong>, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request — and a site can override brand tokens per-client via an optional <em>theme</em> object in the spec."
+        },
+        {
+          "type": "text",
+          "name": "Where to go next",
+          "text": "Read <strong>README.md</strong> for the human quick-start, <strong>AGENTS.md</strong> for the architecture and how to add a block type, and <strong>CLIENT-CHECKLIST.md</strong> for the per-client fill-in list. This demo was built from <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."
+        },
+        {
+          "type": "links",
+          "items": [
+            { "label": "Email", "handle": "name@example.com", "url": "mailto:name@example.com", "icon": "email" },
+            { "label": "Phone", "handle": "+1 (000) 000-0000", "url": "tel:+10000000000", "icon": "phone" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "Find us on",
+          "text": "The same <strong>links</strong> block, laid out as tiles with brand-tinted icons — here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the <em>socials</em> list."
+        },
+        {
+          "type": "links",
+          "layout": "grid",
+          "items": [
+            { "handle": "channel", "url": "https://youtube.com/", "icon": "youtube" },
+            { "handle": "profile", "url": "https://instagram.com/", "icon": "instagram" },
+            { "handle": "artist", "url": "https://spotify.com/", "icon": "spotify" }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "note": "A live, self-documenting demo of the static-web-template engine.",
+    "year": 2026
+  },
+  "socials": [
+    { "label": "Instagram", "icon": "instagram", "url": "https://instagram.com/" },
+    { "label": "YouTube", "icon": "youtube", "url": "https://youtube.com/" },
+    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" }
+  ],
+  "backgrounds": [
+    "assets/background/background.jpg",
+    "assets/background/background_2.jpg",
+    "assets/background/background_3.jpg"
+  ]
+}
