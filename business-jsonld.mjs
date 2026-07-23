@@ -112,7 +112,7 @@ export function buildBusinessJsonLd(site) {
 
     const data = {
         "@context": "https://schema.org",
-        "@type": "BikeStore",
+        "@type": "Store",
         name,
     };
 
@@ -185,7 +185,7 @@ export function buildBusinessJsonLd(site) {
     if (catalogs.length === 1) {
         data.hasOfferCatalog = catalogs[0];
     } else if (catalogs.length > 1) {
-        data.hasOfferCatalog = {"@type": "OfferCatalog", name: "Cenník", itemListElement: catalogs};
+        data.hasOfferCatalog = {"@type": "OfferCatalog", name: "Price list", itemListElement: catalogs};
     }
     // Only claim a currency when at least one offer actually states a price.
     const anyPriced = catalogs.some((c) =>

@@ -312,16 +312,20 @@ runtime. Before editing markup or CSS, check whether the request is actually a
 | `llms.txt`                                      | Plain-text site summary for AI crawlers — **GENERATED** from the spec by `generate-static.mjs`; never edit by hand | regenerate after any content edit |
 | `business-jsonld.mjs`                           | Pure spec→JSON-LD builder (ES module) shared by `engine.js` (runtime tag) and `generate-static.mjs` (static mirror) | JSON-LD shape changes               |
 | `generate-static.mjs`                           | Dev-only generator: stamps `llms.txt`, `sitemap.xml` + the static JSON-LD and LCP-image preload in `index.html` from the spec; `--check` mode is run by `launch-check` | adding a generated artifact         |
+| `site-spec.<lang>.json`                         | Alternate-locale content (e.g. `site-spec.sk.json`); a full self-contained spec, loaded at runtime by the language switch | translating content; adding a language |
 | `assets/`                                       | favicon, `background/` images, `slides/` images, `fonts/` woff2 | swapping media; changing fonts     |
 
 ## Content loading & metadata — JSON is the single source of truth
 
-There is **no inline content** in `engine.js`. On boot, `init()` calls
-`loadContent()`, which `fetch`es `site-spec.json` (the path is the `DATA_URL`
-constant at the top of `engine.js`) and parses it into the module-level `SITE`
-object. `SITE` starts as `{}` and is assigned the parsed JSON — there is no
-inline fallback content and no `deepMerge`. (The old `dataUrl`/`deepMerge`
-"inline + optional override" model is gone; do not reintroduce it.)
+There is **no inline content** in `engine.js`. On boot, `init()` resolves the
+active locale (see "Internationalization" below) and calls `loadContent()`,
+which `fetch`es that locale's spec file (`currentSpecUrl()` → `LOCALE_SPECS`;
+the default locale's file is `site-spec.json`) and parses it into the
+module-level `SITE` object. `SITE` starts as `{}` and is assigned the parsed
+JSON — there is no inline fallback content and no `deepMerge`. (The old
+`dataUrl`/`deepMerge` "inline + optional override" model is gone; do not
+reintroduce it. Each locale spec is **self-contained** — that's deliberate, not
+an oversight.)
 
 Three failure modes all end at the same calm error screen
 (`renderErrorState()`), and the page must never blank or throw:
@@ -572,7 +576,7 @@ colors live as standalone rules, identical in light and dark mode:
   `contentWidth`, `radius`, `fontSans`, `fontHeading`, `fontBrand`,
   `socialColors`) as `:root` CSS custom properties; omitted tokens keep their
   `styles.css` defaults.
-- `renderJsonLd()` — upserts a schema.org `BikeStore` JSON-LD script into
+- `renderJsonLd()` — upserts a schema.org `Store` JSON-LD script into
   `<head>` from `SITE.business` + `SITE.meta` + `brand` + `socials` +
   flagged tables. Hours in `H:MM–H:MM`
   form become `openingHoursSpecification` entries; free-form values
@@ -598,6 +602,10 @@ colors live as standalone rules, identical in light and dark mode:
   contact escape hatch (from `socials`, if any survived) and a collapsed
   `<details>` with the technical reason for the maintainer.
 - `initTheme()` / `applyTheme()` — dark-default theme toggle + `localStorage`.
+- `resolveLocale()` / `t()` / `currentSpecUrl()` / `initLang()` /
+  `applyChromeStrings()` — the i18n layer: pick the locale from `localStorage`,
+  resolve chrome strings, pick the locale's spec file, and wire the header
+  language switch (see "Internationalization").
 - `initTabs()` — section-as-tab switching, hash routing, keyboard arrows on the
   desktop tablist, and scroll-position control (see the scroll gotcha below).
 - `initMobileMenu()` — frosted drawer; injects its own close (`×`) button,
@@ -651,6 +659,50 @@ doubles as the `aria-label`, so give each entry a distinct label. To add a
 platform: add an SVG to `SOCIAL_ICONS`, add a `.socials__link--<icon> svg
 { color: … }` rule (and, if it'll be used in a contact row, a
 `.link-list--<icon> .link-list__icon` rule), then reference the key.
+
+## Internationalization (i18n) — runtime language switch
+
+Language is a **runtime switch backed by `localStorage`**, not separate URLs and
+not a build step. It internationalizes two layers, kept apart on purpose:
+
+- **Content** — one full spec file per locale: `LOCALE_SPECS` in the I18N block
+  near the top of `engine.js` maps each locale to its file (`en` →
+  `site-spec.json`, `sk` → `site-spec.sk.json`). Each file is a **complete,
+  self-contained spec** — not a base + overlay. This is a deliberate exception
+  to DRY: it's the one place you could re-add a merge, and we don't (the engine
+  removed `deepMerge` for a reason). Locale-invariant data (contact, images) is
+  duplicated across files; `launch-check`'s `checkLocales()` warns if the
+  section set drifts between them.
+- **Chrome** — the strings the spec never carries (aria-labels, the error
+  screen, weekday names, the switcher) live in the `UI` table in `engine.js`,
+  keyed by locale with an English fallback. Read them with **`t("key")`** — never
+  hardcode a user-facing string in a builder again; add it to `UI` (both
+  locales) and call `t()`.
+
+Flow: `init()` calls `resolveLocale()` (reads `LANG_KEY` from `localStorage`,
+falls back to `DEFAULT_LOCALE`) **before** fetching, so the right spec loads and
+every `t()` reads the right locale. `renderHead()` sets `<html lang>` from the
+loaded `meta.lang`. The header `#langToggle` **ships `hidden`**; `initLang()`
+reveals it *only* when a second locale exists (so a single-locale site shows no
+switcher at all, even before/without JS — the `.lang-toggle[hidden]` CSS rule
+beats the button's own `display`). When shown it displays the *other* locale's
+code, and on click saves the choice and **`location.reload()`s** — the boot path
+then re-fetches the matching spec. Reload (not partial re-render) is intentional:
+no stale listeners, no half-swapped DOM. `applyChromeStrings()` pushes localized
+aria/text onto the static shell elements `index.html` ships in English.
+
+**Trade-off (know this):** because the switch is runtime-only, the **static SEO
+mirror reflects the default locale** — `generate-static.mjs` and `launch-check`
+run on `site-spec.json` (English). Crawlers see English; alternate locales are
+for visitors, not search engines. That's the accepted cost of a switcher over
+per-locale URLs. To fully validate a locale's content, run
+`node launch-check.js --site-spec site-spec.sk.json`.
+
+**To add a language:** add its spec file, add a `LOCALE_SPECS` entry, add a `UI`
+block for it, and translate the weekday `days` array. The switcher handles two
+locales as a toggle; more than two would need a menu (noted in `initLang`). Also
+mirror the strings in `404.html`'s inline script (it localizes from the same
+`localStorage` key without loading the engine).
 
 ## Header fit (left cluster ↔ nav collision) — don't "simplify" this
 

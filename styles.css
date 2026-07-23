@@ -67,7 +67,7 @@
        whole site (text, headings, gutters, gaps, content widths) bigger or
        smaller proportionally. 100% = browser default (usually 16px);
        106.25% ≈ 17px; 112.5% ≈ 18px. Applied on `html` below. */
-    --root-scale: 106.25%;
+    --root-scale: 99.25%;
 
     --gutter: clamp(1.25rem, 4vw, 2.5rem);
     --radius: 6px;
@@ -131,7 +131,7 @@
     --menu-hover-bg: var(--accent-soft); /* hover pill behind link */
 
     /* — Accents & lines — */
-    --accent: #C9B7FA;
+    --accent: #4de0c2;
     /* Derived from --accent so changing the brand color updates the soft
        accent (hover pills, focus glow) automatically — one value, many uses. */
     --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
@@ -169,7 +169,7 @@
     --menu-hover-bg: var(--accent-soft); /* hover pill behind link */
 
     /* — Accents & lines — */
-    --accent: #8C1C6C;
+    --accent: #0b7d6c;
     /* Derived from --accent. Light mode uses a slightly lower 10% tint. */
     --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
     --border: rgba(43, 43, 43, 0.49);
@@ -334,6 +334,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
    still respond. The bordered controls share one press rule: */
 .theme-toggle:active,
 .menu-toggle:active,
+.lang-toggle:active,
 .nav-mobile__close:active,
 .map-open-row a:active,
 .carousel__nav:active,
@@ -511,7 +512,8 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 /* Theme toggle */
 .theme-toggle,
-.menu-toggle {
+.menu-toggle,
+.lang-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -528,9 +530,27 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 @media (hover: hover) {
     .theme-toggle:hover,
-    .menu-toggle:hover {
+    .menu-toggle:hover,
+    .lang-toggle:hover {
         border-color: var(--accent);
     }
+}
+
+/* Language switcher — same chrome as the theme toggle, but shows a short
+   two-letter code (the OTHER locale) instead of an icon. It ships `hidden`
+   and the engine reveals it only when a second locale exists; the base
+   `display: inline-flex` above would otherwise override `[hidden]`, so this
+   rule (class + attribute = higher specificity) keeps it hidden until then. */
+.lang-toggle[hidden] {
+    display: none;
+}
+
+.lang-toggle__label {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 0.8rem;
+    line-height: 1;
+    letter-spacing: 0.04em;
 }
 
 /* Theme toggle icon — one SVG that morphs between a crescent moon (dark mode,
@@ -1145,7 +1165,7 @@ article.card .card__meta {
     min-width: 0;
 }
 
-/* Small muted "what is this" line ("Telefón", "Instagram", …) */
+/* Small muted "what is this" line ("Phone", "Instagram", …) */
 .link-list__kind {
     font-size: 0.72rem;
     letter-spacing: 0.07em;
@@ -2346,7 +2366,7 @@ span.footer__count {
     }
 
     /* Visually hide the header row — each stacked row is self-explanatory in
-       source order (e.g. condition then detail, or úkon/popis/cena). Kept in
+       source order (e.g. condition then detail, or task/description/price). Kept in
        the DOM for screen readers. */
     .data-table thead {
         position: absolute;

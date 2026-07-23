@@ -238,6 +238,27 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
   `--max-image-kb` (default 900 KB), and CSS/JS over `--max-css-kb` /
   `--max-js-kb` (default 250 KB), so heavy media gets compressed before ship.
 
+### Locale specs (`site-spec.<lang>.json`)
+
+The runtime language switch loads one spec per locale (see `AGENTS.md` →
+"Internationalization"). The default run validates the alternate-locale files
+**structurally** against the default `site-spec.json` (the main content/asset/SEO
+checks run on the default spec only — that's the single-language SEO mirror by
+design):
+
+- **Invalid locale spec** (`LOCALE_SPEC_INVALID`, `spec`) — a
+  `site-spec.<lang>.json` is not valid JSON.
+- **Missing `meta.lang`** (`LOCALE_LANG_MISSING`, `spec`) — needed for
+  `<html lang>` and the switcher.
+- **Section drift** (`LOCALE_SECTION_DRIFT`, `content`) — a locale's section
+  `id`s differ from the default's, so a translation is missing or renaming a
+  section (the current tab is preserved across a switch by id).
+
+To run the **full** content/contact/SEO pass on a specific locale, point the
+validator at it: `node launch-check.js --site-spec site-spec.sk.json`. (Expect
+`HTML_*_STALE` there — the static `index.html` mirror is the default locale on
+purpose.)
+
 ## How to use it in the workflow
 
 The intended place is the gate **between authoring the spec and shipping**:

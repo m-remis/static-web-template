@@ -32,9 +32,12 @@
    served, run by hand (or by launch-check) — it does not violate the
    no-build rule; the runtime site stays plain static files.
 
-   NOTE the Slovak strings below are presentation labels (day names, section
-   scaffolding), same precedent as KIND_LABELS/HOURS_DAYS in engine.js —
-   the CONTENT all comes from the spec.
+   NOTE the scaffolding labels below (section headings, "Opening hours", the
+   how-this-works note, weekday names) are in the DEFAULT locale (English):
+   llms.txt is generated from the default site-spec.json, and the static
+   SEO/crawler mirror is single-language by design — the runtime language
+   switch does not restamp it (see AGENTS.md → Internationalization). The
+   CONTENT all comes from the spec.
    ========================================================= */
 
 import {readFileSync, statSync, writeFileSync} from "node:fs";
@@ -67,8 +70,8 @@ function stripHtml(s = "") {
 }
 
 const DAY_LABELS = [
-    ["mon", "pondelok"], ["tue", "utorok"], ["wed", "streda"], ["thu", "štvrtok"],
-    ["fri", "piatok"], ["sat", "sobota"], ["sun", "nedeľa"],
+    ["mon", "Monday"], ["tue", "Tuesday"], ["wed", "Wednesday"], ["thu", "Thursday"],
+    ["fri", "Friday"], ["sat", "Saturday"], ["sun", "Sunday"],
 ];
 
 /* ---- llms.txt ------------------------------------------------------------
@@ -89,8 +92,8 @@ function buildLlmsTxt(spec) {
         out.push(`> ${stripHtml(meta.description)}`);
         out.push("");
     }
-    out.push("Stránka je jednostránková aplikácia renderovaná JavaScriptom — tento súbor");
-    out.push("zhŕňa jej obsah v čistom texte." + (meta.author ? ` Vedie ju ${meta.author}.` : ""));
+    out.push("This site is a single-page app rendered by JavaScript — this file");
+    out.push("summarizes its content in plain text." + (meta.author ? ` Operated by ${meta.author}.` : ""));
     out.push("");
 
     // ---- Contact block from the business SSOT ----
@@ -98,16 +101,16 @@ function buildLlmsTxt(spec) {
     if (b.address && (b.address.label || b.address.street)) {
         const label = b.address.label || [b.address.street, b.address.city].filter(Boolean).join(", ");
         const country = b.address.country ? `, ${b.address.country}` : "";
-        contact.push(`- Adresa: ${label}${country}`);
+        contact.push(`- Address: ${label}${country}`);
     }
-    if (b.phone) contact.push(`- Telefón: ${b.phone}`);
-    if (b.email) contact.push(`- E-mail: ${b.email}`);
+    if (b.phone) contact.push(`- Phone: ${b.phone}`);
+    if (b.email) contact.push(`- Email: ${b.email}`);
     (spec.socials || []).forEach((s) => {
         if (!s || !s.url) return;
-        const kind = s.icon ? s.icon.charAt(0).toUpperCase() + s.icon.slice(1) : (s.label || "Odkaz");
+        const kind = s.icon ? s.icon.charAt(0).toUpperCase() + s.icon.slice(1) : (s.label || "Link");
         contact.push(`- ${kind}: ${s.url}`);
     });
-    if (b.mapUrl) contact.push(`- Mapa: ${b.mapUrl}`);
+    if (b.mapUrl) contact.push(`- Map: ${b.mapUrl}`);
     if (b.hours && typeof b.hours === "object") {
         const days = DAY_LABELS
             .map(([key, label]) => {
@@ -116,12 +119,12 @@ function buildLlmsTxt(spec) {
             })
             .filter(Boolean);
         if (days.length) {
-            contact.push("- Otváracie hodiny:");
+            contact.push("- Opening hours:");
             contact.push(...days);
         }
     }
     if (contact.length) {
-        out.push("## Kontakt a otváracie hodiny");
+        out.push("## Contact & opening hours");
         out.push("");
         out.push(...contact);
         out.push("");
@@ -228,14 +231,14 @@ function buildLlmsTxt(spec) {
     // ---- Machine-readable pointers ----
     if (meta.domain) {
         const domain = meta.domain.replace(/\/+$/, "");
-        out.push("## Odkazy");
+        out.push("## Links");
         out.push("");
-        out.push(`- [Web](${domain}/): hlavná stránka (obsah renderuje JavaScript zo site-spec.json)`);
-        out.push(`- [site-spec.json](${domain}/site-spec.json): kompletný obsah stránky v strojovo čitateľnom JSON`);
+        out.push(`- [Web](${domain}/): main page (content rendered by JavaScript from site-spec.json)`);
+        out.push(`- [site-spec.json](${domain}/site-spec.json): the full site content in machine-readable JSON`);
         out.push("");
     }
 
-    out.push("<!-- GENEROVANÉ zo site-spec.json (node generate-static.mjs) — needituj ručne. -->");
+    out.push("<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->");
     return out.join("\n") + "\n";
 }
 

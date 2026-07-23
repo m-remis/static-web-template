@@ -198,7 +198,7 @@ Per-block placeholders to hunt down for a new client:
   so a number/handle is typed once in `business` and reused. You can also add
   explicit `items[]` of `{ label, handle, url, icon?, kind? }`. A `use` key that
   matches nothing is warned (`LINK_USE_UNRESOLVED`). Rows show a small kind
-  label ("Telefón", "Instagram", …) over the value automatically for known
+  label ("Phone", "Instagram", …) over the value automatically for known
   icons — set `kind` on inline items to control it. `"layout": "grid"` renders
   up to a handful of contacts as side-by-side tiles instead of stacked rows.
   **Replace the template
@@ -236,6 +236,26 @@ Per-block placeholders to hunt down for a new client:
   any other value renders a generic star. Replace any template URL with the
   client's real review page (for Google, the direct
   `https://search.google.com/local/writereview?placeid=…` deep link is best).
+
+### 1d. Multiple languages (optional)
+
+The site ships a runtime language switch (see `AGENTS.md` →
+"Internationalization"). To offer a second language:
+
+- [ ] **Copy `site-spec.json` → `site-spec.<lang>.json`** (e.g.
+  `site-spec.sk.json`) and translate its content. Keep the **same section
+  `id`s** — `launch-check` warns (`LOCALE_SECTION_DRIFT`) if they diverge, and
+  the current tab is preserved across a language switch by id. Set the file's
+  `meta.lang`.
+- [ ] **Register the locale in `engine.js`**: add it to `LOCALE_SPECS`, add a
+  `UI` block (translate every chrome string incl. the weekday `days`), and — for
+  more than two languages — turn the header toggle into a menu. Mirror the
+  strings in `404.html`'s inline map.
+- [ ] **Validate the translation**: `node launch-check.js --site-spec
+  site-spec.<lang>.json`.
+- [ ] Note the **default locale is the SEO one**: `llms.txt`, `sitemap.xml` and
+  the static JSON-LD are generated from `site-spec.json` only. Alternate locales
+  are for visitors, not crawlers.
 
 ---
 

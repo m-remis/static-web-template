@@ -1,0 +1,383 @@
+{
+  "$schema": "site-spec.schema.json",
+  "brand": "Static Web Template",
+  "meta": {
+    "lang": "sk",
+    "domain": "https://example.com/",
+    "title": "Static Web Template — statický web poháňaný jedným JSON súborom",
+    "description": "Malý, rýchly engine pre statické weby: jeden site-spec.json vykreslí celú stránku — bez frameworku, bez build kroku, bez závislostí.",
+    "author": "Static Web Template",
+    "themeColor": "#0e0f13",
+    "ogType": "website",
+    "twitterCard": "summary"
+  },
+  "business": {
+    "legalName": "Static Web Template",
+    "phone": "+1 (000) 000-0000",
+    "email": "name@example.com",
+    "address": {
+      "street": "123 Example Street",
+      "city": "Anytown",
+      "postalCode": "00000",
+      "country": "Country",
+      "label": "123 Example Street, Anytown"
+    },
+    "mapUrl": "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+    "mapEmbed": "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+    "hours": {
+      "mon": "9:00–17:00",
+      "tue": "9:00–17:00",
+      "wed": "9:00–17:00",
+      "thu": "9:00–17:00",
+      "fri": "9:00–17:00",
+      "sat": "Na objednávku",
+      "sun": "Zatvorené"
+    }
+  },
+  "sections": [
+    {
+      "id": "home",
+      "label": "Prehľad",
+      "blocks": [
+        {
+          "type": "hero",
+          "eyebrow": "Static Web Template",
+          "title": "Jeden <em>JSON súbor</em>. Celý web.",
+          "lead": "Celá táto stránka — každá záložka, každý blok, metadáta, aj táto veta — sa vykreslí za behu z jediného <strong>site-spec.json</strong>. Bez frameworku, bez build kroku, bez závislostí."
+        },
+        {
+          "type": "text",
+          "text": "Práve sledujete engine, ktorý dokumentuje sám seba. Každá záložka je <em>sekcia</em> a každá sekcia je usporiadaný zoznam typových <em>blokov</em>. Otvorte <strong>Obsahové bloky</strong> a <strong>Mediálne bloky</strong>, kde uvidíte každý typ bloku, a potom si prečítajte <strong>Ako to funguje</strong> pre architektúru za tým."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Bez build kroku",
+              "body": "Čisté HTML, CSS a vanilla JS servované ako súbory. Naklonuj, uprav spec, nasaď na ľubovoľný statický hosting.",
+              "meta": "nula závislostí"
+            },
+            {
+              "title": "Bloky riadené konfiguráciou",
+              "body": "Pridaj sekciu alebo presuň obsah úpravou JSON-u. Pridanie úplne nového typu bloku je malá, lokálna zmena kódu.",
+              "meta": "jeden spec"
+            },
+            {
+              "title": "Odolný už z princípu",
+              "body": "Poškodený alebo chýbajúci spec zobrazí pokojnú chybovú obrazovku, nikdy nie prázdnu stránku. Preklep v jednom bloku nikdy nevymaže zvyšok.",
+              "meta": "nikdy prázdne"
+            }
+          ]
+        },
+        {
+          "type": "slideshow",
+          "slides": [
+            {
+              "src": "assets/slides/mountains.jpg",
+              "title": "Blok slideshow",
+              "caption": "Jedna snímka je orámovaný obrázok; dve a viac tvoria carousel.",
+              "text": "Šípky, bodky, gestá potiahnutím a lightbox sú zabudované."
+            },
+            {
+              "src": "assets/slides/lake.jpg",
+              "caption": "Každý obrázok na stránke zdieľa jeden lightbox."
+            },
+            {
+              "src": "assets/slides/castle.jpg",
+              "caption": "Obrázky skrytých záložiek sa prednačítavajú na pozadí pre okamžité prepínanie."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "how",
+      "label": "Ako to funguje",
+      "title": "Ako to funguje",
+      "blocks": [
+        {
+          "type": "text",
+          "name": "Jediný zdroj pravdy",
+          "text": "Všetko, čo návštevník vidí, žije v <strong>site-spec.json</strong> — značka, navigačné záložky, každá sekcia a blok, pätička, sociálne siete, obrázky na pozadí aj metadáta dokumentu. <strong>index.html</strong> je takmer prázdna schránka; <strong>engine.js</strong> pri načítaní stiahne spec a z neho zostaví stránku. Ak chceš zmeniť, čo web hovorí, upravuješ spec, nie markup."
+        },
+        {
+          "type": "text",
+          "name": "Blokový engine",
+          "text": "<strong>sections</strong> je usporiadané pole a jeho poradie je zároveň poradím navigácie aj poradím na stránke. Každá sekcia je zoznam typových blokov a vykresľovanie je jedno generické rozhodovanie: engine vyhľadá <em>type</em> každého bloku v mape rendererov a zavolá príslušný builder. Nikde nie je špeciálne vetvenie podľa sekcie — presne preto zostáva pridanie nového druhu obsahu malou zmenou."
+        },
+        {
+          "type": "text",
+          "name": "Odolný už z princípu",
+          "text": "Tri režimy zlyhania — spec sa nenačíta, nedá sa naparsovať, alebo nemá použiteľné sekcie — všetky skončia na tej istej pokojnej obrazovke <em>dočasne nedostupné</em> s kontaktným únikovým východom. Stránka nikdy nezbelie a nikdy nevyhodí chybu. Neznáme typy blokov sa preskočia s varovaním v konzole, takže jeden zlý blok nezhodí zvyšok stránky."
+        },
+        {
+          "type": "text",
+          "name": "Stavané aj pre stroje",
+          "text": "Keďže sa stránka vykresľuje JavaScriptom, engine tiež zrkadlí spec do formátov, ktoré prečíta aj crawler bez JS: čistý text <strong>llms.txt</strong>, <strong>sitemap.xml</strong> a schema.org <strong>JSON-LD</strong> blok — všetko razí <strong>generate-static.mjs</strong>, takže sa nikdy nerozídu s tým, čo návštevníci reálne vidia. Vývojársky validátor <strong>launch-check.js</strong> odmietne pustiť nekonzistentný web von."
+        },
+        {
+          "type": "table",
+          "name": "Čo je v projekte",
+          "blurb": "Súbory, ktoré upravuješ, a tie, ktoré vlastní engine.",
+          "accentValue": false,
+          "headings": ["Súbor", "Na čo slúži"],
+          "rows": [
+            ["site-spec.json", "Všetok obsah a metadáta — jediný zdroj pravdy"],
+            ["engine.js", "Runtime: buildery blokov, vykresľovanie a všetka UI logika"],
+            ["styles.css", "Štýly, rozloženie a dva bloky farebných tokenov"],
+            ["index.html", "Schránka — kostra hlavičky a prázdny main, ktorý dopĺňa JS"],
+            ["generate-static.mjs", "Razí llms.txt, sitemap.xml a statický JSON-LD"],
+            ["launch-check.js", "Predštartový validátor — brána pred nasadením"]
+          ]
+        },
+        {
+          "type": "faq",
+          "name": "FAQ o architektúre",
+          "items": [
+            {
+              "q": "Potrebujem Node alebo build nástroj na spustenie webu?",
+              "a": "Nie. Nasadený web sú čisté statické súbory. Node používajú len voliteľné vývojárske nástroje (generate-static a launch-check) — živý web ho nikdy nespúšťa."
+            },
+            {
+              "q": "Prečo stránka potrebuje lokálny webový server?",
+              "a": "Engine sťahuje site-spec.json a prehliadače blokujú toto stiahnutie cez file://. Naservíruj priečinok ľubovoľným statickým serverom, napr. python3 -m http.server 8000, a otvor localhost adresu."
+            },
+            {
+              "q": "Ako pridám úplne nový druh bloku?",
+              "a": "Napíš builder v engine.js a zaregistruj ho v mape rendererov, pridaj jeho CSS, zdokumentuj jeho tvar, potom pridaj pravidlo validátora a záznam v schéme. AGENTS.md prevedie celým reťazcom, aby sa nič nerozišlo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "label": "Obsahové bloky",
+      "title": "Obsahové bloky",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Všetko nižšie je živý blok definovaný pár riadkami JSON-u. Malý serifový nadpis nad väčšinou blokov je voliteľné pole <em>name</em>."
+        },
+        {
+          "type": "hero",
+          "eyebrow": "hero",
+          "title": "Výrazný <em>nadpisový</em> blok.",
+          "lead": "Hero vykreslí nadnadpis, veľký nadpis a úvodný odsek. Prvý hero na stránke sa stane H1; ďalšie hero sú H2 s rovnakým štýlom, takže stránka si drží jediné H1 pre SEO."
+        },
+        {
+          "type": "text",
+          "name": "text",
+          "text": "Tento odsek je blok <strong>text</strong>. Vykresľuje prózu s malou sadou dôveryhodných inline značiek — <em>zvýraznenie</em>, <strong>strong</strong> a <a href=\"#/how\">odkazy</a>. Nastav <em>format</em> na <strong>markdown</strong> pre malú podmnožinu markdownu, alebo <strong>plain</strong> na escapovanie všetkého. Každé pole s formátovaným textom je pred vložením na stránku sanitizované."
+        },
+        {
+          "type": "text",
+          "name": "cards",
+          "text": "Blok <strong>cards</strong> je responzívna mriežka. Karty môžu niesť voliteľný meta riadok a s nastaveným <em>linked</em> sa stanú klikateľné."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Mriežkové rozloženie",
+              "body": "Karty sa preskladajú z troch stĺpcov na jeden, ako sa zužuje okno.",
+              "meta": "responzívne"
+            },
+            {
+              "title": "Voliteľný odkaz",
+              "body": "Nastav linked: true a daj položke url, aby sa celá karta stala odkazom.",
+              "meta": "odkaz"
+            },
+            {
+              "title": "Voliteľná ikona",
+              "body": "Ikona položky pridá monochromatický odznak, ktorý sa v tmavom režime automaticky invertuje.",
+              "meta": "ikona"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "links",
+          "text": "Blok <strong>links</strong> vykresľuje kontaktné riadky — ikona, popis nad hodnotou a šípkový náznak. Je to ten istý blok, ktorý poháňa kontaktné údaje nižšie."
+        },
+        {
+          "type": "links",
+          "items": [
+            { "label": "E-mail", "handle": "name@example.com", "url": "mailto:name@example.com", "icon": "email" },
+            { "label": "Telefón", "handle": "+1 (000) 000-0000", "url": "tel:+10000000000", "icon": "phone" }
+          ]
+        },
+        {
+          "type": "table",
+          "name": "table",
+          "blurb": "Posledný stĺpec je štandardne štýlovaný ako cena; nastav accentValue: false pre textové tabuľky ako tá v sekcii Ako to funguje.",
+          "headings": ["Balík", "Obsahuje", "Cena"],
+          "rows": [
+            ["Starter", "Jednostránkový web, všetky bloky", "0 €"],
+            ["Studio", "Vlastná téma a assety", "na dopyt"]
+          ]
+        },
+        {
+          "type": "faq",
+          "name": "faq",
+          "items": [
+            {
+              "q": "Je tento blok prístupný?",
+              "a": "Áno. Používa natívne tlačidlové prepínače a je plne prepojený s ARIA a ovládateľný klávesnicou."
+            },
+            {
+              "q": "Môžem preusporiadať bloky?",
+              "a": "Preusporiadaj sekciu preusporiadaním jej poľa blocks — poradie v JSON-e je poradie na stránke."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "label": "Mediálne bloky",
+      "title": "Mediálne bloky",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Bloky, ktoré vykresľujú obrázky, embedy a štruktúrované dáta. Všetky obrázkové bloky napájajú ten istý lightbox."
+        },
+        {
+          "type": "slideshow",
+          "name": "slideshow",
+          "blurb": "Jedna snímka vykreslí orámovaný obrázok; dve a viac tvoria carousel so šípkami, bodkami, potiahnutím a lightboxom.",
+          "slides": [
+            { "src": "assets/slides/mountains.jpg", "caption": "Snímka jedna" },
+            { "src": "assets/slides/church.jpg", "caption": "Snímka dva" },
+            { "src": "assets/slides/lake.jpg", "caption": "Snímka tri" }
+          ]
+        },
+        {
+          "type": "gallery",
+          "name": "gallery",
+          "blurb": "Stránkovaná responzívna obrázková mriežka. Ťukni na dlaždicu pre otvorenie zdieľaného lightboxu.",
+          "columns": 3,
+          "images": [
+            { "src": "assets/slides/mountains.jpg", "caption": "Hory" },
+            { "src": "assets/slides/church.jpg", "caption": "Kostol" },
+            { "src": "assets/slides/lake.jpg", "caption": "Jazero" },
+            { "src": "assets/slides/nature.jpg", "caption": "Príroda" },
+            { "src": "assets/slides/castle.jpg", "caption": "Hrad" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "photo",
+          "text": "Blok <strong>photo</strong> je cukrík pre jeden obrázok — normalizuje sa na jednoobrázkovú galériu, takže aj osamotená fotka dostane rám a lightbox."
+        },
+        {
+          "type": "photo",
+          "src": "assets/slides/nature.jpg",
+          "caption": "Jeden orámovaný obrázok."
+        },
+        {
+          "type": "text",
+          "name": "map",
+          "text": "Blok <strong>map</strong> vloží živú mapu, alebo s <em>mode: static</em> vykreslí čistú tematickú adresnú kartu. Embedy skrytých záložiek sa prednačítavajú na pozadí, takže sa záložka otvorí okamžite."
+        },
+        {
+          "type": "map",
+          "mode": "embed",
+          "embed": "https://maps.google.com/maps?q=Times+Square,New+York,NY&z=15&output=embed",
+          "url": "https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY",
+          "label": "Times Square, New York",
+          "address": "Manhattan, NY 10036, USA"
+        },
+        {
+          "type": "hours",
+          "name": "hours",
+          "blurb": "Číta otváracie hodiny z business.hours a zvýrazní aktuálny deň."
+        },
+        {
+          "type": "review",
+          "name": "review",
+          "blurb": "Odchádzajúce tlačidlá výzvy na akciu, ktoré posielajú návštevníkov na recenzné platformy — len odkazy, žiadny backend.",
+          "items": [
+            { "label": "Ohodnoťte nás na Google", "url": "https://example.com/", "platform": "google" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "video",
+          "text": "Blok <strong>video</strong> vloží súkromie rešpektujúci, lenivo načítaný YouTube prehrávač. Nasmeruj ho na jedno video, alebo na playlist nahrávok kanála, aby vždy ukazoval najnovšie."
+        },
+        {
+          "type": "video",
+          "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+          "title": "Big Buck Bunny (ukážka)"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "label": "Začni tu",
+      "title": "Začni tu",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Spustenie vlastného webu zaberie asi päť minút."
+        },
+        {
+          "type": "cards",
+          "items": [
+            { "title": "Uprav spec", "body": "Otvor site-spec.json a zmeň značku, záložky, bloky a kontaktné údaje.", "meta": "1" },
+            { "title": "Pridaj svoje obrázky", "body": "Vlož pozadia a fotky do priečinka assets a nasmeruj na ne spec.", "meta": "2" },
+            { "title": "Obnov zrkadlá", "body": "Spusti node generate-static.mjs, aby sa prestavali llms.txt, sitemap a JSON-LD.", "meta": "3" },
+            { "title": "Spusti bránu", "body": "Spusti node launch-check.js a oprav každú chybu, ktorú nahlási — zvyšný demo text, falošné kontaktné údaje, rozbité assety.", "meta": "4" },
+            { "title": "Nasaď", "body": "Nahraj priečinok na GitHub Pages, Netlify, Vercel, Cloudflare Pages alebo ľubovoľný statický hosting.", "meta": "5" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "Motív",
+          "text": "Farby žijú ako CSS custom properties v <strong>styles.css</strong>, zoskupené pod tmavým a svetlým blokom; zmena týchto premenných preskinuje celý web vrátane 404 stránky a farby prehliadačovej lišty. Tmavý režim je predvolený. Fonty (Inter a Oswald) sú self-hostované, takže žiadna požiadavka na Google Fonts — a web môže cez voliteľný objekt <em>theme</em> v spec-u prepísať tokeny značky pre konkrétneho klienta."
+        },
+        {
+          "type": "text",
+          "name": "Kam ďalej",
+          "text": "Prečítaj si <strong>README.md</strong> pre ľudský rýchly štart, <strong>AGENTS.md</strong> pre architektúru a ako pridať typ bloku, a <strong>CLIENT-CHECKLIST.md</strong> pre zoznam vyplnenia na klienta. Toto demo bolo postavené z <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."
+        },
+        {
+          "type": "links",
+          "items": [
+            { "label": "E-mail", "handle": "name@example.com", "url": "mailto:name@example.com", "icon": "email" },
+            { "label": "Telefón", "handle": "+1 (000) 000-0000", "url": "tel:+10000000000", "icon": "phone" }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "Nájdi nás na",
+          "text": "Ten istý blok <strong>links</strong>, rozložený ako dlaždice s ikonami vo farbách značiek — tu smerujúci na sociálne siete namiesto kontaktných metód. Hlavička a mobilná zásuvka vykresľujú tie isté platformy zo zoznamu <em>socials</em>."
+        },
+        {
+          "type": "links",
+          "layout": "grid",
+          "items": [
+            { "handle": "kanál", "url": "https://youtube.com/", "icon": "youtube" },
+            { "handle": "profil", "url": "https://instagram.com/", "icon": "instagram" },
+            { "handle": "interpret", "url": "https://spotify.com/", "icon": "spotify" }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "note": "Živé demo enginu static-web-template, ktoré dokumentuje samo seba.",
+    "year": 2026
+  },
+  "socials": [
+    { "label": "Instagram", "icon": "instagram", "url": "https://instagram.com/" },
+    { "label": "YouTube", "icon": "youtube", "url": "https://youtube.com/" },
+    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" }
+  ],
+  "backgrounds": [
+    "assets/background/background.jpg",
+    "assets/background/background_2.jpg",
+    "assets/background/background_3.jpg"
+  ]
+}

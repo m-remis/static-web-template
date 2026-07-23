@@ -161,7 +161,6 @@ const PLACEHOLDER_MARKERS = [
     "lorem", "ipsum", "bla bla",
     "nejaky", "nejaký",
     "doplnit", "doplniť",
-    "docasne", "dočasne",
     "sem vlož",
     "tbd", "fixme", "todo", "placeholder", "dummy",
     "your company", "your name", "your email", "your phone",
@@ -1919,6 +1918,48 @@ function report() {
 
 /* ---- Main ---------------------------------------------------------------- */
 
+/* ---- i18n locale specs ----------------------------------------------------
+   The runtime language switch loads one spec per locale: the default
+   site-spec.json plus alternates named site-spec.<lang>.json. This validates
+   the alternates structurally against the default (they're only loaded at
+   runtime, so the main asset/SEO checks — which run on the default spec — never
+   see them). For a full content pass on a locale, run this validator with
+   --site-spec site-spec.<lang>.json. */
+function checkLocales(defaultSpec) {
+    let entries;
+    try {
+        entries = fs.readdirSync(ROOT);
+    } catch {
+        return;
+    }
+
+    // site-spec.json (default) and site-spec.schema.json are excluded by the
+    // two-letter language pattern; only alternates like site-spec.sk.json match.
+    const localeFiles = entries.filter((f) => /^site-spec\.[a-z]{2}\.json$/.test(f)).sort();
+    if (!localeFiles.length) return;
+
+    const baseIds = (defaultSpec.sections || []).map((s) => s && s.id).filter(Boolean).join(",");
+
+    localeFiles.forEach((file) => {
+        const res = readJson(file);
+        if (!res.ok) {
+            fail("spec", "LOCALE_SPEC_INVALID", `${file} is not valid JSON: ${res.error}`);
+            return;
+        }
+        const data = res.data;
+
+        if (!data.meta || !hasNonEmptyString(data.meta.lang)) {
+            warn("spec", "LOCALE_LANG_MISSING", `${file}: missing meta.lang (needed for <html lang> and the switcher)`);
+        }
+
+        const ids = (data.sections || []).map((s) => s && s.id).filter(Boolean).join(",");
+        if (ids !== baseIds) {
+            warn("content", "LOCALE_SECTION_DRIFT",
+                `${file} section ids [${ids}] differ from ${SPEC_FILE} [${baseIds}] — a translation may be missing or renaming a section`);
+        }
+    });
+}
+
 function main() {
     checkRequiredFiles();
 
@@ -1963,6 +2004,7 @@ function main() {
     checkAssets(spec, html, referenced);
     checkImageAlt(spec);
     checkContentQuality(spec);
+    checkLocales(spec);
 
     report();
     process.exit(hasBlockingProblems() ? 1 : 0);

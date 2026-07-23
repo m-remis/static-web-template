@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <title>404 — Page not found · Company</title>
+    <title>404 — Page not found · Static Web Template</title>
     <meta name="robots" content="noindex"/>
     <meta name="theme-color" content="#0e0f13" id="themeColorMeta"/>
 
@@ -34,17 +34,18 @@
 </main>
 
 <script>
-    // Match the saved theme so the 404 page feels continuous with the site.
-    // Dark is the default; a previously saved choice wins. System setting is ignored.
+    // Match the saved theme AND language so the 404 page feels continuous with
+    // the site. Both read the same localStorage keys the engine uses; dark +
+    // English are the defaults, a previously saved choice wins. The static HTML
+    // ships English, so no-JS visitors still get a readable page.
     (function () {
+        // --- theme ---
         var t = "dark";
-
         try {
             t = localStorage.getItem("theme-preference") || "dark";
         } catch (e) {
             // localStorage can fail in locked-down browsers.
         }
-
         document.body.dataset.theme = t;
 
         var meta = document.getElementById("themeColorMeta");
@@ -53,6 +54,41 @@
             var bg = getComputedStyle(document.body).getPropertyValue("--bg-base").trim();
             if (bg) meta.setAttribute("content", bg);
         }
+
+        // --- language --- (mirror the engine's chrome strings for the 404)
+        var STRINGS = {
+            en: {
+                docTitle: "404 — Page not found · Static Web Template",
+                title: "This page went for a walk.",
+                lead: "The link is broken, the page moved, or it never existed. Either way — let's get you back home.",
+                home: "← Back to home"
+            },
+            sk: {
+                docTitle: "404 — Stránka sa nenašla · Static Web Template",
+                title: "Táto stránka sa vybrala na prechádzku.",
+                lead: "Odkaz je nefunkčný, stránka sa presunula alebo nikdy neexistovala. Tak či onak — poďme ťa dostať späť domov.",
+                home: "← Späť domov"
+            }
+        };
+
+        var lang = "en";
+        try {
+            if (localStorage.getItem("lang-preference") === "sk") lang = "sk";
+        } catch (e) {
+            // storage unavailable — keep English default
+        }
+
+        var s = STRINGS[lang];
+        document.documentElement.lang = lang;
+        document.title = s.docTitle;
+
+        var set = function (sel, txt) {
+            var n = document.querySelector(sel);
+            if (n) n.textContent = txt;
+        };
+        set(".error__title", s.title);
+        set(".error__lead", s.lead);
+        set(".error__home", s.home);
     })();
 </script>
 </body>

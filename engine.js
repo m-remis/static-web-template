@@ -16,10 +16,11 @@ console.log(
 /* ----------------------------------------------------------------------
    1. CONTENT
 
-   There is NO inline content. All content lives in an external JSON file
-   (DATA_URL below). The site loads it on boot; if it can't be loaded or
-   parsed, or contains no usable sections, the visitor sees the error screen
-   instead. JSON is the single source of truth.
+   There is NO inline content. All content lives in an external JSON file —
+   one per locale (LOCALE_SPECS in the I18N section below; the default locale's
+   file is site-spec.json). The site loads the active locale's file on boot; if
+   it can't be loaded or parsed, or contains no usable sections, the visitor
+   sees the error screen instead. JSON is the single source of truth.
 
    site-spec.json SHAPE (full field list: AGENTS.md + site-spec.schema.json)
    --------------------
@@ -71,9 +72,134 @@ console.log(
    not permission to feed it untrusted input.
 ---------------------------------------------------------------------- */
 
-// Path to the content file, relative to the page. Must be served over http
-// (not file://) or the fetch is blocked by CORS.
-const DATA_URL = "site-spec.json";
+/* ----------------------------------------------------------------------
+   I18N — runtime language switch (localStorage, no URL/build)
+
+   Two layers are internationalized:
+     1. CONTENT — one full spec file per locale (LOCALE_SPECS). The default
+        locale's file is the canonical `site-spec.json` that the dev tools
+        (generate-static.mjs, launch-check.js) and the static crawler mirror
+        target; alternate locales are runtime-only.
+     2. CHROME — the engine's own strings (aria-labels, error screen, weekday
+        names, the language switcher) live in the UI table below, keyed by
+        locale with an English fallback. Reach them with t("key").
+
+   The active locale is read from localStorage at boot (LANG_KEY); switching
+   saves the choice and reloads, so the boot path re-fetches the right spec —
+   no partial re-render, no separate URLs. Because the switch is runtime-only,
+   the static SEO mirror reflects the DEFAULT locale; that's the accepted
+   trade-off of a switcher over per-locale URLs.
+---------------------------------------------------------------------- */
+
+const LANG_KEY = "lang-preference";
+const DEFAULT_LOCALE = "en";
+// locale → its full spec file. Must be served over http (not file://) or the
+// fetch is blocked by CORS. To add a language: add its spec file here, a UI
+// block below, and a case in the switcher label (initLang).
+const LOCALE_SPECS = {
+    en: "site-spec.json",
+    sk: "site-spec.sk.json",
+};
+
+// Engine chrome strings, per locale. Author content in the spec; these are the
+// strings the spec never carries. Missing keys fall back to English.
+const UI = {
+    en: {
+        home: "Home",
+        mainSections: "Main sections",
+        skip: "Skip to content",
+        themeToggle: "Toggle color theme",
+        openMenu: "Open menu",
+        closeMenu: "Close menu",
+        primaryNav: "Primary",
+        mobileNav: "Mobile",
+        langToggle: "Change language",
+        visitorStats: "Visitor statistics",
+        prevSlide: "Previous slide",
+        nextSlide: "Next slide",
+        chooseSlide: "Choose slide",
+        image: "Image",
+        imageCarousel: (n) => `Image carousel, ${n} slides`,
+        lightboxLabel: "Enlarged image",
+        lightboxClose: "Close",
+        lightboxPrev: "Previous image",
+        lightboxNext: "Next image",
+        openMaps: "Open in Maps",
+        locationMap: "Location map",
+        slide: "Slide",
+        enlargeImage: "Enlarge image",
+        imageGallery: (n) => `Image gallery, ${n} images`,
+        galleryPagination: "Gallery pagination",
+        prevPage: "Previous page",
+        nextPage: "Next page",
+        kinds: {phone: "Phone", email: "Email", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify"},
+        errorTitle: "This page is temporarily unavailable",
+        errorLead: "The content couldn't be loaded right now. Please try again in a moment. ",
+        errorDetails: "Technical details",
+        days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    },
+    sk: {
+        home: "Domov",
+        mainSections: "Hlavné sekcie",
+        skip: "Preskočiť na obsah",
+        themeToggle: "Prepnúť farebný motív",
+        openMenu: "Otvoriť menu",
+        closeMenu: "Zavrieť menu",
+        primaryNav: "Hlavná navigácia",
+        mobileNav: "Mobilná navigácia",
+        langToggle: "Zmeniť jazyk",
+        visitorStats: "Štatistiky návštevnosti",
+        prevSlide: "Predchádzajúca snímka",
+        nextSlide: "Ďalšia snímka",
+        chooseSlide: "Vybrať snímku",
+        image: "Obrázok",
+        imageCarousel: (n) => `Fotogaléria, ${n} snímok`,
+        lightboxLabel: "Zväčšený obrázok",
+        lightboxClose: "Zavrieť",
+        lightboxPrev: "Predchádzajúci obrázok",
+        lightboxNext: "Ďalší obrázok",
+        openMaps: "Otvoriť mapy",
+        locationMap: "Mapa lokality",
+        slide: "Snímka",
+        enlargeImage: "Zväčšiť obrázok",
+        imageGallery: (n) => `Galéria, ${n} obrázkov`,
+        galleryPagination: "Stránkovanie galérie",
+        prevPage: "Predchádzajúca strana",
+        nextPage: "Ďalšia strana",
+        kinds: {phone: "Telefón", email: "E-mail", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify"},
+        errorTitle: "Stránka je dočasne nedostupná",
+        errorLead: "Obsah sa práve nepodarilo načítať. Skús to prosím o chvíľu znova. ",
+        errorDetails: "Technické detaily",
+        days: ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Nedeľa"],
+    },
+};
+
+// Active locale, resolved from localStorage at the top of init(). Everything
+// under here reads it via t(); the fetched spec file is LOCALE_SPECS[LOCALE].
+let LOCALE = DEFAULT_LOCALE;
+
+// Look up a chrome string for the active locale, falling back to English, then
+// to the key itself. Function values (e.g. imageCarousel) are returned as-is
+// for the caller to invoke.
+function t(key) {
+    const table = UI[LOCALE] || UI[DEFAULT_LOCALE];
+    const val = table[key];
+    return val !== undefined ? val : (UI[DEFAULT_LOCALE][key] !== undefined ? UI[DEFAULT_LOCALE][key] : key);
+}
+
+// The spec file for the active locale.
+const currentSpecUrl = () => LOCALE_SPECS[LOCALE] || LOCALE_SPECS[DEFAULT_LOCALE];
+
+// Pick the active locale from localStorage; unknown/missing → default.
+function resolveLocale() {
+    let stored = null;
+    try {
+        stored = localStorage.getItem(LANG_KEY);
+    } catch {
+        // storage unavailable — fall back to default
+    }
+    return stored && LOCALE_SPECS[stored] ? stored : DEFAULT_LOCALE;
+}
 
 // Populated from the fetched JSON on boot. Empty until then; if the load fails
 // it stays empty and the error screen is shown.
@@ -293,32 +419,26 @@ function getBusiness() {
 /* Strip spaces/formatting from a phone number to build a tel: href. */
 const telHref = (phone = "") => "tel:" + String(phone).replace(/[^\d+]/g, "");
 
-/* Slovak display names for what KIND of contact a row is ("Telefón" over the
-   number). Same hardcoded-Slovak precedent as the hours block's day names.
-   Used by resolveRef() for SSOT rows and as the icon-key fallback for inline
-   links items (an explicit item `kind` always wins). */
-const KIND_LABELS = {
-    phone: "Telefón",
-    email: "E-mail",
-    instagram: "Instagram",
-    youtube: "YouTube",
-    spotify: "Spotify",
-};
+/* Localized display names for what KIND of contact a row is ("Phone" over the
+   number) — the active locale's `kinds` map from the UI table. Used by
+   resolveRef() for SSOT rows and as the icon-key fallback for inline links
+   items (an explicit item `kind` always wins). */
+const kindLabels = () => t("kinds");
 
 function resolveRef(key) {
     const b = getBusiness();
 
     if (key === "phone" && b.phone) {
-        return {label: b.phone, handle: "", url: telHref(b.phone), icon: "phone", kind: KIND_LABELS.phone};
+        return {label: b.phone, handle: "", url: telHref(b.phone), icon: "phone", kind: kindLabels().phone};
     }
     if (key === "email" && b.email) {
-        return {label: b.email, handle: "", url: "mailto:" + b.email, icon: "email", kind: KIND_LABELS.email};
+        return {label: b.email, handle: "", url: "mailto:" + b.email, icon: "email", kind: kindLabels().email};
     }
 
     // Otherwise treat the key as a social icon key and pull from socials[].
     const social = (SITE.socials || []).find((s) => s && s.icon === key);
     if (social) {
-        return {label: social.label, handle: "", url: social.url, icon: social.icon, kind: KIND_LABELS[social.icon] || ""};
+        return {label: social.label, handle: "", url: social.url, icon: social.icon, kind: kindLabels()[social.icon] || ""};
     }
 
     return null;
@@ -631,7 +751,7 @@ function buildCards(block) {
 
 /* links — the contact/social link rows.
    Row anatomy: icon | (kind label over value) | optional handle | arrow cue.
-   The kind ("Telefón", "Instagram", …) comes from KIND_LABELS via the icon
+   The kind ("Phone", "Instagram", …) comes from kindLabels() via the icon
    key, or an explicit item `kind`; the persistent arrow is the same
    clickability cue redirect cards use, so rows never need explaining.
    `layout: "grid"` renders the rows as side-by-side tiles instead. */
@@ -660,7 +780,7 @@ function buildLinks(block) {
 
         // Small muted "what is this" line above the value. Explicit item
         // `kind` wins; otherwise derived from the icon key. Optional.
-        const kind = it.kind || KIND_LABELS[it.icon] || "";
+        const kind = it.kind || kindLabels()[it.icon] || "";
         const kindHtml = kind ? `<span class="link-list__kind">${safeText(kind)}</span>` : "";
         const labelHtml = it.label ? `<span class="label">${safeText(it.label)}</span>` : "";
         // Only render the handle span when there is one — an empty span here
@@ -691,7 +811,7 @@ const mapOpenRow = (href) =>
     el(
         "p",
         {class: "map-open-row"},
-        `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Otvoriť mapy</a>`
+        `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("openMaps"))}</a>`
     );
 
 function buildMap(block) {
@@ -722,7 +842,7 @@ function buildMap(block) {
     wrap.appendChild(
         el("iframe", {
             src: embed,
-            title: block.label || "Location map",
+            title: block.label || t("locationMap"),
             loading: "lazy",
             referrerpolicy: "no-referrer-when-downgrade",
             allowfullscreen: true,
@@ -947,18 +1067,18 @@ function getLightbox() {
         class: "lightbox",
         role: "dialog",
         "aria-modal": "true",
-        "aria-label": "Zväčšený obrázok",
+        "aria-label": t("lightboxLabel"),
         hidden: true,
     });
 
     const closeBtn = el("button", {
         type: "button",
         class: "lightbox__close",
-        "aria-label": "Zavrieť",
+        "aria-label": t("lightboxClose"),
     }, "&times;");
 
-    const prevBtn = navButton("lightbox__nav lightbox__nav--prev", "Predchádzajúci obrázok", "prev");
-    const nextBtn = navButton("lightbox__nav lightbox__nav--next", "Ďalší obrázok", "next");
+    const prevBtn = navButton("lightbox__nav lightbox__nav--prev", t("lightboxPrev"), "prev");
+    const nextBtn = navButton("lightbox__nav lightbox__nav--next", t("lightboxNext"), "next");
 
     const img = el("img", {class: "lightbox__img", alt: ""});
     const cap = el("p", {class: "lightbox__caption"});
@@ -1075,7 +1195,7 @@ function closeLightbox() {
 function toLightboxSlides(list) {
     return (list || []).map((s, i) => ({
         src: s.src,
-        caption: [s.title, s.caption, s.text].filter(Boolean).join(" — ") || `Obrázok ${i + 1}`,
+        caption: [s.title, s.caption, s.text].filter(Boolean).join(" — ") || `${t("image")} ${i + 1}`,
     }));
 }
 
@@ -1088,7 +1208,7 @@ function buildCarousel(block) {
     const multi = list.length > 1;
     const uid = `carousel-${++carouselSeq}`;
 
-    const baseLabel = multi ? `Image carousel, ${list.length} slides` : "Image";
+    const baseLabel = multi ? t("imageCarousel")(list.length) : t("image");
 
     const wrapper = el("div", {class: "carousel-block"});
     appendBlockHeader(wrapper, block, "carousel", {id: `${uid}-name`});
@@ -1115,7 +1235,7 @@ function buildCarousel(block) {
             id: `${uid}-slide-${i}`,
         });
 
-        const altText = s.title || s.caption || `Slide ${i + 1}`;
+        const altText = s.title || s.caption || `${t("slide")} ${i + 1}`;
 
         if (multi) {
             slide.appendChild(
@@ -1127,7 +1247,7 @@ function buildCarousel(block) {
         const trigger = el("button", {
             type: "button",
             class: "carousel__expand",
-            "aria-label": `Zväčšiť obrázok: ${altText}`,
+            "aria-label": `${t("enlargeImage")}: ${altText}`,
         });
 
         const img = el("img", {
@@ -1209,8 +1329,8 @@ function buildCarousel(block) {
     root.addEventListener("focusin", stop);
     root.addEventListener("focusout", start);
 
-    const prevBtn = navButton("carousel__nav carousel__nav--prev", "Previous slide", "prev");
-    const nextBtn = navButton("carousel__nav carousel__nav--next", "Next slide", "next");
+    const prevBtn = navButton("carousel__nav carousel__nav--prev", t("prevSlide"), "prev");
+    const nextBtn = navButton("carousel__nav carousel__nav--next", t("nextSlide"), "next");
 
     const manual = (fn) => () => {
         fn();
@@ -1232,7 +1352,7 @@ function buildCarousel(block) {
     const dotWrap = el("div", {
         class: "carousel__dots",
         role: "tablist",
-        "aria-label": "Choose slide",
+        "aria-label": t("chooseSlide"),
     });
 
     dots = list.map((s, i) => {
@@ -1321,7 +1441,7 @@ function buildGallery(block) {
     const gridAttrs = {
         class: "gallery__grid",
         role: "list",
-        "aria-label": name || `Galéria, ${list.length} obrázkov`,
+        "aria-label": name || t("imageGallery")(list.length),
     };
     const cols = Number(block.columns);
     if (cols === 2 || cols === 3 || cols === 4) {
@@ -1331,7 +1451,7 @@ function buildGallery(block) {
 
     // Build one tile for absolute index `absI` in the full list.
     const buildTile = (s, absI) => {
-        const altText = s.title || s.caption || `Obrázok ${absI + 1}`;
+        const altText = s.title || s.caption || `${t("image")} ${absI + 1}`;
 
         // Each tile is a real button → focusable + keyboard-openable, exactly
         // like the carousel's .carousel__expand trigger.
@@ -1339,7 +1459,7 @@ function buildGallery(block) {
             type: "button",
             class: "gallery__item",
             role: "listitem",
-            "aria-label": `Zväčšiť obrázok: ${altText}`,
+            "aria-label": `${t("enlargeImage")}: ${altText}`,
         });
 
         const img = el("img", {
@@ -1383,7 +1503,7 @@ function buildGallery(block) {
     if (paged) {
         const pager = el("nav", {
             class: "gallery__pager",
-            "aria-label": name ? `Stránkovanie galérie: ${name}` : "Stránkovanie galérie",
+            "aria-label": name ? `${t("galleryPagination")}: ${name}` : t("galleryPagination"),
         });
 
         const status = el("span", {
@@ -1391,8 +1511,8 @@ function buildGallery(block) {
             "aria-live": "polite",
         });
 
-        const prev = navButton("gallery__pager-btn gallery__pager-btn--prev", "Predchádzajúca strana", "prev");
-        const next = navButton("gallery__pager-btn gallery__pager-btn--next", "Ďalšia strana", "next");
+        const prev = navButton("gallery__pager-btn gallery__pager-btn--prev", t("prevPage"), "prev");
+        const next = navButton("gallery__pager-btn gallery__pager-btn--next", t("nextPage"), "next");
 
         const syncControls = () => {
             status.textContent = `${page + 1} / ${pageCount}`;
@@ -1436,7 +1556,7 @@ function buildPhoto(block) {
 /* ----------------------------------------------------------------------
    6C. OPENING HOURS
 
-   Renders SITE.business.hours as a seven-row week (Pondelok…Nedeľa). Hours
+   Renders SITE.business.hours as a seven-row week (Monday…Sunday). Hours
    are single-source-of-truth: the block carries no hours data, only an
    optional name/blurb, and reads business.hours by key — same philosophy as
    the links block referencing phone/email. Today's row is highlighted
@@ -1448,17 +1568,10 @@ function buildPhoto(block) {
    Block shape: { "type": "hours", "name"?, "blurb"? }
 ---------------------------------------------------------------------- */
 
-// Fixed Mon-first week. JS getDay() is Sun=0..Sat=6; HOURS_DAY_BY_GETDAY maps
-// that into our key order so "today" lands on the right row.
-const HOURS_DAYS = [
-    {key: "mon", label: "Pondelok"},
-    {key: "tue", label: "Utorok"},
-    {key: "wed", label: "Streda"},
-    {key: "thu", label: "Štvrtok"},
-    {key: "fri", label: "Piatok"},
-    {key: "sat", label: "Sobota"},
-    {key: "sun", label: "Nedeľa"},
-];
+// Fixed Mon-first week; the visible weekday labels are localized via the UI
+// `days` array (same Mon→Sun order). HOURS_DAY_BY_GETDAY maps JS getDay()
+// (Sun=0..Sat=6) into this key order so "today" lands on the right row.
+const HOURS_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const HOURS_DAY_BY_GETDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 function buildHours(block) {
@@ -1467,27 +1580,28 @@ function buildHours(block) {
     if (!hours || typeof hours !== "object") return null;
 
     // Need at least one real day value, else there's nothing to show.
-    const hasAny = HOURS_DAYS.some((d) => typeof hours[d.key] === "string" && hours[d.key].trim());
+    const hasAny = HOURS_DAY_KEYS.some((k) => typeof hours[k] === "string" && hours[k].trim());
     if (!hasAny) return null;
 
     const todayKey = HOURS_DAY_BY_GETDAY[new Date().getDay()];
+    const dayLabels = t("days");
 
     const wrapper = el("div", {class: "hours-block"});
     appendBlockHeader(wrapper, block, "hours");
 
     const dl = el("dl", {class: "hours__list"});
 
-    HOURS_DAYS.forEach((d) => {
-        const raw = hours[d.key];
+    HOURS_DAY_KEYS.forEach((key, i) => {
+        const raw = hours[key];
         const value = (typeof raw === "string" && raw.trim()) ? raw.trim() : "—";
-        const isToday = d.key === todayKey;
+        const isToday = key === todayKey;
 
         const row = el("div", {
             class: isToday ? "hours__row is-today" : "hours__row",
             "aria-current": isToday ? "date" : false,
         });
 
-        row.appendChild(el("dt", {class: "hours__day"}, d.label));
+        row.appendChild(el("dt", {class: "hours__day"}, dayLabels[i]));
         row.appendChild(el("dd", {class: "hours__value"}, escapeHtml(value)));
         dl.appendChild(row);
     });
@@ -1695,7 +1809,7 @@ function renderNav() {
         brand.appendChild(el("img", {
             class: "brand__img",
             src: brandImage,
-            alt: SITE.brand || "Home",
+            alt: SITE.brand || t("home"),
         }));
     } else {
         brand.textContent = SITE.brand;
@@ -1718,7 +1832,7 @@ function renderNav() {
     }
 
     desktop.setAttribute("role", "tablist");
-    desktop.setAttribute("aria-label", "Main sections");
+    desktop.setAttribute("aria-label", t("mainSections"));
 
     navItems().forEach((item) => {
         // Desktop nav is the real ARIA tablist. These IDs are unique.
@@ -1981,7 +2095,7 @@ function renderFooter() {
         const countEl = analytics.dashboardUrl
             ? el("a", linkAttrs(analytics.dashboardUrl, {
                 class: "footer__count",
-                "aria-label": "Visitor statistics",
+                "aria-label": t("visitorStats"),
             }))
             : el("span", {class: "footer__count"});
         f.append(countEl);
@@ -2136,7 +2250,7 @@ function renderHead() {
 /* ----------------------------------------------------------------------
    11B. STRUCTURED DATA (JSON-LD)
 
-   Emits a schema.org BikeStore description of the business as a
+   Emits a schema.org Store description of the business as a
    <script type="application/ld+json"> tag, built entirely from data that
    already lives in the spec (SITE.business + SITE.meta + brand). The
    builder lives in business-jsonld.mjs, SHARED with the dev-only
@@ -2242,6 +2356,70 @@ function initTheme() {
 }
 
 /* ----------------------------------------------------------------------
+   13B. LANGUAGE (runtime switch + localStorage)
+---------------------------------------------------------------------- */
+
+// Push the active locale's chrome strings onto the static shell elements that
+// index.html ships in English (they render before the engine runs). Called on
+// boot; aria-labels/text are swapped in place. Safe to call on the error path.
+function applyChromeStrings() {
+    document.documentElement.lang = (SITE.meta && SITE.meta.lang) || LOCALE;
+
+    const set = (sel, attr, val) => {
+        const node = $(sel);
+        if (node) attr === "text" ? (node.textContent = val) : node.setAttribute(attr, val);
+    };
+
+    set(".skip-link", "text", t("skip"));
+    set("#themeToggle", "aria-label", t("themeToggle"));
+    set("#navDesktop", "aria-label", t("primaryNav"));
+    set("#navMobile", "aria-label", t("mobileNav"));
+    set("#brand", "aria-label", t("home"));
+
+    // Only relabel the menu toggle if the drawer is closed — initMobileMenu()
+    // owns the open/closed aria-label swap while it's active.
+    const menu = $("#menuToggle");
+    if (menu && menu.getAttribute("aria-expanded") !== "true") {
+        menu.setAttribute("aria-label", t("openMenu"));
+    }
+}
+
+// Wire the header language switcher. Two locales → a simple toggle whose label
+// shows the OTHER language; clicking saves the choice and reloads so the boot
+// path re-fetches the matching spec. Idempotent-safe: no-op if the button or a
+// second locale is absent.
+function initLang() {
+    applyChromeStrings();
+
+    const btn = $("#langToggle");
+    if (!btn) return;
+
+    // The button ships hidden. A single-locale site has no other locale to
+    // switch to, so we leave it hidden and bail — no switcher at all.
+    const others = Object.keys(LOCALE_SPECS).filter((l) => l !== LOCALE);
+    // With more than two locales this would need a menu; for two, toggle.
+    const target = others[0];
+    if (!target) return;
+
+    const label = btn.querySelector(".lang-toggle__label");
+    if (label) label.textContent = target.toUpperCase();
+    btn.setAttribute("aria-label", t("langToggle"));
+    btn.setAttribute("title", t("langToggle"));
+    btn.hidden = false; // reveal now that we know there's a second locale
+
+    btn.addEventListener("click", () => {
+        try {
+            localStorage.setItem(LANG_KEY, target);
+        } catch {
+            // storage unavailable — fail silently; without persistence the
+            // reload would just re-read the old locale, so bail early.
+            return;
+        }
+        location.reload();
+    });
+}
+
+/* ----------------------------------------------------------------------
    14. MOBILE MENU
 ---------------------------------------------------------------------- */
 
@@ -2258,7 +2436,7 @@ function initMobileMenu() {
         closeBtn = document.createElement("button");
         closeBtn.type = "button";
         closeBtn.className = "nav-mobile__close";
-        closeBtn.setAttribute("aria-label", "Close menu");
+        closeBtn.setAttribute("aria-label", t("closeMenu"));
         closeBtn.innerHTML = "&times;";
         nav.prepend(closeBtn);
     }
@@ -2272,7 +2450,7 @@ function initMobileMenu() {
         nav.setAttribute("aria-hidden", "false");
         nav.inert = false;
         toggle.setAttribute("aria-expanded", "true");
-        toggle.setAttribute("aria-label", "Close menu");
+        toggle.setAttribute("aria-label", t("closeMenu"));
         document.body.classList.add("menu-open");
 
         scrim.hidden = false;
@@ -2286,7 +2464,7 @@ function initMobileMenu() {
         nav.setAttribute("aria-hidden", "true");
         nav.inert = true;
         toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Open menu");
+        toggle.setAttribute("aria-label", t("openMenu"));
         document.body.classList.remove("menu-open");
 
         scrim.classList.remove("is-visible");
@@ -2488,7 +2666,7 @@ function initHeaderFit() {
                 document.body.classList.remove("menu-open");
                 if (menuToggle) {
                     menuToggle.setAttribute("aria-expanded", "false");
-                    menuToggle.setAttribute("aria-label", "Open menu");
+                    menuToggle.setAttribute("aria-label", t("openMenu"));
                 }
                 if (scrim) {
                     scrim.classList.remove("is-visible");
@@ -2583,6 +2761,7 @@ function initBackground() {
      - "fetch" — couldn't load it at all (404 / network / file:// CORS).
      - "parse" — loaded, but the body wasn't valid JSON. */
 async function loadContent() {
+    const DATA_URL = currentSpecUrl();
     let res;
     try {
         res = await fetch(DATA_URL, {headers: {Accept: "application/json"}});
@@ -2626,11 +2805,11 @@ function renderErrorState(reason) {
         const wrap = el("div", {class: "block"});
         const box = el("div", {class: "error-state", role: "alert"});
 
-        box.appendChild(el("h1", {class: "error-state__title"}, "Stránka je dočasne nedostupná"));
+        box.appendChild(el("h1", {class: "error-state__title"}, t("errorTitle")));
         box.appendChild(el(
             "p",
             {class: "error-state__lead"},
-            "Obsah sa práve nepodarilo načítať. Skús to prosím o chvíľu znova. "
+            t("errorLead")
         ));
 
         // Contact escape hatch from socials, if any survived (none if the JSON
@@ -2643,7 +2822,7 @@ function renderErrorState(reason) {
         // Technical detail for the maintainer, collapsed by default.
         if (reason && reason.detail) {
             const details = el("details", {class: "error-state__details"});
-            details.appendChild(el("summary", {}, "Technické detaily"));
+            details.appendChild(el("summary", {}, t("errorDetails")));
             details.appendChild(el("p", {}, escapeHtml(reason.detail)));
             box.appendChild(details);
         }
@@ -2673,6 +2852,10 @@ async function init() {
         html.classList.add("site-ready");
     };
 
+    // Resolve the active language before anything fetches or renders, so the
+    // right spec is loaded and every t() call reads the correct locale.
+    LOCALE = resolveLocale();
+
     try {
         const {data, error} = await loadContent();
         SITE = data || {};
@@ -2697,13 +2880,14 @@ async function init() {
         if (!hasContent) {
             const reason = error || {
                 kind: "empty",
-                detail: `${DATA_URL} loaded but contained no usable "sections".`,
+                detail: `${currentSpecUrl()} loaded but contained no usable "sections".`,
             };
             console.error("No renderable content — showing error screen:", reason.detail);
 
             renderErrorState(reason);
             initInputMode();
             initTheme();
+            initLang();
             return;
         }
 
@@ -2712,6 +2896,7 @@ async function init() {
         renderFooter();
         initInputMode();
         initTheme();
+        initLang();
         initMobileMenu();
         initHeaderFit();
         initTabs();

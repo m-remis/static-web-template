@@ -2,26 +2,26 @@
 
 > A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.
 
-Stránka je jednostránková aplikácia renderovaná JavaScriptom — tento súbor
-zhŕňa jej obsah v čistom texte. Vedie ju Static Web Template.
+This site is a single-page app rendered by JavaScript — this file
+summarizes its content in plain text. Operated by Static Web Template.
 
-## Kontakt a otváracie hodiny
+## Contact & opening hours
 
-- Adresa: 123 Example Street, Anytown, Country
-- Telefón: +1 (000) 000-0000
-- E-mail: name@example.com
+- Address: 123 Example Street, Anytown, Country
+- Phone: +1 (000) 000-0000
+- Email: name@example.com
 - Instagram: https://instagram.com/
 - Youtube: https://youtube.com/
 - Spotify: https://spotify.com/
-- Mapa: https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY
-- Otváracie hodiny:
-  - pondelok: 9:00–17:00
-  - utorok: 9:00–17:00
-  - streda: 9:00–17:00
-  - štvrtok: 9:00–17:00
-  - piatok: 9:00–17:00
-  - sobota: By appointment
-  - nedeľa: Closed
+- Map: https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY
+- Opening hours:
+  - Monday: 9:00–17:00
+  - Tuesday: 9:00–17:00
+  - Wednesday: 9:00–17:00
+  - Thursday: 9:00–17:00
+  - Friday: 9:00–17:00
+  - Saturday: By appointment
+  - Sunday: Closed
 
 ## Overview
 
@@ -150,13 +150,13 @@ Read README.md for the human quick-start, AGENTS.md for the architecture and how
 
 The same links block, laid out as tiles with brand-tinted icons — here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the socials list.
 
-- [YouTube](https://youtube.com/)
-- [Instagram](https://instagram.com/)
-- [Spotify](https://spotify.com/)
+- [https://youtube.com/](https://youtube.com/)
+- [https://instagram.com/](https://instagram.com/)
+- [https://spotify.com/](https://spotify.com/)
 
-## Odkazy
+## Links
 
-- [Web](https://example.com/): hlavná stránka (obsah renderuje JavaScript zo site-spec.json)
-- [site-spec.json](https://example.com/site-spec.json): kompletný obsah stránky v strojovo čitateľnom JSON
+- [Web](https://example.com/): main page (content rendered by JavaScript from site-spec.json)
+- [site-spec.json](https://example.com/site-spec.json): the full site content in machine-readable JSON
 
-<!-- GENEROVANÉ zo site-spec.json (node generate-static.mjs) — needituj ručne. -->
+<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->
