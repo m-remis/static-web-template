@@ -9,6 +9,63 @@ and the page metadata. The engine (`engine.js`) fetches that file on load and
 renders the whole page from it; `index.html` is just an empty shell. To change
 what the site says, edit `site-spec.json` — not the HTML or the JS.
 
+## Project structure
+
+```text
+.
+├── index.html              # mostly empty shell — content is injected by the engine
+├── engine.js               # the runtime: fetches the spec, renders every block, all UI logic
+├── styles.css              # all styling + the light/dark theme tokens (incl. --accent)
+├── business-jsonld.mjs     # spec → schema.org JSON-LD (shared by the runtime + the generator)
+├── 404.html                # custom not-found page (inherits its theme from styles.css)
+├── 404.css
+│
+├── site-spec.json          # ◀━━ ALL content + metadata — the single source of truth (default: English)
+├── site-spec.sk.json       # Slovak copy — loaded at runtime by the language switch (localStorage)
+├── site-spec.schema.json   # JSON Schema for the spec → live validation + autocomplete in the editor
+│
+├── generate-static.mjs     # dev tool: regenerates the mirrors below from the spec (Node built-ins only)
+├── launch-check.js         # dev tool: pre-deploy validator (placeholders, fake data, broken assets…)
+├── llms.txt                # GENERATED — plain-text mirror of the site for AI crawlers
+├── sitemap.xml             # GENERATED — SEO sitemap
+│
+├── site.webmanifest        # PWA manifest
+├── robots.txt              # crawler rules + explicit AI-crawler opt-in
+├── _headers                # Cloudflare Pages caching + security headers
+├── .nojekyll               # tell GitHub Pages to skip Jekyll processing
+├── .gitignore
+├── LICENSE
+│
+├── README.md               # this file
+├── AGENTS.md               # architecture / how the engine works — read before changing behavior
+├── CLIENT-CHECKLIST.md     # per-client setup checklist (incl. §1d: adding a language)
+├── LAUNCH-CHECK.md         # what launch-check.js checks, and how to run it
+├── _block-template.md      # copyable skeleton for adding a new block type
+├── CLAUDE.md               # points coding agents at AGENTS.md
+│
+└── assets/
+    ├── favicon.ico
+    ├── background/          # cycled at random per visit — list the paths in site-spec.json → "backgrounds"
+    │   ├── background.jpg
+    │   ├── background_2.jpg
+    │   └── background_3.jpg
+    ├── slides/              # demo images for the slideshow / gallery / photo blocks
+    │   ├── mountains.jpg
+    │   └── …
+    └── fonts/               # self-hosted Inter + Oswald (woff2) — no Google Fonts request
+        ├── inter-latin.woff2
+        └── …
+```
+
+> **Content vs. generated:** you edit `site-spec.json` (and any
+> `site-spec.<lang>.json`); `llms.txt`, `sitemap.xml`, and the JSON-LD + LCP
+> preload inside `index.html` are **generated** from it by `generate-static.mjs`
+> — never by hand. Backgrounds are **listed explicitly** in the spec's
+> `backgrounds` array, not auto-discovered.
+>
+> No `CNAME` ships by default — add one (a single line with your domain) only if
+> you deploy to a custom domain; see **Deploy**.
+
 ## Run it locally
 
 The page fetches `site-spec.json`, so it must be served over HTTP (opening the
