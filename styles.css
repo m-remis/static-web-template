@@ -2330,6 +2330,31 @@ span.footer__count {
         display: inline-flex;
     }
 
+    /* Let the brand shrink + ellipsis so the action buttons (lang/theme/menu)
+       ALWAYS fit — a long brand otherwise overflows the header and clips the
+       menu button off-screen (body is overflow-x:hidden). Safe here: the
+       desktop nav is already hidden at this width, so header-fit's
+       natural-width measurement is moot. header-actions stays flex:none so the
+       buttons never shrink. */
+    .site-header {
+        gap: 0.5rem;
+    }
+
+    .brand-wrap {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .brand-wrap .brand,
+    .brand {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 1.35rem;
+    }
+
     .link-list a {
         padding: 1rem 1.1rem;
     }
