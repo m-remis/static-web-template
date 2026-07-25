@@ -367,13 +367,14 @@
     }
   ],
   "footer": {
-    "note": "Živé demo enginu static-web-template, ktoré dokumentuje samo seba.",
-    "year": 2026
+    "note": "Živé demo enginu static-web-template, ktoré dokumentuje samo seba."
   },
   "socials": [
     { "label": "Instagram", "icon": "instagram", "url": "https://instagram.com/" },
     { "label": "YouTube", "icon": "youtube", "url": "https://youtube.com/" },
-    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" }
+    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" },
+    { "label": "GitHub", "icon": "github", "url": "https://github.com/" },
+    { "label": "LinkedIn", "icon": "linkedin", "url": "https://linkedin.com/" }
   ],
   "backgrounds": [
     "assets/background/background.jpg",

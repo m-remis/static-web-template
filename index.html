@@ -58,7 +58,7 @@
     <!-- Static mirror of the runtime JSON-LD for crawlers that don't run JS.
          GENERATED — do not edit: run `node generate-static.mjs`. The engine
          upserts this same tag (by its data-jsonld marker) at boot. -->
-    <script type="application/ld+json" data-jsonld="business">{"@context":"https://schema.org","@type":"Store","name":"Static Web Template","legalName":"Static Web Template","telephone":"+1 (000) 000-0000","email":"name@example.com","description":"A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.","url":"https://example.com/","address":{"@type":"PostalAddress","streetAddress":"123 Example Street","addressLocality":"Anytown","postalCode":"00000","addressCountry":"Country"},"hasMap":"https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY","sameAs":["https://instagram.com/","https://youtube.com/","https://spotify.com/"],"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":"Monday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Tuesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Wednesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Thursday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"09:00","closes":"17:00"}]}</script>
+    <script type="application/ld+json" data-jsonld="business">{"@context":"https://schema.org","@type":"Store","name":"Static Web Template","legalName":"Static Web Template","telephone":"+1 (000) 000-0000","email":"name@example.com","description":"A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.","url":"https://example.com/","address":{"@type":"PostalAddress","streetAddress":"123 Example Street","addressLocality":"Anytown","postalCode":"00000","addressCountry":"Country"},"hasMap":"https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY","sameAs":["https://instagram.com/","https://youtube.com/","https://spotify.com/","https://github.com/","https://linkedin.com/"],"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":"Monday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Tuesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Wednesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Thursday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"09:00","closes":"17:00"}]}</script>
     <!-- Preload of the default tab's first image (the likely LCP element),
          so it downloads in parallel with engine.js instead of waiting for
          the render. GENERATED — do not edit: run `node generate-static.mjs`. -->
@@ -80,13 +80,11 @@
     <nav class="nav-desktop" id="navDesktop" aria-label="Primary"></nav>
 
     <div class="header-actions">
-        <!-- Language switcher. Ships HIDDEN and is revealed by the engine
-             (initLang) only when a second locale exists — a single-locale site
-             shows no switcher at all, even before/without JS. initLang sets the
-             target-language label and wires the localStorage-backed reload. -->
-        <button class="lang-toggle" id="langToggle" type="button" aria-label="Change language" hidden>
-            <span class="lang-toggle__label" aria-hidden="true"></span>
-        </button>
+        <!-- Language switcher: a custom <details> dropdown built by the engine
+             (initLang) into this container — a frosted button + a site-styled
+             option list. Ships HIDDEN and is revealed only when a second locale
+             exists, so a single-locale site shows no switcher even without JS. -->
+        <div class="lang-switcher" id="langSwitcher" hidden></div>
 
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme"
                 aria-pressed="false">

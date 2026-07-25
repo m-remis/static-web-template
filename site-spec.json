@@ -367,13 +367,14 @@
     }
   ],
   "footer": {
-    "note": "A live, self-documenting demo of the static-web-template engine.",
-    "year": 2026
+    "note": "A live, self-documenting demo of the static-web-template engine."
   },
   "socials": [
     { "label": "Instagram", "icon": "instagram", "url": "https://instagram.com/" },
     { "label": "YouTube", "icon": "youtube", "url": "https://youtube.com/" },
-    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" }
+    { "label": "Spotify", "icon": "spotify", "url": "https://spotify.com/" },
+    { "label": "GitHub", "icon": "github", "url": "https://github.com/" },
+    { "label": "LinkedIn", "icon": "linkedin", "url": "https://linkedin.com/" }
   ],
   "backgrounds": [
     "assets/background/background.jpg",

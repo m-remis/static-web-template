@@ -682,14 +682,19 @@ not a build step. It internationalizes two layers, kept apart on purpose:
 Flow: `init()` calls `resolveLocale()` (reads `LANG_KEY` from `localStorage`,
 falls back to `DEFAULT_LOCALE`) **before** fetching, so the right spec loads and
 every `t()` reads the right locale. `renderHead()` sets `<html lang>` from the
-loaded `meta.lang`. The header `#langToggle` **ships `hidden`**; `initLang()`
-reveals it *only* when a second locale exists (so a single-locale site shows no
-switcher at all, even before/without JS — the `.lang-toggle[hidden]` CSS rule
-beats the button's own `display`). When shown it displays the *other* locale's
-code, and on click saves the choice and **`location.reload()`s** — the boot path
-then re-fetches the matching spec. Reload (not partial re-render) is intentional:
-no stale listeners, no half-swapped DOM. `applyChromeStrings()` pushes localized
-aria/text onto the static shell elements `index.html` ships in English.
+loaded `meta.lang`. The header `#langSwitcher` container **ships `hidden`**;
+`initLang()` builds a custom **`<details>` dropdown** into it and reveals it
+*only* when a second locale exists (so a single-locale site shows no switcher at
+all, even before/without JS — the `.lang-switcher[hidden]` CSS rule keeps the
+container hidden until then). The summary is the frosted "button" showing the
+active locale's **ISO 639-1 code** (`EN`, `SK`); the panel lists one option per
+locale (each shows the code, with the endonym from `LOCALE_NAMES` as the
+accessible label/tooltip). Picking a locale saves the choice and
+**`location.reload()`s** — the boot path then re-fetches the matching spec.
+Reload (not partial re-render) is intentional: no stale listeners, no
+half-swapped DOM. The dropdown closes on Escape (focus returns to the summary)
+and on outside click. `applyChromeStrings()` pushes localized aria/text onto the
+static shell elements `index.html` ships in English.
 
 **Trade-off (know this):** because the switch is runtime-only, the **static SEO
 mirror reflects the default locale** — `generate-static.mjs` and `launch-check`
@@ -698,11 +703,11 @@ for visitors, not search engines. That's the accepted cost of a switcher over
 per-locale URLs. To fully validate a locale's content, run
 `node launch-check.js --site-spec site-spec.sk.json`.
 
-**To add a language:** add its spec file, add a `LOCALE_SPECS` entry, add a `UI`
-block for it, and translate the weekday `days` array. The switcher handles two
-locales as a toggle; more than two would need a menu (noted in `initLang`). Also
-mirror the strings in `404.html`'s inline script (it localizes from the same
-`localStorage` key without loading the engine).
+**To add a language:** add its spec file, add a `LOCALE_SPECS` entry, add a
+`LOCALE_NAMES` endonym, add a `UI` block for it, and translate the weekday
+`days` array. The dropdown lists every locale, so any number works — no per-
+locale switcher code to touch. Also mirror the strings in `404.html`'s inline
+script (it localizes from the same `localStorage` key without loading the engine).
 
 ## Header fit (left cluster ↔ nav collision) — don't "simplify" this
 

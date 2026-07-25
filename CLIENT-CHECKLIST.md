@@ -123,7 +123,8 @@ node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
   a **distinct `label`** (it doubles as the `aria-label`); the optional
   `headerLabel` replaces it in the header/drawer only. `icon` must match a key
   in the `SOCIAL_ICONS` map in `engine.js` (currently `instagram`, `youtube`,
-  `spotify`, `email`, `phone`). Remove platforms the client doesn't have.
+  `spotify`, `github`, `linkedin`, `email`, `phone`). Remove platforms the
+  client doesn't have.
   - [ ] **New platform?** Add an inline SVG to `SOCIAL_ICONS` in `engine.js`
     **and** a `.socials__link--<icon> svg { color: … }` brand-tint rule in
     `styles.css`, then reference the key here. (See `AGENTS.md` → "Socials".)

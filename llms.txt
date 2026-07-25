@@ -13,6 +13,8 @@ summarizes its content in plain text. Operated by Static Web Template.
 - Instagram: https://instagram.com/
 - Youtube: https://youtube.com/
 - Spotify: https://spotify.com/
+- Github: https://github.com/
+- Linkedin: https://linkedin.com/
 - Map: https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY
 - Opening hours:
   - Monday: 9:00–17:00

@@ -94,11 +94,19 @@ console.log(
 const LANG_KEY = "lang-preference";
 const DEFAULT_LOCALE = "en";
 // locale → its full spec file. Must be served over http (not file://) or the
-// fetch is blocked by CORS. To add a language: add its spec file here, a UI
-// block below, and a case in the switcher label (initLang).
+// fetch is blocked by CORS. To add a language: add its spec file here, a
+// LOCALE_NAMES endonym below, and a UI block below. The switcher (initLang) is
+// a dropdown that lists every locale, so no per-language switcher code to touch.
 const LOCALE_SPECS = {
     en: "site-spec.json",
     sk: "site-spec.sk.json",
+};
+
+// Human-readable names (endonyms) for the language dropdown; any locale not
+// listed falls back to its uppercased code.
+const LOCALE_NAMES = {
+    en: "English",
+    sk: "Slovenčina",
 };
 
 // Engine chrome strings, per locale. Author content in the spec; these are the
@@ -571,6 +579,14 @@ const SOCIAL_ICONS = {
     phone:
         '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
         '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>' +
+        "</svg>",
+    github:
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">' +
+        '<path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.575.106.785-.25.785-.554 0-.273-.01-.998-.015-1.96-3.196.695-3.87-1.54-3.87-1.54-.523-1.33-1.278-1.683-1.278-1.683-1.044-.714.08-.7.08-.7 1.155.082 1.763 1.187 1.763 1.187 1.026 1.758 2.693 1.25 3.35.955.104-.744.401-1.25.73-1.538-2.552-.29-5.236-1.276-5.236-5.68 0-1.255.448-2.28 1.183-3.084-.119-.29-.513-1.46.112-3.044 0 0 .966-.31 3.165 1.178a10.98 10.98 0 0 1 2.88-.388c.977.005 1.962.132 2.882.388 2.197-1.488 3.162-1.178 3.162-1.178.627 1.584.233 2.754.114 3.044.737.804 1.182 1.829 1.182 3.084 0 4.415-2.688 5.386-5.248 5.671.413.356.78 1.057.78 2.131 0 1.539-.014 2.78-.014 3.158 0 .307.207.666.79.553A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>' +
+        "</svg>",
+    linkedin:
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">' +
+        '<path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/>' +
         "</svg>",
 };
 
@@ -2391,32 +2407,76 @@ function applyChromeStrings() {
 function initLang() {
     applyChromeStrings();
 
-    const btn = $("#langToggle");
-    if (!btn) return;
+    const container = $("#langSwitcher");
+    if (!container) return;
 
-    // The button ships hidden. A single-locale site has no other locale to
-    // switch to, so we leave it hidden and bail — no switcher at all.
-    const others = Object.keys(LOCALE_SPECS).filter((l) => l !== LOCALE);
-    // With more than two locales this would need a menu; for two, toggle.
-    const target = others[0];
-    if (!target) return;
+    // The switcher ships hidden. A single-locale site has nothing to switch
+    // to, so leave it hidden and bail — no switcher at all.
+    const locales = Object.keys(LOCALE_SPECS);
+    if (locales.length < 2) return;
 
-    const label = btn.querySelector(".lang-toggle__label");
-    if (label) label.textContent = target.toUpperCase();
-    btn.setAttribute("aria-label", t("langToggle"));
-    btn.setAttribute("title", t("langToggle"));
-    btn.hidden = false; // reveal now that we know there's a second locale
+    // A custom <details> disclosure (not a native <select>): the summary keeps
+    // the frosted-button look, and the option list is a fully site-styled
+    // panel. Each option shows the ISO 639-1 code (EN, SK); the full language
+    // name (endonym) rides along as the accessible label + tooltip.
+    const labelText = t("langToggle");
+    const caret =
+        '<svg class="lang-dd__caret" viewBox="0 0 12 8" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M1 1.5 6 6.5l5-5"/></svg>';
 
-    btn.addEventListener("click", () => {
-        try {
-            localStorage.setItem(LANG_KEY, target);
-        } catch {
-            // storage unavailable — fail silently; without persistence the
-            // reload would just re-read the old locale, so bail early.
-            return;
-        }
-        location.reload();
+    const optionsHtml = locales.map((loc) => {
+        const name = LOCALE_NAMES[loc] || loc.toUpperCase();
+        const active = loc === LOCALE;
+        return (
+            `<li><button type="button" class="lang-dd__option${active ? " is-active" : ""}" ` +
+            `data-locale="${escapeHtml(loc)}" aria-label="${escapeHtml(name)}" ` +
+            `title="${escapeHtml(name)}"${active ? ' aria-current="true"' : ""}>` +
+            `${escapeHtml(loc.toUpperCase())}</button></li>`
+        );
+    }).join("");
+
+    const details = el("details", {class: "lang-dd"});
+    details.innerHTML =
+        `<summary class="lang-dd__current" aria-label="${escapeHtml(labelText)}" title="${escapeHtml(labelText)}">` +
+        `<span class="lang-dd__code">${escapeHtml(LOCALE.toUpperCase())}</span>${caret}</summary>` +
+        `<ul class="lang-dd__list">${optionsHtml}</ul>`;
+
+    // Choosing a locale: persist + reload (the boot path re-fetches the matching
+    // spec). Choosing the current one just closes the menu.
+    details.querySelectorAll(".lang-dd__option").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.locale;
+            if (!target || target === LOCALE) {
+                details.open = false;
+                return;
+            }
+            try {
+                localStorage.setItem(LANG_KEY, target);
+            } catch {
+                // storage unavailable — without persistence the reload would
+                // just re-read the old locale, so bail (leave menu open state).
+                details.open = false;
+                return;
+            }
+            location.reload();
+        });
     });
+
+    // Close on Escape (return focus to the summary) and on any outside click.
+    details.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && details.open) {
+            details.open = false;
+            const s = details.querySelector("summary");
+            if (s) s.focus();
+        }
+    });
+    document.addEventListener("click", (e) => {
+        if (details.open && !details.contains(e.target)) details.open = false;
+    });
+
+    container.appendChild(details);
+    container.hidden = false; // reveal now that we know there's a second locale
 }
 
 /* ----------------------------------------------------------------------

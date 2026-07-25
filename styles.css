@@ -98,6 +98,7 @@
     --brand-spotify: #1db954;
     --brand-phone: #2e9e4f;
     --brand-email: #3b5bdb;
+    --brand-linkedin: #0a66c2;
 
     --on-image-text: #fff;
     --on-image-btn-bg: rgba(0, 0, 0, 0.45);
@@ -334,7 +335,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
    still respond. The bordered controls share one press rule: */
 .theme-toggle:active,
 .menu-toggle:active,
-.lang-toggle:active,
+.lang-dd__current:active,
 .nav-mobile__close:active,
 .map-open-row a:active,
 .carousel__nav:active,
@@ -512,8 +513,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 /* Theme toggle */
 .theme-toggle,
-.menu-toggle,
-.lang-toggle {
+.menu-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -531,26 +531,106 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 @media (hover: hover) {
     .theme-toggle:hover,
     .menu-toggle:hover,
-    .lang-toggle:hover {
+    .lang-dd__current:hover {
         border-color: var(--accent);
     }
 }
 
-/* Language switcher — same chrome as the theme toggle, but shows a short
-   two-letter code (the OTHER locale) instead of an icon. It ships `hidden`
-   and the engine reveals it only when a second locale exists; the base
-   `display: inline-flex` above would otherwise override `[hidden]`, so this
-   rule (class + attribute = higher specificity) keeps it hidden until then. */
-.lang-toggle[hidden] {
+/* Language switcher — a custom <details> dropdown (built by initLang). The
+   summary is the frosted "button" (same chrome as the theme toggle); the list
+   is a fully site-styled panel, since native <select> option lists can't be
+   themed. Ships hidden; the container is revealed only for a multi-locale site. */
+.lang-switcher[hidden] {
     display: none;
 }
 
-.lang-toggle__label {
+.lang-dd {
+    position: relative;
+}
+
+/* Trigger button (the <summary>) — the frosted control the site already uses. */
+.lang-dd__current {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 2.5rem;
+    padding: 0 0.7rem;
+    border: 1px solid var(--border);
+    background-color: var(--bg-panel);
+    -webkit-backdrop-filter: blur(var(--panel-blur));
+    backdrop-filter: blur(var(--panel-blur));
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
     font-family: var(--font-serif);
     font-weight: 700;
     font-size: 0.8rem;
-    line-height: 1;
     letter-spacing: 0.04em;
+    user-select: none;
+    list-style: none; /* drop the default disclosure triangle */
+    transition: border-color var(--transition), background-color var(--transition);
+}
+
+/* Remove the WebKit/Safari disclosure marker too. */
+.lang-dd__current::-webkit-details-marker {
+    display: none;
+}
+
+.lang-dd__caret {
+    width: 0.7rem;
+    height: 0.7rem;
+    transition: transform var(--transition);
+}
+
+.lang-dd[open] .lang-dd__caret {
+    transform: rotate(180deg);
+}
+
+/* Option list — a frosted panel dropped below the button, matching the cards
+   and mobile drawer. Sits above the sticky header. */
+.lang-dd__list {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 60;
+    min-width: 100%;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-panel-solid);
+    -webkit-backdrop-filter: blur(var(--panel-blur));
+    backdrop-filter: blur(var(--panel-blur));
+    box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.55);
+}
+
+.lang-dd__option {
+    display: block;
+    width: 100%;
+    padding: 0.45rem 0.95rem;
+    border: none;
+    background: transparent;
+    color: var(--menu-text);
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-align: left;
+    border-radius: calc(var(--radius-sm) - 2px);
+    cursor: pointer;
+    transition: color var(--transition), background var(--transition);
+}
+
+@media (hover: hover) {
+    .lang-dd__option:hover {
+        color: var(--menu-text-active);
+        background: var(--menu-hover-bg);
+    }
+}
+
+.lang-dd__option.is-active {
+    color: var(--accent);
 }
 
 /* Theme toggle icon — one SVG that morphs between a crescent moon (dark mode,
@@ -693,6 +773,16 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 .socials__link--email svg {
     color: var(--brand-email);
+}
+
+/* GitHub is a monochrome mark — it follows the text color so it stays legible
+   in both themes; LinkedIn keeps its brand blue (a mid blue readable on both). */
+.socials__link--github svg {
+    color: var(--text);
+}
+
+.socials__link--linkedin svg {
+    color: var(--brand-linkedin);
 }
 
 /* ---- Mobile nav ------------------------------------------------------- */
@@ -1275,6 +1365,14 @@ article.card .card__meta {
 
 .link-list--spotify .link-list__icon {
     color: var(--brand-spotify);
+}
+
+.link-list--github .link-list__icon {
+    color: var(--text);
+}
+
+.link-list--linkedin .link-list__icon {
+    color: var(--brand-linkedin);
 }
 
 /* ---- Table (price list / structured rows) ----------------------------- */
