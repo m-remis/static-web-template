@@ -247,6 +247,36 @@ html.site-ready body {
     transition: opacity 100ms ease;
 }
 
+/* Language swap (switchLocale): only the regions whose text actually changes
+   fade out and back in — the page copy and the desktop tabs. The background, the
+   brand, the header controls, the theme and the scroll position all stay put, so
+   switching language reads as a soft crossfade of the copy rather than the
+   full-page blink a reload gives.
+   Deliberately NOT applied to #navMobile: the drawer owns its own transform
+   transition for opening/closing, and it is closed before a swap anyway.
+   The duration must match SWAP_FADE_MS in engine.js — the fade-out has to have
+   finished before the DOM underneath it is rebuilt.
+
+   #siteFooter is deliberately NOT in either rule. It's one short line pinned
+   under the content, so fading it doesn't read as a crossfade — it reads as the
+   footer blinking out of the page and back. Its text is simply replaced in
+   place, under the cover of the fade happening above it.
+
+   NOTE for sites that give `.section` a visible surface (a card: background,
+   border, blur): fading `#main` fades that surface too, so the page background
+   flashes through where the card was. Those builds should fade the card's
+   CHILDREN instead — `#main > .section > *` — which is what m-remis.github.io
+   does. The plain template has no card, so `#main` is correct here. */
+#main,
+#navDesktop {
+    transition: opacity 90ms ease;
+}
+
+html.site-swapping #main,
+html.site-swapping #navDesktop {
+    opacity: 0;
+}
+
 /* Fallback for older browsers that do not support scrollbar-gutter.
    Keep this on the root scroll container, not body, so the page layout width
    stays consistent between short and long tabs. */

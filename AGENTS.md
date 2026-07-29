@@ -184,14 +184,18 @@ the code. **Done when:** the script runs, and its docs describe what it now does
 lightbox, scroll handling, etc.
 
 1. **Edit the relevant `init*`/`build*` function in `engine.js`.**
-2. **Check the "Constraints / gotchas" section** before touching scroll
+2. **Adding a listener or a timer?** Read "Re-rendering in place (the teardown
+   registry)" first — anything attached to `window`, `document`, or a static
+   shell element must go through `on()`/`onTeardown()`, or it doubles up on the
+   next language switch.
+3. **Check the "Constraints / gotchas" section** before touching scroll
    handling, header-fit, or the mobile drawer — several behaviors are load-
    bearing and look like dead code (e.g. the instant top-scroll on tab
    switches). If you change one, update its gotcha note so the next agent
    knows why.
-3. **Update "Key functions in `engine.js`"** if you add/rename/remove a function
+4. **Update "Key functions in `engine.js`"** if you add/rename/remove a function
    or change what it does.
-4. **Run the manual checks in "How to verify a change"** — behavior changes are
+5. **Run the manual checks in "How to verify a change"** — behavior changes are
    exactly what `launch-check` *can't* catch (it validates the spec, not the
    rendered result).
 
@@ -533,21 +537,27 @@ colors live as standalone rules, identical in light and dark mode:
 
 ## Key functions in `engine.js`
 
-- `init()` (async) — boot: `await loadContent()` → assign `SITE` →
-  `renderHead()` + `renderJsonLd()` + `renderTheme()` (always, so metadata and
-  brand tokens are right even on the error screen) → if no
+- `init()` (async) — boot: `resolveLocale()` (before anything fetches, so the
+  right spec loads) then `await renderSite()`, which does `loadContent()` →
+  assign `SITE` → `renderHead()` + `renderJsonLd()` + `renderTheme()` (always,
+  so metadata and brand tokens are right even on the error screen) → if no
   usable sections, `renderErrorState()` + minimal init and return; otherwise
   `renderNav()`, `renderContent()`, `renderFooter()`, `initInputMode()`,
-  `initTheme()`, `initMobileMenu()`, `initHeaderFit()`, `initTabs()`,
-  and `initBackground()`. The whole body runs inside a
+  `initTheme()`, `initLang()`, `initMobileMenu()`, `initHeaderFit()`,
+  `initTabs()`, and `initBackground()`. The boot body runs inside a
   `try { … } finally { reveal() }`: the shell starts hidden via
   `html.site-booting` (set inline in `index.html` to avoid a flash of the empty
   layout), and `reveal()` swaps it to `site-ready` on **every** exit path
   (normal render and the error-screen return). A `<noscript>` block in
   `index.html` force-shows the page if JS never runs, so the booting class can
   never permanently hide it.
-- `loadContent()` — fetch + parse `site-spec.json`; returns `{data, error}`
-  with `error.kind` of `fetch` / `parse`; never throws.
+- `loadContent(url?)` / `fetchSpec()` / `warmLocale()` — fetch + parse a spec;
+  returns `{data, error}` with `error.kind` of `fetch` / `parse`; never throws.
+  `loadContent()` is the cached front door (`SPEC_CACHE`, keyed by URL, session-
+  scoped, successes only, in-flight promises shared); `fetchSpec()` is the raw
+  request behind it. `warmLocale()` primes a locale's spec ahead of need — the
+  language dropdown calls it on hover/open so the swap itself never waits on the
+  network. Defaults to the active locale's URL, so boot is unchanged.
 - `getSections()` — the normalized, guarded ordered section list. Drops entries
   without an `id`. Every render path and the tab logic go through it, so a
   missing/empty `sections` degrades to the empty/error state instead of throwing.
@@ -603,9 +613,20 @@ colors live as standalone rules, identical in light and dark mode:
   `<details>` with the technical reason for the maintainer.
 - `initTheme()` / `applyTheme()` — dark-default theme toggle + `localStorage`.
 - `resolveLocale()` / `t()` / `currentSpecUrl()` / `initLang()` /
-  `applyChromeStrings()` — the i18n layer: pick the locale from `localStorage`,
-  resolve chrome strings, pick the locale's spec file, and wire the header
-  language switch (see "Internationalization").
+  `switchLocale()` / `applyChromeStrings()` — the i18n layer: pick the locale
+  from `localStorage`, resolve chrome strings, pick the locale's spec file, wire
+  the header language switch, and swap language by re-rendering in place rather
+  than reloading (see "Internationalization").
+- `renderSite(loaded?)` — one full render from the active locale's spec:
+  fetch → head/JSON-LD/theme → nav/content/footer → all the `init*` wiring (or
+  the error screen). Called by `init()` on boot and by `switchLocale()` for a
+  language change, so it must stay safe to run twice; the optional `loaded`
+  argument is a pre-resolved `loadContent()` result, which is how the swap
+  overlaps its fetch with the fade-out.
+- `on()` / `onTeardown()` / `teardownSite()` — the render lifecycle registry
+  (section 1C). Every listener and timer that would outlive a render is
+  installed through these so the next render starts clean; see "Re-rendering in
+  place" below — this is a rule, not a convenience.
 - `initTabs()` — section-as-tab switching, hash routing, keyboard arrows on the
   desktop tablist, and scroll-position control (see the scroll gotcha below).
 - `initMobileMenu()` — frosted drawer; injects its own close (`×`) button,
@@ -622,7 +643,10 @@ colors live as standalone rules, identical in light and dark mode:
   survive a browser back/forward taken while an image is expanded — floating
   over the newly shown panel with page scroll still locked by `.lightbox-open`.
   The `lightboxApi &&` guard is what keeps the overlay lazy for visitors who
-  never open one; don't "simplify" it into `getLightbox().close()`.
+  never open one; don't "simplify" it into `getLightbox().close()`. The overlay
+  is also page-level in the other sense — it would outlive a re-render — so it
+  registers a teardown that removes the node and nulls `lightboxApi`, letting the
+  next open rebuild it with the new locale's labels.
 - `renderFooter()` — `© year brand` + footer note, plus an optional visitor
   count when `meta.analytics.countUrl` is set. `renderVisitorCount()` fetches
   the GoatCounter-style JSON count best-effort (any failure leaves the footer
@@ -689,12 +713,48 @@ all, even before/without JS — the `.lang-switcher[hidden]` CSS rule keeps the
 container hidden until then). The summary is the frosted "button" showing the
 active locale's **ISO 639-1 code** (`EN`, `SK`); the panel lists one option per
 locale (each shows the code, with the endonym from `LOCALE_NAMES` as the
-accessible label/tooltip). Picking a locale saves the choice and
-**`location.reload()`s** — the boot path then re-fetches the matching spec.
-Reload (not partial re-render) is intentional: no stale listeners, no
-half-swapped DOM. The dropdown closes on Escape (focus returns to the summary)
-and on outside click. `applyChromeStrings()` pushes localized aria/text onto the
-static shell elements `index.html` ships in English.
+accessible label/tooltip). Picking a locale hands off to **`switchLocale()`**,
+which saves the choice and **re-renders in place** — no page reload. The
+dropdown closes on Escape (focus returns to the summary) and on outside click.
+`applyChromeStrings()` pushes localized aria/text onto the static shell elements
+`index.html` ships in English.
+
+**The switch does not reload the page — and the re-render has a contract.** An
+earlier build did `location.reload()`, which was simple but visibly blinked the
+whole site: the shell repainted empty behind `html.site-booting`, the background
+restarted from nothing, the boot fade replayed, and the reader lost their scroll
+position — a full-page flash to change some text. Now `switchLocale()` fades out
+the regions whose text actually changes (`#main` and `#navDesktop` —
+`html.site-swapping` in `styles.css`, duration must match `SWAP_FADE_MS`),
+starts the new spec's fetch **during** the fade, then calls `teardownSite()` and
+re-runs `renderSite()`. The background, theme, header chrome, current tab and
+scroll position all survive. The footer is deliberately left out of the fade:
+it's a single line, so fading it reads as a blink rather than a crossfade, and
+its text is just replaced in place. (A build that gives `.section` a card
+surface must fade `#main > .section > *` instead of `#main`, or the card's own
+background fades and the page background flashes through — see the CSS note.)
+
+**What the swap costs, and why it's built that way.** Three things were in the
+critical path, and each is dealt with at its source rather than by shortening
+the animation:
+
+- **The network.** Specs are a few KB, so a fetch is pure latency — and
+  `_headers` serves them `max-age=0, must-revalidate`, so even a warm HTTP cache
+  still pays a round-trip for a `304`. `SPEC_CACHE` keeps parsed specs for the
+  session (switching back is free), and the dropdown calls `warmLocale()` on
+  hover/`toggle`, so the fetch starts while the reader is still choosing and the
+  click lands on a cached spec. Prefetch-on-intent is why the fade no longer has
+  to be long enough to hide a request.
+- **The fade**, at `SWAP_FADE_MS`, paid twice — this is now the swap's only
+  self-imposed cost, so keep it short enough to read as a crossfade and no
+  longer. Raising it re-adds dead time on both ends.
+- **Reduced motion.** The global `prefers-reduced-motion` rule already forces
+  every transition to `0.001ms`, so waiting `SWAP_FADE_MS` for those users was
+  waiting on a fade that never ran. `switchLocale()` checks `reducedMotion()`
+  and skips both the class and the wait — the text just changes.
+
+See "Re-rendering in place" below for the rule this puts on every `init*`
+function.
 
 **Trade-off (know this):** because the switch is runtime-only, the **static SEO
 mirror reflects the default locale** — `generate-static.mjs` and `launch-check`
@@ -708,6 +768,50 @@ per-locale URLs. To fully validate a locale's content, run
 `days` array. The dropdown lists every locale, so any number works — no per-
 locale switcher code to touch. Also mirror the strings in `404.html`'s inline
 script (it localizes from the same `localStorage` key without loading the engine).
+
+## Re-rendering in place (the teardown registry) — read before adding a listener
+
+The site is rendered **more than once per page load**: `renderSite()` runs on
+boot from `init()`, and again on every language switch (`switchLocale()`). That
+makes idempotency a hard requirement, in two directions:
+
+1. **Every `render*` function clears what it owns first.** `renderContent()`,
+   `renderFooter()` and `initLang()` empty their container; `renderNav()` clears
+   both navs, drops the `brand--image` class, and *reuses* an existing
+   `.brand-wrap` (a second `brand.replaceWith()` would nest one wrap inside the
+   old one). `renderHead()`/`renderJsonLd()` upsert. If you add a render step,
+   it must be safe to run twice.
+2. **Every listener or timer on a target that outlives a render goes through
+   `on()` / `onTeardown()`** — the registry in section 1C of `engine.js`. That
+   means `window`, `document`, a `matchMedia` list, and the static shell
+   elements `index.html` ships (`#brand`, `#themeToggle`, `#menuToggle`,
+   `#navDesktop`, `#navScrim`, `#navMobile`, the `#bg`/`#bg2` layers), plus
+   anything page-level the engine creates once (the lightbox overlay, the
+   background interval). `teardownSite()` pops them all before the next render.
+   A bare `addEventListener` on one of those is the bug this registry exists to
+   prevent: it survives the render and you get **two** handlers, so one theme
+   click toggles twice, one tab click pushes two history entries, and so on.
+
+Listeners inside `build*` functions need no registration — their nodes are
+replaced by the render, so the listeners go with them. Don't add bookkeeping
+there.
+
+Two teardown details that are load-bearing, both found by breaking them:
+
+- **A teardown must *finish* a pending transition, not just cancel it.** The
+  drawer's `close()` hides the scrim on a 220ms delay, and closing the drawer is
+  the first thing a swap does — so the teardown lands inside that window. The
+  scrim is `position: fixed; inset: 0` with **no** `pointer-events: none`; it
+  only stops covering the page once `hidden` is set. Cancelling that timer
+  without also setting `hidden` leaves an invisible sheet over the new render
+  swallowing every click.
+- **`initBackground()` adopts the running background instead of restarting it.**
+  It reads which layer carries `.is-active` and which list entry it shows, and
+  only calls `show()` when nothing is painted yet. Restarting would crossfade
+  the background on a language switch for no reason — or dip it to black while
+  re-fading the image that was already up. Its in-flight `Image.onload`
+  callbacks check a `stopped` flag the teardown trips, so the previous render's
+  loads can't paint over the new one.
 
 ## Header fit (left cluster ↔ nav collision) — don't "simplify" this
 
@@ -868,6 +972,13 @@ There are no tests and no build. After editing:
 6. Tables: confirm the desktop table scrolls sideways if very wide, and that on
    ≤640px each row collapses into a stacked card (a long row must not force
    horizontal page scroll).
+7. Language switch (multi-locale sites): from a *non-first* tab, scrolled down,
+   pick the other language. The copy should crossfade — no page blink, no
+   background restart, same tab, same scroll position — and afterwards **one**
+   theme-toggle click must still flip the theme once, one tab click must add one
+   history entry, and the drawer/lightbox must still open. Duplicated handlers
+   from a missed teardown show up exactly there. Switching *while* the drawer is
+   open must leave the page clickable (the scrim gotcha above).
 
 Make the smallest change that satisfies the request, match the existing style,
 and don't reformat unrelated code.

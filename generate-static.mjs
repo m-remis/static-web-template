@@ -303,10 +303,21 @@ function buildLcpPreload(html, spec) {
    so --check may flag the sitemap stale there — rerun the generator once and
    it settles; day granularity keeps that churn rare. */
 
+/* Format a Date as YYYY-MM-DD in LOCAL time. Deliberately not
+   toISOString().slice(0, 10): that converts to UTC first, so an evening edit
+   east of Greenwich (or an early-morning one west of it) stamps the
+   neighbouring calendar day — e.g. 00:58 local in UTC+2 became the previous
+   date. <lastmod> is a day-granularity field, so it should name the day the
+   spec was actually edited. */
+function localDay(date) {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function buildSitemapXml(spec) {
     const domain = String((spec.meta || {}).domain || "").replace(/\/+$/, "");
     if (!domain) return null;
-    const lastmod = statSync(SPEC_PATH).mtime.toISOString().slice(0, 10);
+    const lastmod = localDay(statSync(SPEC_PATH).mtime);
     return [
         `<?xml version="1.0" encoding="UTF-8"?>`,
         `<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->`,

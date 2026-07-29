@@ -85,10 +85,13 @@ console.log(
         locale with an English fallback. Reach them with t("key").
 
    The active locale is read from localStorage at boot (LANG_KEY); switching
-   saves the choice and reloads, so the boot path re-fetches the right spec —
-   no partial re-render, no separate URLs. Because the switch is runtime-only,
-   the static SEO mirror reflects the DEFAULT locale; that's the accepted
-   trade-off of a switcher over per-locale URLs.
+   saves the choice and re-renders the site in place (switchLocale → renderSite)
+   behind a short crossfade — no page reload, no separate URLs. The background,
+   theme, current tab and scroll position survive the switch; see the teardown
+   registry (section 1C) for the contract that makes a second render safe.
+   Because the switch is runtime-only, the static SEO mirror reflects the
+   DEFAULT locale; that's the accepted trade-off of a switcher over per-locale
+   URLs.
 ---------------------------------------------------------------------- */
 
 const LANG_KEY = "lang-preference";
@@ -214,6 +217,53 @@ function resolveLocale() {
 let SITE = {};
 
 /* ----------------------------------------------------------------------
+   1C. RENDER LIFECYCLE (teardown registry)
+
+   The site is rendered more than once per page load: the language switch
+   re-renders in place (switchLocale) instead of reloading, because a reload
+   blinks the whole page — the shell repaints empty behind html.site-booting,
+   the background layers restart from nothing, and the boot fade-in replays,
+   all for what is really just a text swap.
+
+   In-place means anything an init* function installs on a target that OUTLIVES
+   a render — window, document, a media query, or one of the static shell
+   elements index.html ships (#brand, #themeToggle, #menuToggle, #navDesktop,
+   #navScrim, the bg layers) — would stack up a second copy on the next render.
+   Install those with on() / onTeardown(), never a bare addEventListener:
+   teardownSite() undoes them all before the next render.
+
+   Listeners on nodes the render itself replaces (everything the build*
+   functions wire: carousels, galleries, faq toggles, nav links) need no
+   registration — they are collected along with their DOM.
+---------------------------------------------------------------------- */
+
+const TEARDOWN = [];
+
+// addEventListener that remembers how to undo itself.
+function on(target, type, handler, opts) {
+    target.addEventListener(type, handler, opts);
+    TEARDOWN.push(() => target.removeEventListener(type, handler, opts));
+}
+
+// Register any other undo: clearInterval, removing a node, tripping a
+// "stopped" flag an in-flight callback checks.
+function onTeardown(fn) {
+    TEARDOWN.push(fn);
+}
+
+// Undo everything the current render installed, most recent first. A failing
+// undo must not strand the rest of the teardown, hence the per-entry catch.
+function teardownSite() {
+    while (TEARDOWN.length) {
+        try {
+            TEARDOWN.pop()();
+        } catch (err) {
+            console.warn("Teardown step failed:", err);
+        }
+    }
+}
+
+/* ----------------------------------------------------------------------
    2. SMALL HELPERS
 ---------------------------------------------------------------------- */
 
@@ -253,16 +303,29 @@ function readTabHash() {
     return "";
 }
 
-function scrollToTopInstant() {
+/* Jump the page to an exact offset with no smooth animation, temporarily
+   overriding the `scroll-behavior: smooth` on <html>. */
+function scrollInstantTo(top) {
     const html = document.documentElement;
     const previous = html.style.scrollBehavior;
 
     html.style.scrollBehavior = "auto";
-    window.scrollTo({top: 0, left: 0, behavior: "auto"});
+    window.scrollTo({top, left: 0, behavior: "auto"});
     html.style.scrollBehavior = previous;
 }
 
+function scrollToTopInstant() {
+    scrollInstantTo(0);
+}
+
 const $ = (sel, root = document) => root.querySelector(sel);
+
+/* The JS side of the `prefers-reduced-motion` guards the CSS already honors —
+   for the motion CSS can't switch off, like a timed fade the code waits on.
+   Read live rather than cached at boot, so flipping the OS setting takes effect
+   without a reload. */
+const reducedMotion = () =>
+    !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const el = (tag, attrs = {}, html = "") => {
     const node = document.createElement(tag);
@@ -1179,11 +1242,20 @@ function getLightbox() {
         if (e.target === overlay) close();
     });
 
-    document.addEventListener("keydown", (e) => {
+    on(document, "keydown", (e) => {
         if (!isOpen) return;
         if (e.key === "Escape") close();
         else if (e.key === "ArrowRight") go(1);
         else if (e.key === "ArrowLeft") go(-1);
+    });
+
+    // The overlay is page-level, so it survives a re-render unless we say
+    // otherwise — but its labels are localized at build time, so a locale swap
+    // has to discard it and let the next open build a localized one.
+    onTeardown(() => {
+        overlay.remove();
+        document.body.classList.remove("lightbox-open");
+        lightboxApi = null;
     });
 
     // Touch: flick sideways to step through the set, down to dismiss — the
@@ -1323,8 +1395,6 @@ function buildCarousel(block) {
     };
 
     const AUTOPLAY_MS = 5000;
-    const prefersReducedMotion = window.matchMedia
-        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let timer = null;
 
@@ -1336,9 +1406,14 @@ function buildCarousel(block) {
     };
 
     const start = () => {
-        if (prefersReducedMotion || timer) return;
+        if (reducedMotion() || timer) return;
         timer = setInterval(() => setActive(index + 1), AUTOPLAY_MS);
     };
+
+    // The carousel's own listeners ride along when the render replaces its DOM,
+    // but a timer doesn't — an autoplay left running would keep ticking against
+    // a detached carousel, one extra interval per language switch.
+    onTeardown(stop);
 
     root.addEventListener("mouseenter", stop);
     root.addEventListener("mouseleave", start);
@@ -1812,6 +1887,14 @@ function renderNav() {
 
     if (!desktop || !mobile || !brand) return;
 
+    // Start from empty: this runs again on a locale swap, and appending to the
+    // previous render's nav would stack two sets of tabs. Clearing the drawer
+    // also drops its injected close button — initMobileMenu(), which runs after
+    // this, puts a freshly localized one back.
+    desktop.innerHTML = "";
+    mobile.innerHTML = "";
+    brand.classList.remove("brand--image");
+
     // Header brand: text by default; an optional spec-level `brandImage`
     // (e.g. a PNG logo) replaces the text visually. The brand string still
     // matters — it becomes the image's alt, and keeps feeding the footer
@@ -1837,11 +1920,19 @@ function renderNav() {
     }
 
     // Wrap the brand and optional socials into one left-side header cluster
-    // so header-fit measures brand + socials as a single unit.
-    const brandWrap = el("div", {class: "brand-wrap"});
-    brand.replaceWith(brandWrap);
+    // so header-fit measures brand + socials as a single unit. On a re-render
+    // the cluster already exists — reuse it (a second replaceWith() would nest
+    // a wrap inside the old one) and rebuild its contents from scratch.
+    let brandWrap = brand.parentElement && brand.parentElement.classList.contains("brand-wrap")
+        ? brand.parentElement
+        : null;
 
-    brandWrap.appendChild(brand);
+    if (!brandWrap) {
+        brandWrap = el("div", {class: "brand-wrap"});
+        brand.replaceWith(brandWrap);
+    }
+
+    brandWrap.replaceChildren(brand);
 
     if (SITE.socials && SITE.socials.length) {
         brandWrap.appendChild(buildSocials(SITE.socials, {useHeaderLabel: true}));
@@ -2317,10 +2408,10 @@ function initInputMode() {
         document.body.classList.remove("keyboard-nav");
     };
 
-    window.addEventListener("keydown", enableKeyboardMode, true);
-    window.addEventListener("pointerdown", disableKeyboardMode, true);
-    window.addEventListener("mousedown", disableKeyboardMode, true);
-    window.addEventListener("touchstart", disableKeyboardMode, true);
+    on(window, "keydown", enableKeyboardMode, true);
+    on(window, "pointerdown", disableKeyboardMode, true);
+    on(window, "mousedown", disableKeyboardMode, true);
+    on(window, "touchstart", disableKeyboardMode, true);
 }
 
 /* ----------------------------------------------------------------------
@@ -2359,7 +2450,7 @@ function initTheme() {
 
     applyTheme(theme);
 
-    toggle.addEventListener("click", () => {
+    on(toggle, "click", () => {
         const next = document.body.getAttribute("data-theme") === "light" ? "dark" : "light";
         applyTheme(next);
 
@@ -2400,15 +2491,106 @@ function applyChromeStrings() {
     }
 }
 
-// Wire the header language switcher. Two locales → a simple toggle whose label
-// shows the OTHER language; clicking saves the choice and reloads so the boot
-// path re-fetches the matching spec. Idempotent-safe: no-op if the button or a
-// second locale is absent.
+/* Swap the active language without reloading the page.
+
+   The obvious implementation — persist + location.reload() — is what this used
+   to do, and it flashes: the whole shell is torn down and rebuilt, so the
+   background restarts, the boot fade replays, and the reader loses their scroll
+   position, all to change some text. Instead: fade out only the parts that
+   change, undo the previous render (teardownSite), re-render from the new
+   locale's spec, fade back in. The background, the header chrome, the theme,
+   the current tab and the scroll position all stay put.
+
+   Sequential by design: a second pick mid-swap is ignored. */
+
+// Must match the .site-swapping opacity transition in styles.css — the fade-out
+// has to have finished before the DOM underneath it is rebuilt. It is also the
+// swap's entire self-imposed cost (paid twice, out and back), so it's kept just
+// long enough to read as a crossfade rather than a cut. Don't raise it without
+// a reason; the fetch it used to hide is prefetched now.
+const SWAP_FADE_MS = 90;
+
+let localeSwapping = false;
+
+async function switchLocale(target) {
+    if (localeSwapping || !target || target === LOCALE || !LOCALE_SPECS[target]) return;
+    localeSwapping = true;
+
+    // Persist first, so a later reload agrees with what the page is about to
+    // show. Unlike the reload version, storage failure is no longer fatal —
+    // the swap still happens, it just won't outlive the tab.
+    try {
+        localStorage.setItem(LANG_KEY, target);
+    } catch {
+        // storage unavailable — session-only switch
+    }
+
+    // Transient UI that must not outlive the swap: an expanded image, and the
+    // mobile drawer, whose contents renderNav is about to replace. Clicking the
+    // toggle runs the drawer's real close(), so focus and the scrim stay in step.
+    closeLightbox();
+    const drawer = $("#navMobile");
+    const menuToggle = $("#menuToggle");
+    if (drawer && menuToggle && drawer.classList.contains("is-open")) menuToggle.click();
+
+    // The dropdown the pick came from is about to be replaced; note whether it
+    // held focus so we can hand focus to its replacement instead of dropping it
+    // on <body>.
+    const langHadFocus = !!(document.activeElement
+        && document.activeElement.closest
+        && document.activeElement.closest("#langSwitcher"));
+
+    const html = document.documentElement;
+    const scrollY = window.scrollY;
+
+    // Point the engine at the new locale and start its fetch NOW, so the load
+    // overlaps the fade-out instead of following it — otherwise a cold spec file
+    // leaves the content area sitting empty behind the fade. The old render is
+    // still live for these few frames; nothing it can do in that window matters
+    // beyond a chrome string resolving in the incoming language.
+    LOCALE = target;
+    const loading = loadContent();
+
+    // Reduced motion means no crossfade — and with no fade to wait out, the
+    // swap is just "new text appears" as soon as the spec is in hand. Don't add
+    // the class either: a 0ms fade still costs a paint.
+    const fade = !reducedMotion();
+
+    if (fade) html.classList.add("site-swapping");
+
+    const [loaded] = await Promise.all([
+        loading,
+        fade ? new Promise((resolve) => setTimeout(resolve, SWAP_FADE_MS)) : null,
+    ]);
+
+    teardownSite();
+    await renderSite(loaded);
+
+    // initTabs' first show() lands the new render at the top; put the reader
+    // back where they were — this is a text swap, not navigation. Same frame as
+    // the render, so the jump is never painted.
+    scrollInstantTo(scrollY);
+
+    if (langHadFocus) {
+        const summary = $("#langSwitcher summary");
+        if (summary) summary.focus({preventScroll: true});
+    }
+
+    if (fade) html.classList.remove("site-swapping");
+    localeSwapping = false;
+}
+
+// Wire the header language switcher: a dropdown listing every locale, revealed
+// only when there's more than one. Picking one hands off to switchLocale().
+// Idempotent-safe: no-op if the container or a second locale is absent.
 function initLang() {
     applyChromeStrings();
 
     const container = $("#langSwitcher");
     if (!container) return;
+
+    // A re-render (locale swap) must not leave the previous dropdown behind.
+    container.innerHTML = "";
 
     // The switcher ships hidden. A single-locale site has nothing to switch
     // to, so leave it hidden and bail — no switcher at all.
@@ -2442,24 +2624,32 @@ function initLang() {
         `<span class="lang-dd__code">${escapeHtml(LOCALE.toUpperCase())}</span>${caret}</summary>` +
         `<ul class="lang-dd__list">${optionsHtml}</ul>`;
 
-    // Choosing a locale: persist + reload (the boot path re-fetches the matching
-    // spec). Choosing the current one just closes the menu.
+    // Prefetch on intent. Reaching for the switcher is a reliable signal that a
+    // spec is about to be needed, and the gap between "hovered/opened" and
+    // "clicked an option" is far longer than the fetch — so by click time the
+    // spec is usually cached and the swap never touches the network. Both
+    // events, because they cover different inputs: hover is the earliest signal
+    // on a pointer, `toggle` is the only one a touch or keyboard user fires.
+    // Cheap and idempotent — SPEC_CACHE collapses repeats into one request.
+    const warmOthers = () => {
+        Object.keys(LOCALE_SPECS).forEach((loc) => {
+            if (loc !== LOCALE) warmLocale(loc);
+        });
+    };
+
+    const summary = details.querySelector("summary");
+    if (summary) summary.addEventListener("pointerenter", warmOthers);
+    details.addEventListener("toggle", () => {
+        if (details.open) warmOthers();
+    });
+
+    // Choosing a locale re-renders the site in place; choosing the current one
+    // just closes the menu. Close first either way, so the dropdown isn't left
+    // hanging open over the swap.
     details.querySelectorAll(".lang-dd__option").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const target = btn.dataset.locale;
-            if (!target || target === LOCALE) {
-                details.open = false;
-                return;
-            }
-            try {
-                localStorage.setItem(LANG_KEY, target);
-            } catch {
-                // storage unavailable — without persistence the reload would
-                // just re-read the old locale, so bail (leave menu open state).
-                details.open = false;
-                return;
-            }
-            location.reload();
+            details.open = false;
+            switchLocale(btn.dataset.locale);
         });
     });
 
@@ -2471,7 +2661,9 @@ function initLang() {
             if (s) s.focus();
         }
     });
-    document.addEventListener("click", (e) => {
+    // Document-level, so it outlives the dropdown it belongs to — must be
+    // registered for teardown or every swap would add another copy.
+    on(document, "click", (e) => {
         if (details.open && !details.contains(e.target)) details.open = false;
     });
 
@@ -2533,16 +2725,19 @@ function initMobileMenu() {
         }, 220);
     };
 
-    toggle.addEventListener("click", () => (nav.classList.contains("is-open") ? close() : open()));
-    scrim.addEventListener("click", close);
-    closeBtn.addEventListener("click", close);
+    // All of these hang off shell elements that outlive a render (the drawer and
+    // scrim are in index.html; the close button is re-injected above), so they
+    // go through on() — see the teardown registry.
+    on(toggle, "click", () => (nav.classList.contains("is-open") ? close() : open()));
+    on(scrim, "click", close);
+    on(closeBtn, "click", close);
     // Close on link tap.
-    nav.addEventListener("click", (e) => {
+    on(nav, "click", (e) => {
         if (e.target.closest("a")) close();
     });
 
     // Close on Escape.
-    document.addEventListener("keydown", (e) => {
+    on(document, "keydown", (e) => {
         if (e.key === "Escape" && nav.classList.contains("is-open")) {
             close();
             toggle.focus();
@@ -2555,8 +2750,24 @@ function initMobileMenu() {
         if (e.matches) close();
     };
 
-    if (mq.addEventListener) mq.addEventListener("change", onDesktop);
-    else mq.addListener(onDesktop);
+    if (mq.addEventListener) {
+        on(mq, "change", onDesktop);
+    } else {
+        mq.addListener(onDesktop);
+        onTeardown(() => mq.removeListener(onDesktop));
+    }
+
+    // close() hides the scrim on a 220ms delay (it fades first). If a render
+    // lands inside that window — closing the drawer is the first thing a locale
+    // swap does — the timer must not simply be dropped: the scrim is
+    // position:fixed inset:0 and only stops covering the page once `hidden` is
+    // set, so cancelling without finishing the job leaves an invisible sheet
+    // swallowing every click on the new render.
+    onTeardown(() => {
+        if (!closeTimer) return;
+        clearTimeout(closeTimer);
+        scrim.hidden = true;
+    });
 }
 
 /* ----------------------------------------------------------------------
@@ -2636,7 +2847,8 @@ function initTabs() {
         }
     };
 
-    // Click / tap.
+    // Click / tap. The links themselves are rebuilt by every renderNav(), so
+    // their listeners are collected with them — no teardown needed here.
     links.forEach((link) => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
@@ -2649,7 +2861,7 @@ function initTabs() {
     // Keyboard arrows on the desktop tablist only.
     const desktop = $("#navDesktop");
     if (desktop) {
-        desktop.addEventListener("keydown", (e) => {
+        on(desktop, "keydown", (e) => {
             rovingKeydown(
                 e,
                 desktopTabs.length,
@@ -2666,7 +2878,7 @@ function initTabs() {
     // Brand click → home tab.
     const brand = $("#brand");
     if (brand) {
-        brand.addEventListener("click", (e) => {
+        on(brand, "click", (e) => {
             e.preventDefault();
             show(defaultId);
         });
@@ -2675,7 +2887,7 @@ function initTabs() {
     // Routing is hash-only, so hashchange alone covers typed URLs AND the
     // back/forward buttons (a popstate listener here would just double-fire
     // the same show() on every history step).
-    window.addEventListener("hashchange", () => {
+    on(window, "hashchange", () => {
         show(readTabHash() || defaultId, {push: false});
     });
 
@@ -2737,7 +2949,7 @@ function initHeaderFit() {
     };
 
     apply();
-    window.addEventListener("resize", apply);
+    on(window, "resize", apply);
 
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(apply).catch(() => {
@@ -2753,11 +2965,20 @@ function initBackground() {
     const layers = [$("#bg"), $("#bg2")].filter(Boolean);
     const list = SITE.backgrounds;
 
+    // The layers are page-level: a locale swap re-runs this while they are still
+    // painted and mid-cycle. `stopped` lets the previous render's in-flight
+    // image loads and its interval expire without touching them.
+    let stopped = false;
+    onTeardown(() => {
+        stopped = true;
+    });
+
     if (layers.length < 2 || !list || !list.length) {
         const bg = layers[0];
         if (bg && list && list.length) {
             const img = new Image();
             img.onload = () => {
+                if (stopped) return;
                 bg.style.backgroundImage = `url("${list[0]}")`;
                 bg.classList.add("is-active");
             };
@@ -2777,6 +2998,8 @@ function initBackground() {
         const img = new Image();
 
         img.onload = () => {
+            if (stopped) return;
+
             layer.style.backgroundImage = `url("${src}")`;
 
             layer.classList.remove("is-active");
@@ -2793,15 +3016,29 @@ function initBackground() {
         img.src = src;
     };
 
-    show(index, front);
+    // On a re-render the background is already on screen. Adopt what it shows —
+    // which layer is active, and where in the list it is — instead of starting
+    // over: re-showing list[0] would either crossfade the background for no
+    // reason or dip it to black re-fading the image that's already up.
+    const activeLayer = layers.findIndex((l) => l.classList.contains("is-active"));
+
+    if (activeLayer >= 0) {
+        front = activeLayer;
+        const shown = list.findIndex((src) => layers[front].style.backgroundImage.includes(src));
+        if (shown >= 0) index = shown;
+    } else {
+        show(index, front);
+    }
 
     if (list.length < 2) return;
 
-    setInterval(() => {
+    const timer = setInterval(() => {
         index = (index + 1) % list.length;   // next image, in order
         front = 1 - front;                    // swap to the other layer
         show(index, front);
     }, HOLD);
+
+    onTeardown(() => clearInterval(timer));
 }
 
 /* ----------------------------------------------------------------------
@@ -2820,8 +3057,44 @@ function initBackground() {
    Failure shapes:
      - "fetch" — couldn't load it at all (404 / network / file:// CORS).
      - "parse" — loaded, but the body wasn't valid JSON. */
-async function loadContent() {
-    const DATA_URL = currentSpecUrl();
+/* Parsed specs, keyed by URL, for the life of the page.
+
+   Worth it because the swap's one unavoidable cost is the network: the specs
+   are a few KB, so fetching one is all latency and no transfer — and `_headers`
+   serves them `max-age=0, must-revalidate`, so even a warm HTTP cache still
+   pays a round-trip to be told "not modified". Cached here, switching back to a
+   locale you've already seen costs nothing, and `warmLocale()` can move the
+   first switch's round-trip off the critical path too.
+
+   Two rules: only SUCCESSFUL loads stay cached (a transient failure must not
+   stick for the whole session), and the in-flight promise is cached as well, so
+   a prefetch and the swap that follows it share one request instead of racing.
+
+   Session-scoped on purpose — a reload still revalidates, so a content push
+   shows up as fast as the headers promise. */
+const SPEC_CACHE = new Map();
+
+function loadContent(url = currentSpecUrl()) {
+    const cached = SPEC_CACHE.get(url);
+    if (cached) return cached;
+
+    const pending = fetchSpec(url).then((result) => {
+        if (result.error) SPEC_CACHE.delete(url);
+        return result;
+    });
+
+    SPEC_CACHE.set(url, pending);
+    return pending;
+}
+
+// Kick off (and cache) a locale's spec before it's needed. Fire-and-forget: a
+// failure just leaves the cache empty and the real swap retries it.
+function warmLocale(locale) {
+    const url = LOCALE_SPECS[locale];
+    if (url) loadContent(url);
+}
+
+async function fetchSpec(DATA_URL) {
     let res;
     try {
         res = await fetch(DATA_URL, {headers: {Accept: "application/json"}});
@@ -2858,6 +3131,13 @@ function renderErrorState(reason) {
     // Minimal header brand (empty if the JSON never loaded).
     const brand = $("#brand");
     if (brand) brand.textContent = SITE.brand || "";
+
+    // Empty at boot, but a locale swap onto a broken spec lands here with the
+    // previous render's tabs still in the header — and their handlers already
+    // torn down. Clear them so nothing dead is left clickable.
+    [$("#navDesktop"), $("#navMobile")].forEach((nav) => {
+        if (nav) nav.innerHTML = "";
+    });
 
     if (main) {
         main.innerHTML = "";
@@ -2900,12 +3180,68 @@ function renderErrorState(reason) {
  * https://github.com/m-remis/static-web-template
  */
 
+/* Render the whole site from the active locale's spec, and wire the UI to it.
+   Called on boot by init() and again by switchLocale() for a language change,
+   so it must be safe to run more than once: the render* functions each clear
+   what they own, and everything wired here onto a long-lived target goes
+   through on() / onTeardown() (see the teardown registry).
+
+   `loaded` is an already-resolved loadContent() result; switchLocale passes one
+   so its fetch can run during the fade rather than after it. */
+async function renderSite(loaded) {
+    const {data, error} = loaded || await loadContent();
+    SITE = data || {};
+
+    // Drive the document head (title, meta, OG, canonical) from SITE.meta.
+    // Done first so the metadata is correct even if we fall through to the
+    // error screen below.
+    renderHead();
+    renderJsonLd();
+
+    // Apply brand design tokens from SITE.theme (before content paints, and
+    // before the error screen, so both are correctly branded).
+    renderTheme();
+
+    // JSON is the single source of truth: render it, or show the error
+    // screen. Three ways we end up with nothing to render:
+    //   - "fetch": couldn't load the file (404 / network / file:// CORS),
+    //   - "parse": loaded but wasn't valid JSON,
+    //   - "empty": loaded + parsed fine, but had no usable `sections`.
+    const hasContent = getSections().length > 0;
+
+    if (!hasContent) {
+        const reason = error || {
+            kind: "empty",
+            detail: `${currentSpecUrl()} loaded but contained no usable "sections".`,
+        };
+        console.error("No renderable content — showing error screen:", reason.detail);
+
+        renderErrorState(reason);
+        initInputMode();
+        initTheme();
+        initLang();
+        return;
+    }
+
+    renderNav();
+    renderContent();
+    renderFooter();
+    initInputMode();
+    initTheme();
+    initLang();
+    initMobileMenu();
+    initHeaderFit();
+    initTabs();
+    initBackground();
+}
+
 async function init() {
-    // Reveal the page exactly once, no matter which path init() takes (normal
-    // render OR the error screen). The shell starts hidden via html.site-booting
-    // (set inline in index.html before first paint) to avoid a flash of the
-    // empty layout; we swap to site-ready here so the finished page fades in.
-    // Must run on every exit, or the page would stay invisible — hence finally.
+    // Reveal the page exactly once, no matter which path the render takes
+    // (normal render OR the error screen). The shell starts hidden via
+    // html.site-booting (set inline in index.html before first paint) to avoid a
+    // flash of the empty layout; we swap to site-ready here so the finished page
+    // fades in. Must run on every exit, or the page would stay invisible —
+    // hence finally.
     const reveal = () => {
         const html = document.documentElement;
         html.classList.remove("site-booting");
@@ -2917,50 +3253,7 @@ async function init() {
     LOCALE = resolveLocale();
 
     try {
-        const {data, error} = await loadContent();
-        SITE = data || {};
-
-        // Drive the document head (title, meta, OG, canonical) from SITE.meta.
-        // Done first so the metadata is correct even if we fall through to the
-        // error screen below.
-        renderHead();
-        renderJsonLd();
-
-        // Apply brand design tokens from SITE.theme (before content paints, and
-        // before the error screen, so both are correctly branded).
-        renderTheme();
-
-        // JSON is the single source of truth: render it, or show the error
-        // screen. Three ways we end up with nothing to render:
-        //   - "fetch": couldn't load the file (404 / network / file:// CORS),
-        //   - "parse": loaded but wasn't valid JSON,
-        //   - "empty": loaded + parsed fine, but had no usable `sections`.
-        const hasContent = getSections().length > 0;
-
-        if (!hasContent) {
-            const reason = error || {
-                kind: "empty",
-                detail: `${currentSpecUrl()} loaded but contained no usable "sections".`,
-            };
-            console.error("No renderable content — showing error screen:", reason.detail);
-
-            renderErrorState(reason);
-            initInputMode();
-            initTheme();
-            initLang();
-            return;
-        }
-
-        renderNav();
-        renderContent();
-        renderFooter();
-        initInputMode();
-        initTheme();
-        initLang();
-        initMobileMenu();
-        initHeaderFit();
-        initTabs();
-        initBackground();
+        await renderSite();
     } finally {
         reveal();
     }

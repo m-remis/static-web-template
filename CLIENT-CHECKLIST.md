@@ -248,10 +248,11 @@ The site ships a runtime language switch (see `AGENTS.md` →
   `id`s** — `launch-check` warns (`LOCALE_SECTION_DRIFT`) if they diverge, and
   the current tab is preserved across a language switch by id. Set the file's
   `meta.lang`.
-- [ ] **Register the locale in `engine.js`**: add it to `LOCALE_SPECS`, add a
-  `UI` block (translate every chrome string incl. the weekday `days`), and — for
-  more than two languages — turn the header toggle into a menu. Mirror the
-  strings in `404.html`'s inline map.
+- [ ] **Register the locale in `engine.js`**: add it to `LOCALE_SPECS`, add its
+  endonym to `LOCALE_NAMES`, and add a `UI` block (translate every chrome string
+  incl. the weekday `days`). The header switcher is a dropdown that lists every
+  registered locale, so any number of languages works with no switcher code to
+  touch. Mirror the strings in `404.html`'s inline map.
 - [ ] **Validate the translation**: `node launch-check.js --site-spec
   site-spec.<lang>.json`.
 - [ ] Note the **default locale is the SEO one**: `llms.txt`, `sitemap.xml` and
