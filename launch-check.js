@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =========================================================
-   launch-check.js — static-site launch preflight
+   launch-check.js - static-site launch preflight
 
    A dev-only tool. NOT loaded by the page. Run before shipping
    a client site:
@@ -77,7 +77,7 @@ const ROOT = path.resolve(OPTS.root);
 const SPEC_FILE = normalizeCliPath(OPTS.siteSpec);
 
 if (OPTS.help) {
-    console.log(`launch-check.js — static-site launch preflight
+    console.log(`launch-check.js - static-site launch preflight
 
 Usage:
   node launch-check.js [options]
@@ -411,7 +411,7 @@ function checkSpecShape(spec) {
         const lngOk = typeof geo.lng === "number" && geo.lng >= -180 && geo.lng <= 180;
         if (!latOk || !lngOk) {
             fail("spec", "GEO_INVALID",
-                `business.geo must be { lat: -90..90, lng: -180..180 } numbers (got lat=${geo.lat}, lng=${geo.lng}) — the JSON-LD would pin the business at a wrong location`);
+                `business.geo must be { lat: -90..90, lng: -180..180 } numbers (got lat=${geo.lat}, lng=${geo.lng}) - the JSON-LD would pin the business at a wrong location`);
         }
     }
 
@@ -456,7 +456,7 @@ function checkSpecShape(spec) {
         }
 
         if (!sec.label) {
-            warn("spec", "SECTION_MISSING_LABEL", `${where} (id=${sec.id || "?"}) is missing "label" — the nav tab will be blank`);
+            warn("spec", "SECTION_MISSING_LABEL", `${where} (id=${sec.id || "?"}) is missing "label" - the nav tab will be blank`);
         } else {
             const labelKey = String(sec.label).trim().toLowerCase();
             if (seenLabels.has(labelKey)) {
@@ -466,7 +466,7 @@ function checkSpecShape(spec) {
         }
 
         if (!Array.isArray(sec.blocks) || sec.blocks.length === 0) {
-            warn("spec", "SECTION_EMPTY", `${where} (id=${sec.id || "?"}) has no blocks — the tab will render empty`);
+            warn("spec", "SECTION_EMPTY", `${where} (id=${sec.id || "?"}) has no blocks - the tab will render empty`);
             return;
         }
 
@@ -516,11 +516,11 @@ function checkMetaShape(meta) {
     }
 
     if (meta.description && String(meta.description).length > 170) {
-        warn("seo", "META_DESCRIPTION_LONG", `meta.description is ${String(meta.description).length} chars — usually keep it around 150-160`);
+        warn("seo", "META_DESCRIPTION_LONG", `meta.description is ${String(meta.description).length} chars - usually keep it around 150-160`);
     }
 
     if (meta.title && String(meta.title).length > 70) {
-        warn("seo", "META_TITLE_LONG", `meta.title is ${String(meta.title).length} chars — social/search snippets may truncate it`);
+        warn("seo", "META_TITLE_LONG", `meta.title is ${String(meta.title).length} chars - social/search snippets may truncate it`);
     }
 
     if (meta.themeColor && !/^#[0-9a-f]{6}$/i.test(String(meta.themeColor))) {
@@ -590,14 +590,14 @@ function checkCardsBlock(block, where, sectionIds) {
             checkDuplicateValue(seenTitles, item.title, "content", "DUPLICATE_CARD_TITLE", `${iw} duplicates card title`);
         }
 
-        // An icon-led nav card is complete with just icon + title + meta —
+        // An icon-led nav card is complete with just icon + title + meta -
         // it works as a visual button. Only nag on plain text cards.
         if (!hasNonEmptyString(item.body) && !hasNonEmptyString(item.icon)) {
             warn("content", "CARD_MISSING_BODY", `${iw} has no body`);
         }
 
         if (hasNonEmptyString(item.image)) {
-            fail("spec", "CARD_IMAGE_REMOVED", `${iw} uses "image" — card background photos were removed; use "icon" (monochrome black PNG on transparent) instead`);
+            fail("spec", "CARD_IMAGE_REMOVED", `${iw} uses "image" - card background photos were removed; use "icon" (monochrome black PNG on transparent) instead`);
         }
 
         if (block.linked && !item.url) {
@@ -614,7 +614,7 @@ function checkLinksBlock(block, where, sectionIds) {
 
     if (block.layout != null && block.layout !== "rows" && block.layout !== "grid") {
         warn("spec", "LINKS_BAD_LAYOUT",
-            `${where} (links) has unknown layout "${block.layout}" (expected "rows" | "grid") — the engine falls back to rows`);
+            `${where} (links) has unknown layout "${block.layout}" (expected "rows" | "grid") - the engine falls back to rows`);
     }
 
     // The engine builds rows from `use` (SSOT refs into business/socials) AND
@@ -642,7 +642,7 @@ function checkLinksBlock(block, where, sectionIds) {
                 return;
             }
             if (!resolvable(key)) {
-                warn("links", "LINK_USE_UNRESOLVED", `${kw} ref "${key}" matches no business field or social — the engine will drop this row`);
+                warn("links", "LINK_USE_UNRESOLVED", `${kw} ref "${key}" matches no business field or social - the engine will drop this row`);
             }
             checkDuplicateValue(seenUse, key, "links", "DUPLICATE_LINK_USE", `${kw} duplicates ref "${key}"`);
         });
@@ -690,11 +690,11 @@ function checkTableBlock(block, where) {
     }
     if (block.accentValue != null && typeof block.accentValue !== "boolean") {
         warn("spec", "TABLE_ACCENT_VALUE_NOT_BOOL",
-            `${where} (table) accentValue should be true/false — the engine only disables the price styling on exactly false`);
+            `${where} (table) accentValue should be true/false - the engine only disables the price styling on exactly false`);
     }
     if (block.offerCatalog != null && typeof block.offerCatalog !== "boolean") {
         warn("spec", "TABLE_OFFER_CATALOG_NOT_BOOL",
-            `${where} (table) offerCatalog should be true/false — business-jsonld.mjs only exports the table on exactly true`);
+            `${where} (table) offerCatalog should be true/false - business-jsonld.mjs only exports the table on exactly true`);
     }
     if (!Array.isArray(block.rows) || block.rows.length === 0) {
         fail("spec", "TABLE_MISSING_ROWS", `${where} (table) has no "rows"`);
@@ -753,7 +753,7 @@ function checkFaqBlock(block, where) {
 }
 
 /* Platforms with a dedicated brand icon in engine.js REVIEW_ICONS. Others
-   render with the generic star glyph — not an error, just a soft note. */
+   render with the generic star glyph - not an error, just a soft note. */
 const REVIEW_PLATFORMS = ["google", "facebook"];
 
 function checkReviewBlock(block, where) {
@@ -771,7 +771,7 @@ function checkReviewBlock(block, where) {
         }
 
         if (!hasNonEmptyString(it && it.url)) {
-            fail("spec", "REVIEW_ITEM_NO_URL", `${iw} (review) has no "url" — the CTA wouldn't render`);
+            fail("spec", "REVIEW_ITEM_NO_URL", `${iw} (review) has no "url" - the CTA wouldn't render`);
         } else {
             // Review CTAs point at an external platform; a local/relative URL is
             // almost certainly a mistake here.
@@ -782,7 +782,7 @@ function checkReviewBlock(block, where) {
         }
 
         if (hasNonEmptyString(it && it.platform) && !REVIEW_PLATFORMS.includes(it.platform)) {
-            warn("content", "REVIEW_UNKNOWN_PLATFORM", `${iw} (review) "platform" "${it.platform}" has no brand icon — renders a generic star`);
+            warn("content", "REVIEW_UNKNOWN_PLATFORM", `${iw} (review) "platform" "${it.platform}" has no brand icon - renders a generic star`);
         }
     });
 }
@@ -809,7 +809,7 @@ function checkSlideshowBlock(block, where, section) {
 
 function checkMapBlock(block, where) {
     // The engine falls back to business.mapEmbed / mapUrl when the block omits
-    // url/embed (SSOT). Only fail if NOTHING — block or business — supplies a
+    // url/embed (SSOT). Only fail if NOTHING - block or business - supplies a
     // source, which is the case the engine renders to nothing.
     const bizEmbed = hasNonEmptyString(specBusiness.mapEmbed);
     const bizUrl = hasNonEmptyString(specBusiness.mapUrl);
@@ -840,30 +840,30 @@ function checkVideoBlock(block, where) {
 
     if (hasUrl && hasPlaylist) {
         warn("spec", "VIDEO_BOTH_SOURCES",
-            `${where} (video) sets both "url" and "playlist" — the engine uses "url" (a pin beats auto-latest); drop one`);
+            `${where} (video) sets both "url" and "playlist" - the engine uses "url" (a pin beats auto-latest); drop one`);
     }
 
     if (hasUrl) {
         checkUrlValue(block.url, `${where}.url`, { allowRelative: false, allowHash: false, allowMailTel: false });
 
-        // The engine renders nothing when it can't extract a video id — that's
+        // The engine renders nothing when it can't extract a video id - that's
         // a silent blank spot on the page, so it's a fail, not a warn.
         // Same parser the engine's buildVideo() uses (SHARED), so "the engine
         // renders nothing" here is a fact, not a second regex's opinion.
         if (!SHARED.youtubeVideoId(block.url)) {
             fail("spec", "VIDEO_URL_NOT_YOUTUBE",
-                `${where} (video) url is not a recognizable YouTube video URL (watch?v=, youtu.be/, shorts/, live/, embed/) — the engine renders nothing`);
+                `${where} (video) url is not a recognizable YouTube video URL (watch?v=, youtu.be/, shorts/, live/, embed/) - the engine renders nothing`);
         }
     } else {
         if (!SHARED.youtubePlaylistId(block.playlist)) {
             fail("spec", "VIDEO_PLAYLIST_INVALID",
-                `${where} (video) playlist is neither a playlist id (PL…/UU…/UULF…) nor a URL with ?list= — the engine renders nothing`);
+                `${where} (video) playlist is neither a playlist id (PL…/UU…/UULF…) nor a URL with ?list= - the engine renders nothing`);
         }
     }
 
     if (!hasNonEmptyString(block.title) && !hasNonEmptyString(block.name)) {
         warn("accessibility", "VIDEO_MISSING_TITLE",
-            `${where} (video) has no title/name — the iframe's accessible title falls back to a generic "YouTube video"`);
+            `${where} (video) has no title/name - the iframe's accessible title falls back to a generic "YouTube video"`);
     }
 }
 
@@ -1250,7 +1250,7 @@ function checkSeo(html, spec) {
     const ogImageInHtml = !!htmlMeta(html, "og:image");
     const ogImageInSpec = !!(spec && spec.meta && spec.meta.ogImage);
     if (!ogImageInHtml && !ogImageInSpec) {
-        fail("seo", "OG_IMAGE_MISSING", "Missing og:image (not in index.html and meta.ogImage is unset) — no social-share preview image");
+        fail("seo", "OG_IMAGE_MISSING", "Missing og:image (not in index.html and meta.ogImage is unset) - no social-share preview image");
     }
 
     if (!htmlMeta(html, "og:title")) warn("seo", "OG_TITLE_MISSING", "index.html has no og:title");
@@ -1336,7 +1336,7 @@ function hostOf(u) {
 function checkDomainConsistency(spec, html) {
     const domain = spec && spec.meta && spec.meta.domain;
     if (!domain) {
-        fail("seo", "DOMAIN_MISSING", "meta.domain is not set in site-spec.json — canonical/og:url/sitemap can't be verified");
+        fail("seo", "DOMAIN_MISSING", "meta.domain is not set in site-spec.json - canonical/og:url/sitemap can't be verified");
         return;
     }
 
@@ -1367,11 +1367,11 @@ function checkDomainConsistency(spec, html) {
         // so compare hosts only. Relative values are fine (crawlers resolve
         // them against the page URL). A warning, not an error: while the site
         // runs on a dev/preview host only, the image MUST live where crawlers
-        // can actually fetch it — but at launch it should move to meta.domain,
+        // can actually fetch it - but at launch it should move to meta.domain,
         // or crawlers that don't run JS keep sharing the old host forever.
         for (const [tag, val] of [["og:image", htmlMeta(html, "og:image")], ["twitter:image", htmlMeta(html, "twitter:image")]]) {
             if (val && /^https?:\/\//i.test(val) && hostOf(val) !== wantHost) {
-                warn("seo", "OG_IMAGE_DOMAIN_MISMATCH", `index.html ${tag} (${val}) is not on meta.domain host (${wantHost}) — intended while only the dev host is live, switch at launch`);
+                warn("seo", "OG_IMAGE_DOMAIN_MISMATCH", `index.html ${tag} (${val}) is not on meta.domain host (${wantHost}) - intended while only the dev host is live, switch at launch`);
             }
         }
     }
@@ -1413,7 +1413,7 @@ function checkDomainConsistency(spec, html) {
     if (cname != null) {
         const cn = cname.trim().split(/\s+/)[0];
         if (cn && cn.toLowerCase() !== wantHost) {
-            warn("seo", "CNAME_DOMAIN_MISMATCH", `CNAME (${cn}) does not match meta.domain host (${wantHost}) — intended if you redirect www↔apex, otherwise a mismatch`);
+            warn("seo", "CNAME_DOMAIN_MISMATCH", `CNAME (${cn}) does not match meta.domain host (${wantHost}) - intended if you redirect www↔apex, otherwise a mismatch`);
         }
     }
 }
@@ -1435,7 +1435,7 @@ function checkMetadataConsistency(spec, html, manifestRes) {
 
     for (const [name, inHtml, inMeta] of pairs) {
         if (inMeta != null && inHtml != null && inHtml.trim() !== String(inMeta).trim()) {
-            warn("seo", "HTML_META_STALE", `index.html ${name} fallback ("${truncate(inHtml)}") differs from meta ("${truncate(inMeta)}") — crawlers see the stale fallback`);
+            warn("seo", "HTML_META_STALE", `index.html ${name} fallback ("${truncate(inHtml)}") differs from meta ("${truncate(inMeta)}") - crawlers see the stale fallback`);
         }
     }
 
@@ -1537,7 +1537,7 @@ function checkManifest(manifestRes, referenced) {
         if (!literalExists && !assetsExists) {
             fail("manifest", "MANIFEST_ICON_MISSING", `Manifest icon path does not exist: ${src}`);
         } else if (!literalExists && assetsExists) {
-            fail("manifest", "MANIFEST_ICON_WRONG_PATH", `Manifest icon path does not exist as written: ${src} (file is at ${inAssets} — fix the src to point there)`);
+            fail("manifest", "MANIFEST_ICON_WRONG_PATH", `Manifest icon path does not exist as written: ${src} (file is at ${inAssets} - fix the src to point there)`);
         }
 
         if (!icon.sizes) warn("manifest", "MANIFEST_ICON_SIZES_MISSING", `Manifest icon[${i}] has no sizes`);
@@ -1579,7 +1579,7 @@ function checkAssets(spec, html, referenced, localeSpecs = []) {
                 if (!val) continue;
                 for (const ref of splitPossibleSrcset(val)) {
                     // Protocol-relative URLs (//host/path) are remote, not local
-                    // assets — skip them so e.g. //gc.zgo.at/count.js isn't
+                    // assets - skip them so e.g. //gc.zgo.at/count.js isn't
                     // mistaken for a missing repo file.
                     if (ref.startsWith("//")) continue;
                     if (!isLocalReference(ref) && !ref.startsWith("/")) continue;
@@ -1654,13 +1654,13 @@ function checkAssetSizes() {
 
         const ext = path.extname(f).toLowerCase();
         if (IMAGE_EXT.includes(ext) && size > OPTS.maxImageKb * 1024) {
-            warn("performance", "IMAGE_TOO_LARGE", `${f} is ${formatKb(size)} — consider compressing/resizing it`);
+            warn("performance", "IMAGE_TOO_LARGE", `${f} is ${formatKb(size)} - consider compressing/resizing it`);
         }
         if (CSS_EXT.includes(ext) && size > OPTS.maxCssKb * 1024) {
-            warn("performance", "CSS_TOO_LARGE", `${f} is ${formatKb(size)} — big for a tiny static site`);
+            warn("performance", "CSS_TOO_LARGE", `${f} is ${formatKb(size)} - big for a tiny static site`);
         }
         if (JS_EXT.includes(ext) && size > OPTS.maxJsKb * 1024) {
-            warn("performance", "JS_TOO_LARGE", `${f} is ${formatKb(size)} — big for a tiny static site`);
+            warn("performance", "JS_TOO_LARGE", `${f} is ${formatKb(size)} - big for a tiny static site`);
         }
     }
 }
@@ -1715,7 +1715,7 @@ function checkContentQuality(spec) {
             }
 
             if (block.type === "cards" && Array.isArray(block.items) && block.items.length > 6) {
-                warn("content", "CARDS_TOO_MANY", `Cards block in section "${sec.id}" has ${block.items.length} cards — maybe split it`);
+                warn("content", "CARDS_TOO_MANY", `Cards block in section "${sec.id}" has ${block.items.length} cards - maybe split it`);
             }
         }
     }
@@ -1725,10 +1725,10 @@ function checkContentQuality(spec) {
 
 /* Drift guard. The set of supported block types is stated in four independent
    places that must agree, or sites break in confusing ways:
-     1. engine.js   BLOCK_RENDERERS         — what actually renders
-     2. launch-check.js KNOWN_BLOCK_TYPES   — what this validator accepts
-     3. site-spec.schema.json  block type enum — what the editor allows
-     4. docs/spec-format.md block-types table — what agents are told exists
+     1. engine.js   BLOCK_RENDERERS         - what actually renders
+     2. launch-check.js KNOWN_BLOCK_TYPES   - what this validator accepts
+     3. site-spec.schema.json  block type enum - what the editor allows
+     4. docs/spec-format.md block-types table - what agents are told exists
    When they disagree, a block can render but fail validation (or validate but
    not render, or be flagged invalid in the IDE, or an agent is documented into
    the wrong world). This check parses the other three sources and fails loudly
@@ -1774,7 +1774,7 @@ function checkBlockTypeRegistryConsistency() {
     }
 
     // --- docs/spec-format.md block-types table rows ---
-    // Rows look like: | `hero` | `buildHero` | … | — the backticked type in
+    // Rows look like: | `hero` | `buildHero` | … | - the backticked type in
     // column 1 next to a backticked build* function in column 2.
     // Skipped when the file is absent (e.g. --root pointed at a deploy
     // folder that ships without the docs).
@@ -1801,25 +1801,25 @@ function diffBlockSets(sourceLabel, sourceSet, known) {
 
     missingFromKnown.forEach((t) => {
         fail("spec", "BLOCK_TYPE_DRIFT",
-            `Block type "${t}" is in ${sourceLabel} but not in launch-check.js KNOWN_BLOCK_TYPES — add it to BLOCK_RULES`);
+            `Block type "${t}" is in ${sourceLabel} but not in launch-check.js KNOWN_BLOCK_TYPES - add it to BLOCK_RULES`);
     });
     missingFromSource.forEach((t) => {
         fail("spec", "BLOCK_TYPE_DRIFT",
-            `Block type "${t}" is in launch-check.js but not in ${sourceLabel} — the four sources must agree`);
+            `Block type "${t}" is in launch-check.js but not in ${sourceLabel} - the four sources must agree`);
     });
 }
 
 /* ---- Generated artifacts freshness --------------------------------------- */
 
 /* llms.txt, sitemap.xml and the static JSON-LD tag in index.html are
-   GENERATED from the spec by generate-static.mjs — a hand edit, or a spec
+   GENERATED from the spec by generate-static.mjs - a hand edit, or a spec
    change without a re-run, makes them lie to crawlers. The generator owns the
    byte-level comparison; this just runs its --check mode (exit 2 = stale). */
 function checkGeneratedArtifacts() {
     const script = path.join(ROOT, "generate-static.mjs");
     if (!fs.existsSync(script)) {
         warn("spec", "GENERATOR_MISSING",
-            "generate-static.mjs not found — cannot verify llms.txt / sitemap.xml / static JSON-LD freshness");
+            "generate-static.mjs not found - cannot verify llms.txt / sitemap.xml / static JSON-LD freshness");
         return;
     }
 
@@ -1830,7 +1830,7 @@ function checkGeneratedArtifacts() {
     if (res.status === 0) return;
     if (res.status === 2) {
         fail("spec", "GENERATED_STALE",
-            (res.stderr || "").trim() || "llms.txt / sitemap.xml / index.html static JSON-LD are stale — run `node generate-static.mjs`");
+            (res.stderr || "").trim() || "llms.txt / sitemap.xml / index.html static JSON-LD are stale - run `node generate-static.mjs`");
     } else {
         warn("spec", "GENERATOR_FAILED",
             `generate-static.mjs --check did not run cleanly: ${(res.stderr || res.stdout || "").trim()}`);
@@ -1996,7 +1996,7 @@ function checkLocales(defaultSpec, localeSpecs) {
         const ids = (data.sections || []).map((s) => s && s.id).filter(Boolean).join(",");
         if (ids !== baseIds) {
             warn("content", "LOCALE_SECTION_DRIFT",
-                `${file} section ids [${ids}] differ from ${SPEC_FILE} [${baseIds}] — a translation may be missing or renaming a section`);
+                `${file} section ids [${ids}] differ from ${SPEC_FILE} [${baseIds}] - a translation may be missing or renaming a section`);
             return; // the block-structure comparison below would only repeat this
         }
 
@@ -2006,7 +2006,7 @@ function checkLocales(defaultSpec, localeSpecs) {
             const b = JSON.stringify(theirs[i][1] === undefined ? null : theirs[i][1]);
             if (a !== b) {
                 warn("content", "LOCALE_DATA_DRIFT",
-                    `${file}: ${label} differs from ${SPEC_FILE} (${truncate(b, 60)} vs ${truncate(a, 60)}) — untranslated data must be the same in every locale spec`);
+                    `${file}: ${label} differs from ${SPEC_FILE} (${truncate(b, 60)} vs ${truncate(a, 60)}) - untranslated data must be the same in every locale spec`);
             }
         });
     });

@@ -60,7 +60,7 @@ body {
     transition: border-color var(--transition), transform var(--transition), background var(--transition);
 }
 
-/* Hover gated behind (hover: hover), same policy as styles.css — touch never
+/* Hover gated behind (hover: hover), same policy as styles.css - touch never
    gets sticky hover; the :active press feedback below still applies. */
 @media (hover: hover) {
     .error__home:hover {

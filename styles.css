@@ -4,7 +4,7 @@
    ========================================================= */
 
 /* ---- Webfonts (self-hosted) -------------------------------------------
-   Variable woff2 files served from our own origin — no Google Fonts request
+   Variable woff2 files served from our own origin - no Google Fonts request
    chain in the critical path, no third-party connection (EU-friendly). One
    file per family+subset covers every weight the site uses (Inter 400–600,
    Oswald 500–600); the browser only fetches the subsets the text needs
@@ -51,7 +51,7 @@
     /* Headings: bold/industrial condensed face. */
     --font-serif: "Oswald", "Arial Narrow", system-ui, sans-serif;
     /* Brand wordmark only. The header brand renders as an image (spec-level
-       brandImage), so this only shows on the error screen's text fallback —
+       brandImage), so this only shows on the error screen's text fallback -
        no webfont is loaded for it, system serif is enough. */
     --font-brand: Georgia, "Times New Roman", serif;
 
@@ -75,7 +75,7 @@
 
     --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Interaction tokens — theme-independent (same in light + dark).
+    /* Interaction tokens - theme-independent (same in light + dark).
        Keyboard focus ring (only shown after real keyboard nav) and the
        subtle "press" shrink shared by every button-like control. */
     --focus-ring: 2px solid var(--accent);
@@ -83,7 +83,7 @@
 
     --unicode-arrow: "\2192"; /* Unicode for → */
 
-    /* Theme-independent tokens — identical in light + dark, so defined once
+    /* Theme-independent tokens - identical in light + dark, so defined once
        here instead of duplicated in both [data-theme] blocks.
 
        --brand-* : per-platform social/contact icon tints. renderTheme() can
@@ -127,77 +127,77 @@ html:has(body[data-theme="light"]) {
     color-scheme: light;
 }
 
-/* Dark (default) — only tokens that DIFFER from light live here. Shared,
+/* Dark (default) - only tokens that DIFFER from light live here. Shared,
    theme-independent tokens (brand/on-image/dot/chip/panel-blur) are in :root. */
 [data-theme="dark"] {
-    /* — Backgrounds — */
+    /* - Backgrounds - */
     --bg-base: #0e0f13; /* page background */
     --bg-panel: rgba(22, 24, 30, 0.62); /* cards / link rows (translucent) */
     --bg-panel-solid: #16181e; /* mobile drawer, buttons (opaque) */
 
-    /* — Text — */
+    /* - Text - */
     --text: #ecedf1; /* headings + body */
     --text-soft: #d1d1d1; /* secondary / lead text */
     --text-faint: #ffffff; /* footer / captions */
 
-    /* — Menu / nav — */
+    /* - Menu / nav - */
     --menu-text: #a6a9b4; /* idle nav link */
     --menu-text-active: #ecedf1; /* hovered / active nav link */
     --menu-hover-bg: var(--accent-soft); /* hover pill behind link */
 
-    /* — Accents & lines — */
+    /* - Accents & lines - */
     --accent: #4de0c2;
     /* Derived from --accent so changing the brand color updates the soft
-       accent (hover pills, focus glow) automatically — one value, many uses. */
+       accent (hover pills, focus glow) automatically - one value, many uses. */
     --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
     --border: rgba(255, 255, 255, 0.10);
 
-    /* — Background-image overlay & header — */
+    /* - Background-image overlay & header - */
     --overlay-top: rgba(14, 15, 19, 0.79);
     --overlay-bottom: rgba(14, 15, 19, 0.98);
     --header-bg: rgba(14, 15, 19, 0.82);
 
-    /* — Monochrome icon/logo inversion —
+    /* - Monochrome icon/logo inversion -
        Card icons and the optional header logo are black PNGs on transparent.
        Black art is invisible on the dark theme, so dark inverts it to white;
        light leaves it untouched. */
     --mono-icon-filter: invert(1);
 }
 
-/* Light — only tokens that DIFFER from dark; shared tokens are in :root. */
+/* Light - only tokens that DIFFER from dark; shared tokens are in :root. */
 [data-theme="light"] {
-    /* — Backgrounds — */
+    /* - Backgrounds - */
     --bg-base: #ffffff; /* page background */
     /* Cards/rows are more opaque in light mode so text sits on a near-solid
        surface instead of letting the background photo bleed through. */
     --bg-panel: rgba(248, 248, 250, 0.90); /* cards / link rows */
     --bg-panel-solid: #f1f1f4; /* mobile drawer, buttons (opaque) */
 
-    /* — Text — */
+    /* - Text - */
     --text: #15161a; /* headings + body */
     --text-soft: #131415; /* secondary / lead text */
     --text-faint: #212123; /* footer / captions */
 
-    /* — Menu / nav — */
+    /* - Menu / nav - */
     --menu-text: #4b4d55; /* idle nav link */
     --menu-text-active: #15161a; /* hovered / active nav link */
     --menu-hover-bg: var(--accent-soft); /* hover pill behind link */
 
-    /* — Accents & lines — */
+    /* - Accents & lines - */
     --accent: #0b7d6c;
     /* Derived from --accent. Light mode uses a slightly lower 10% tint. */
     --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
     --border: rgba(43, 43, 43, 0.49);
 
-    /* — Background-image overlay & header —
+    /* - Background-image overlay & header -
        Heavier than dark: pushes the background photo back so cards/text read
        cleanly in light mode while still showing the image. */
     --overlay-top: rgba(255, 255, 255, 0.47);
     --overlay-bottom: rgba(255, 255, 255, 0.62);
     --header-bg: rgba(255, 255, 255, 0.90);
 
-    /* — Monochrome icon/logo inversion —
-       Black art already reads on the white theme — no filter. */
+    /* - Monochrome icon/logo inversion -
+       Black art already reads on the white theme - no filter. */
     --mono-icon-filter: none;
 }
 
@@ -208,7 +208,7 @@ html:has(body[data-theme="light"]) {
     box-sizing: border-box;
 }
 
-/* No text I-beam anywhere — mouse stays a normal arrow over text.
+/* No text I-beam anywhere - mouse stays a normal arrow over text.
    Interactive elements still get the pointer hand below. */
 * {
     cursor: default;
@@ -235,7 +235,7 @@ input, textarea, [contenteditable] {
 html {
     /* Root font-size = the global size dial (--root-scale in :root). All rem
        units resolve against this, so changing the token rescales the whole
-       site. Must live here on `html`, not body — rem is anchored to the root. */
+       site. Must live here on `html`, not body - rem is anchored to the root. */
     font-size: var(--root-scale);
 
     -webkit-text-size-adjust: 100%;
@@ -360,7 +360,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 /* ---- Hover / press policy ---------------------------------------------
    Hover styling lives in per-component `@media (hover: hover)` blocks, so
-   touch devices never get sticky hover states — no per-component "undo on
+   touch devices never get sticky hover states - no per-component "undo on
    touch" rules needed. Press feedback (:active) stays unconditional so taps
    still respond. The bordered controls share one press rule: */
 .theme-toggle:active,
@@ -411,7 +411,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     right: 0;
     width: 100%;
     height: 100vh; /* fallback */
-    height: 100lvh; /* LARGE viewport height: the tallest state (URL bar hidden), and it does NOT change as the bar slides — so no resize on scroll */
+    height: 100lvh; /* LARGE viewport height: the tallest state (URL bar hidden), and it does NOT change as the bar slides - so no resize on scroll */
     z-index: -2;
     pointer-events: none;
 }
@@ -425,9 +425,9 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     background-repeat: no-repeat;
     opacity: 0;
     transition: opacity 1200ms ease;
-    /* Continuous, seamless drift — zoom in and back out forever, no snap.
+    /* Continuous, seamless drift - zoom in and back out forever, no snap.
        Runs on both layers always; opacity (.is-active) decides which shows. */
-    /* Ken Burns drift — toggle by commenting line below. */
+    /* Ken Burns drift - toggle by commenting line below. */
     animation: bg-drift 15s ease-in-out infinite alternate;
 }
 
@@ -506,7 +506,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     }
 }
 
-/* Brand as a PNG logo — set by renderNav() when the spec has `brandImage`.
+/* Brand as a PNG logo - set by renderNav() when the spec has `brandImage`.
    The image is height-bound to roughly the text brand's visual size so the
    header layout and header-fit math stay unchanged; width follows the asset's
    aspect ratio. Monochrome black logos get the same dark-theme inversion as
@@ -595,7 +595,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     }
 }
 
-/* Language switcher — a custom <details> dropdown (built by initLang). The
+/* Language switcher - a custom <details> dropdown (built by initLang). The
    summary is the frosted "button" (same chrome as the theme toggle); the list
    is a fully site-styled panel, since native <select> option lists can't be
    themed. Ships hidden; the container is revealed only for a multi-locale site. */
@@ -607,7 +607,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     position: relative;
 }
 
-/* Trigger button (the <summary>) — the frosted control the site already uses. */
+/* Trigger button (the <summary>) - the frosted control the site already uses. */
 .lang-dd__current {
     display: inline-flex;
     align-items: center;
@@ -643,7 +643,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     transform: rotate(180deg);
 }
 
-/* Option list — a frosted panel dropped below the button, matching the cards
+/* Option list - a frosted panel dropped below the button, matching the cards
    and mobile drawer. Sits above the sticky header. */
 .lang-dd__list {
     position: absolute;
@@ -688,7 +688,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     color: var(--accent);
 }
 
-/* Theme toggle icon — one SVG that morphs between a crescent moon (dark mode,
+/* Theme toggle icon - one SVG that morphs between a crescent moon (dark mode,
    default) and a rayed sun (light mode). The "bite" is a mask circle that
    slides off-shape in light mode; the rays fade + scale in. Pure CSS, driven
    by [data-theme="light"] on <body>. The global prefers-reduced-motion rule
@@ -830,7 +830,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     color: var(--brand-email);
 }
 
-/* GitHub is a monochrome mark — it follows the text color so it stays legible
+/* GitHub is a monochrome mark - it follows the text color so it stays legible
    in both themes; LinkedIn keeps its brand blue (a mid blue readable on both). */
 .socials__link--github svg {
     color: var(--text);
@@ -853,7 +853,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    /* Frosted, like the header — translucent panel + blur instead of solid. */
+    /* Frosted, like the header - translucent panel + blur instead of solid. */
     background: var(--header-bg);
     border-left: 1px solid var(--border);
     transform: translateX(105%);
@@ -949,9 +949,10 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     width: 100%;
     max-width: var(--content-width);
     margin: 0 auto;
-    /* Bottom: the same gap that separates two blocks, so the last block sits
-       one block-gap above the footer line. */
-    padding: clamp(2rem, 6vw, 3rem) var(--gutter) var(--block-gap);
+    /* Top and bottom share one value, so the last block sits exactly as far
+       above the footer line as the first block sits below the header. */
+    --content-pad-y: clamp(2rem, 6vw, 3rem);
+    padding: var(--content-pad-y) var(--gutter);
     outline: none;
     flex: 1 0 auto;
 }
@@ -969,19 +970,19 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     display: none;
 }
 
-/* Off-screen embed warm-up — driven by warmUpIframes() in engine.js, which
+/* Off-screen embed warm-up - driven by warmUpIframes() in engine.js, which
    pre-loads a hidden tab's map/video iframes so opening that tab is instant.
    A display:none panel gives its iframes no box, and a zero-size YouTube
    player locks onto its smallest (cropped, pixelated) poster rendition, so
    for the few seconds the embeds are loading the panel is laid out at its
-   real width instead — parked outside the viewport.
+   real width instead - parked outside the viewport.
 
    Two properties are load-bearing, and both are the way they are because the
    obvious alternatives failed:
    - `left: -200vw` (not `visibility: hidden`) is what keeps the panel from
      being seen. `visibility` is inherited but a DESCENDANT CAN TURN IT BACK
      ON, and the carousel does exactly that (`.carousel__slide.is-active,
-     .carousel--single .carousel__slide { visibility: visible }`) — a warming
+     .carousel--single .carousel__slide { visibility: visible }`) - a warming
      panel's slideshow painted straight over the live page. Being genuinely
      off-screen can't be overridden from the inside. `opacity: 0` backs it up
      for the same reason: it applies to the subtree as a group.
@@ -1001,7 +1002,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 }
 
 .section--active {
-    animation: panel-in 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: panel-in 90ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes panel-in {
@@ -1022,7 +1023,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 /* ---- Block layout: uniform spacing ----------------------------------- */
 /* Every rendered block is wrapped by JS in a .block element. This is the
    single source of truth for the vertical rhythm between blocks. Adding a new
-   block type needs no new spacing CSS — it inherits .block + .block. Blocks
+   block type needs no new spacing CSS - it inherits .block + .block. Blocks
    fill the content column; control a block's own width inside its builder/CSS
    if it ever needs to be narrower. */
 .block {
@@ -1104,7 +1105,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     letter-spacing: 0.01em;
 }
 
-/* Accent via <em> in the spec's section `title` — same treatment as
+/* Accent via <em> in the spec's section `title` - same treatment as
    .intro__title em: accent color, no italics. NOTE: .section__title is a
    flex container, so spec titles should wrap the WHOLE text in one <em>
    (a partial <em> would split the title into gap-separated flex items). */
@@ -1137,7 +1138,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     /* transform uses a short ease-OUT (fast start, gentle settle) so the 3px
        lift feels crisp, not draggy; border-color keeps the shared curve. The
        lift is composited (see will-change on a.card__link) so moving the
-       blurred panel doesn't repaint the backdrop-filter every frame — that
+       blurred panel doesn't repaint the backdrop-filter every frame - that
        repaint was the stutter. */
     transition: transform 140ms cubic-bezier(0.2, 0.7, 0.3, 1), border-color var(--transition);
     display: flex;
@@ -1145,7 +1146,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 }
 
 /* Only clickable cards react to the cursor. A plain (non-linked) .card stays
-   put — reacting like a button would be a false affordance (user hovers, it
+   put - reacting like a button would be a false affordance (user hovers, it
    lifts and glows, click does nothing). The lift/accent is reserved for
    a.card__link, which is what buildCards adds only when the card is a link. */
 @media (hover: hover) {
@@ -1155,7 +1156,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     }
 }
 
-/* Card icon — set by buildCards() when an item has an `icon`: a monochrome
+/* Card icon - set by buildCards() when an item has an `icon`: a monochrome
    black-on-transparent PNG, sat to the LEFT of the text
    and vertically centered against it (.card--icon switches the card from the
    default column to a row). The --mono-icon-filter token inverts it to white
@@ -1214,7 +1215,7 @@ a.card__link {
 }
 
 /* Persistent "go" cue on clickable cards, so the affordance survives on touch
-   (no hover on mobile) — not just on desktop hover. The arrow rides on the
+   (no hover on mobile) - not just on desktop hover. The arrow rides on the
    accent meta line and nudges right on hover. */
 a.card__link .card__meta::after {
     /* content: var(--unicode-arrow); */ /* arrow cue intentionally disabled */
@@ -1264,7 +1265,7 @@ a.card__link:not(:has(.card__meta))::after {
 
 /* The accent meta line doubles as the "this card is a link" cue (paired with
    the hover lift on a.card__link). On a plain, non-clickable card the same
-   accent would be a false affordance — mute it to the caption color so the
+   accent would be a false affordance - mute it to the caption color so the
    accent keeps meaning "clickable" everywhere. */
 article.card .card__meta {
     color: var(--text-faint);
@@ -1320,7 +1321,7 @@ article.card .card__meta {
     overflow-wrap: anywhere;
 }
 
-/* Persistent clickability cue — same arrow language as redirect cards, so
+/* Persistent clickability cue - same arrow language as redirect cards, so
    contact rows never need a "these are clickable" sentence in the copy. */
 .link-list__arrow {
     margin-left: auto;
@@ -1341,7 +1342,7 @@ article.card .card__meta {
     margin-left: 0.75rem;
 }
 
-/* layout: "grid" — rows become side-by-side tiles (auto-stacks when narrow). */
+/* layout: "grid" - rows become side-by-side tiles (auto-stacks when narrow). */
 .link-list--grid {
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
     gap: 0.6rem;
@@ -1397,7 +1398,7 @@ article.card .card__meta {
 }
 
 /* Per-platform brand colors for contact-row icons. Brand colors, not theme
-   tokens — intentionally identical in light and dark mode, and kept on hover. */
+   tokens - intentionally identical in light and dark mode, and kept on hover. */
 .link-list--phone .link-list__icon {
     color: var(--brand-phone);
 }
@@ -1434,7 +1435,7 @@ article.card .card__meta {
    wrapper lets a wide table scroll sideways on narrow screens instead of
    squashing columns or forcing the whole page wider.
 
-   On mobile (<= 640px) the table is restructured into stacked row-cards — see
+   On mobile (<= 640px) the table is restructured into stacked row-cards - see
    "Table on mobile" right below the .table-cards rules. The base
    rules here are the DESKTOP table; do not put display:block / card styling
    here or it leaks onto desktop. */
@@ -1450,7 +1451,7 @@ article.card .card__meta {
 }
 
 /* Collapsible table (opt-in via `collapsible: true` in the spec): styled like
-   a FAQ item — the block carries the frame, the name renders as a flat toggle
+   a FAQ item - the block carries the frame, the name renders as a flat toggle
    row inside it, and the inner .table-scroll frame is stripped so the open
    state reads as ONE table continuing under the toggle row. The +/- icon is
    drawn by the shared .faq__icon rules (they also target .table__toggle-icon);
@@ -1473,7 +1474,7 @@ article.card .card__meta {
 }
 
 /* The toggle row + its hover live in the shared .faq__q/.table__toggle rules
-   (FAQ section) — like the +/- icon, the accordion look is styled once. */
+   (FAQ section) - like the +/- icon, the accordion look is styled once. */
 
 /* Open panel: divider under the toggle row, like .faq__a. */
 .table__panel {
@@ -1485,7 +1486,7 @@ article.card .card__meta {
     padding: 0.85rem 1.1rem 0;
 }
 
-/* The outer block already carries the frame — strip the inner one, and the
+/* The outer block already carries the frame - strip the inner one, and the
    last row's divider so it doesn't double with the frame's bottom edge. */
 .table-block--collapsible .table-scroll {
     border: 0;
@@ -1614,7 +1615,7 @@ article.card .card__meta {
        horizontally, turn each row into a self-contained card with cells
        stacked vertically. Works off source order, no JS change needed.
 
-       This is the ONLY place the card/stacking treatment lives — the base
+       This is the ONLY place the card/stacking treatment lives - the base
        .data-table rules above stay a normal desktop table. */
     /* Neutralize the scroll frame: the cards carry their own borders now. */
     .table-scroll {
@@ -1627,7 +1628,7 @@ article.card .card__meta {
     }
 
     /* Collapse the table structure to blocks so rows/cells stack. min-width:0
-       lets them shrink below their intrinsic content width — this is what stops
+       lets them shrink below their intrinsic content width - this is what stops
        a long sentence (e.g. the skladovanie row) from forcing a sideways scroll. */
     .data-table,
     .data-table thead,
@@ -1639,7 +1640,7 @@ article.card .card__meta {
         min-width: 0;
     }
 
-    /* Visually hide the header row — each stacked row is self-explanatory in
+    /* Visually hide the header row - each stacked row is self-explanatory in
        source order (e.g. condition then detail, or task/description/price). Kept in
        the DOM for screen readers. */
     .data-table thead {
@@ -1654,7 +1655,7 @@ article.card .card__meta {
 
     /* Stacked rows fuse into ONE continuous panel, like .hours__list: the
        tbody carries the frame (border/radius/background), rows carry only a
-       divider — so there are no doubled borders and no gaps between rows. */
+       divider - so there are no doubled borders and no gaps between rows. */
     .data-table tbody {
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -1669,7 +1670,7 @@ article.card .card__meta {
         border-top: 1px solid var(--border);
     }
 
-    /* Stacked cards keep the original left-aligned, wrapping value cell —
+    /* Stacked cards keep the original left-aligned, wrapping value cell -
        the desktop right-align/nowrap treatment is a column concept and the
        columns don't exist here. */
     .data-table td.data-table__value {
@@ -1677,7 +1678,7 @@ article.card .card__meta {
         white-space: normal;
     }
 
-    /* Inside a collapsible table the outer block already carries the frame —
+    /* Inside a collapsible table the outer block already carries the frame -
        strip the stacked-card tbody's own frame so it doesn't double up. */
     .table-block--collapsible .data-table tbody {
         border: none;
@@ -1745,7 +1746,7 @@ article.card .card__meta {
 
 /* Shared accordion toggle button: the FAQ question row and the collapsible
    table's name row (same deduplication as the +/- icon rules below). Fills
-   its row, sits flat — the .faq__item / .table-block--collapsible frames it;
+   its row, sits flat - the .faq__item / .table-block--collapsible frames it;
    the 1.1rem inline padding lines the table name up with its cells. */
 .faq__q,
 .table__toggle,
@@ -1855,7 +1856,7 @@ article.card .card__meta {
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-panel);
-    aspect-ratio: 21 / 9; /* wider, shorter — more of a rectangle */
+    aspect-ratio: 21 / 9; /* wider, shorter - more of a rectangle */
 }
 
 .map-embed iframe {
@@ -1870,8 +1871,8 @@ article.card .card__meta {
 
 /* ---- Map: static mode (no iframe, clean themed card) ------------------ */
 /* Rendered when a `map` block sets mode: "static". A lightweight panel that
-   matches cards/table — location name, optional address, and the Open-in-Maps
-   button — instead of the noisier live iframe. */
+   matches cards/table - location name, optional address, and the Open-in-Maps
+   button - instead of the noisier live iframe. */
 .map-card {
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1929,11 +1930,11 @@ article.card .card__meta {
 /* ---- Video (YouTube embed) --------------------------------------------- */
 /* Rendered by buildVideo() in engine.js from a `video` block. Same framed-
    panel treatment as .map-embed, but fixed 16:9 at every width (video content
-   is 16:9 — a portrait crop would letterbox badly) and the iframe stays
+   is 16:9 - a portrait crop would letterbox badly) and the iframe stays
    interactive (no pointer-events trick; the visitor must be able to press
    play). Solid panel behind it so any player letterboxing reads as intended,
    matching the carousel viewport. Heading + blurb come from the shared
-   .block__name / .block__blurb rules — no CSS needed here. */
+   .block__name / .block__blurb rules - no CSS needed here. */
 .video-embed {
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1966,7 +1967,7 @@ article.card .card__meta {
     /* One canonical IMAGE shape. The chin (caption) is no longer a hardcoded
        height: slides are grid-stacked in the viewport below, so the frame is
        image (fixed ratio) + the tallest caption in this carousel. Still no
-       per-slide jumping — the container is sized by the tallest slide, once,
+       per-slide jumping - the container is sized by the tallest slide, once,
        and never resizes as slides change. */
     --carousel-ratio: 16 / 10;
 }
@@ -1982,14 +1983,14 @@ article.card .card__meta {
     overflow: hidden;
 
     /* Horizontal belongs to initSwipe, vertical stays the browser's page
-       scroll. Load-bearing — see the swipe gotcha in docs/gotchas.md: drop this and
+       scroll. Load-bearing - see the swipe gotcha in docs/gotchas.md: drop this and
        the browser can claim the whole gesture, so the swipe never fires. */
     touch-action: pan-y;
 }
 
 /* All slides stay in the stack; opacity shows/hides. A slide is a 2-row grid:
    row 1 = image at the canonical ratio, row 2 = chin, which flexes to fill
-   whatever the tallest caption claimed — so chins match across slides. */
+   whatever the tallest caption claimed - so chins match across slides. */
 .carousel__slide {
     grid-area: 1 / 1;
     min-width: 0;
@@ -2022,7 +2023,7 @@ article.card .card__meta {
 }
 
 /* Expand button wraps the image so it's a real, focusable control that opens
-   the lightbox. The canonical ratio now lives HERE, not on the viewport —
+   the lightbox. The canonical ratio now lives HERE, not on the viewport -
    the image area is the fixed part of the frame, the chin is the flexible
    part. zoom-in cursor hints it's clickable. */
 .carousel__expand {
@@ -2064,7 +2065,7 @@ article.card .card__meta {
    Content-sized: the line-clamps below are the ceiling, not a fixed pixel
    height. The old fixed height (clamp + vw) was smaller than 1 title line +
    2 text lines on phones, and justify-content: center clipped the overflow
-   on BOTH edges — that was the sliced-title / mid-word-cut bug. */
+   on BOTH edges - that was the sliced-title / mid-word-cut bug. */
 .carousel__caption {
     z-index: 2;
 
@@ -2103,7 +2104,7 @@ article.card .card__meta {
 }
 
 /* Line-clamps are now the ONLY cap on caption size. Overflow past the clamp
-   ends on a line boundary with an ellipsis — never a sliced glyph. */
+   ends on a line boundary with an ellipsis - never a sliced glyph. */
 .carousel__title,
 .carousel__text,
 .carousel__subtext {
@@ -2246,7 +2247,7 @@ article.card .card__meta {
 }
 
 /* Each tile is a button so it's focusable/keyboard-openable. Strip button
-   chrome; the image fills it. zoom-in cursor signals it opens the lightbox —
+   chrome; the image fills it. zoom-in cursor signals it opens the lightbox -
    same affordance language as .carousel__expand. */
 .gallery__item {
     display: flex;
@@ -2403,7 +2404,7 @@ article.card .card__meta {
 
 /* ---- Review block ----------------------------------------------------- */
 /* Rendered by buildReview() in engine.js from a `review` block. Outbound
-   "leave a review" CTAs (Google, Facebook, …). No backend — each is a link to
+   "leave a review" CTAs (Google, Facebook, …). No backend - each is a link to
    the platform's own review page. Surfaces match cards/links so it re-themes
    for free in light/dark and on the 404 page. */
 
@@ -2472,7 +2473,7 @@ article.card .card__meta {
 /* Touch layout tweak: center the Open-in-Maps button under the full-width
    embed. (The iframe itself is view-only via pointer-events: none in its base
    rule, so Firefox/Android can't hijack scroll taps into Maps.) Hover styling
-   needs no touch overrides — it's gated behind @media (hover: hover) at each
+   needs no touch overrides - it's gated behind @media (hover: hover) at each
    component, so touch never receives sticky hover states in the first place. */
 @media (hover: none), (pointer: coarse) {
     .map-open-row {
@@ -2510,7 +2511,7 @@ article.card .card__meta {
    (or stays empty if analytics is off / unreachable), and the ::before dot
    only shows once there's text, so there's no stray leading dot. When it
    links to the public dashboard it's a plain footer link and inherits the
-   shared `.site-footer a` style — same as the credit link — so both match.
+   shared `.site-footer a` style - same as the credit link - so both match.
    The faint color applies only to the non-link span variant. */
 span.footer__count {
     color: var(--text-soft);
@@ -2529,7 +2530,7 @@ span.footer__count {
    (1) genuinely small screens via the media query below;
    (2) the .force-mobile-nav class, added by JS (initHeaderFit) the instant the
        desktop nav and the header socials would touch. In that mode the desktop
-       nav AND the header socials are both hidden and the hamburger takes over —
+       nav AND the header socials are both hidden and the hamburger takes over -
        the socials still live in the mobile drawer, so nothing is lost.
    CSS can't @media on a class, so the two triggers are kept as parallel rules. */
 .site-header.force-mobile-nav .nav-desktop {
@@ -2560,7 +2561,7 @@ span.footer__count {
     }
 
     /* Let the brand shrink + ellipsis so the action buttons (lang/theme/menu)
-       ALWAYS fit — a long brand otherwise overflows the header and clips the
+       ALWAYS fit - a long brand otherwise overflows the header and clips the
        menu button off-screen (body is overflow-x:hidden). Safe here: the
        desktop nav is already hidden at this width, so header-fit's
        natural-width measurement is moot. header-actions stays flex:none so the
@@ -2603,7 +2604,7 @@ body.menu-open {
 /* ---- Lightbox (expanded image view) ----------------------------------- */
 /* A single shared overlay (created once in JS) reused by every carousel.
    Shows the full image letterboxed (object-fit: contain) so each image keeps
-   its own aspect ratio inside one uniform frame — nothing is cropped.
+   its own aspect ratio inside one uniform frame - nothing is cropped.
 
    It is a native modal <dialog> (getLightbox calls showModal()), so it lives in
    the top layer - no z-index - and the browser makes the page behind it inert.
@@ -2780,7 +2781,7 @@ body.lightbox-open {
 }
 
 /* ----------------------------------------------------------------------
-   ERROR STATE — shown when site-spec.json can't be loaded/parsed and there
+   ERROR STATE - shown when site-spec.json can't be loaded/parsed and there
    is no inline content to fall back to. Append to styles.css. Uses the same
    theme tokens as the rest of the site, so it re-themes for free.
 ---------------------------------------------------------------------- */

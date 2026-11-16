@@ -1,6 +1,6 @@
 # LAUNCH-CHECK.md
 
-Documentation for `launch-check.js` — the pre-launch validator for sites built
+Documentation for `launch-check.js` - the pre-launch validator for sites built
 on this engine.
 
 > Companion to `AGENTS.md` + `docs/` (how the engine works) and `CLIENT-CHECKLIST.md`
@@ -12,7 +12,7 @@ on this engine.
 `launch-check.js` is a **dev-only preflight inspector**. It reads the project
 files, runs a series of sanity checks, prints a grouped report, and exits with
 a status code you can act on. It catches the boring, expensive, embarrassing
-mistakes that ship silently because the page still *renders* fine — fake
+mistakes that ship silently because the page still *renders* fine - fake
 contact data, leftover placeholder text, broken asset paths, a domain that
 doesn't match across files, a missing social-share image.
 
@@ -23,7 +23,7 @@ Design constraints, all intentional:
 
 - **Zero dependencies.** Node built-ins only (`fs`, `path`, `url`,
   `child_process`). No npm install, no `package.json` needed.
-- **CommonJS**, not ES modules — runs with plain `node`, no `"type": "module"`.
+- **CommonJS**, not ES modules - runs with plain `node`, no `"type": "module"`.
   The one thing it loads besides built-ins is the project's own
   `business-jsonld.mjs`, via a dynamic `import()`, for pure helpers the engine
   uses too (e.g. the YouTube link parser) - so the validator and the page can't
@@ -32,7 +32,7 @@ Design constraints, all intentional:
   inspects local files only, so it's fast (~tens of ms) and never flaky.
 - **Heuristic, not exhaustive.** It pattern-matches "does this look fake / left
   over / inconsistent." It will occasionally false-positive, and it can miss a
-  novel placeholder phrase. That's an accepted tradeoff for a fast preflight —
+  novel placeholder phrase. That's an accepted tradeoff for a fast preflight -
   it's a nudge, not a proof.
 
 ## How to run it
@@ -67,17 +67,17 @@ other check runs unchanged, so `PASS` there means "nothing is broken beyond
 the placeholders a client will replace". **Never use it on a client site** -
 there each of those six is a real launch blocker.
 
-It must be run **from the repo root** (or pointed at a folder with `--root`) —
+It must be run **from the repo root** (or pointed at a folder with `--root`) -
 it inspects files on disk relative to that root.
 
 ### Exit codes
 
 ```text
-0  pass — no blocking errors (warnings may still be present)
-1  fail — blocking errors found
+0  pass - no blocking errors (warnings may still be present)
+1  fail - blocking errors found
 ```
 
-Warnings never affect the exit code by default. Only errors block — **unless**
+Warnings never affect the exit code by default. Only errors block - **unless**
 you pass `--strict`, which promotes warnings to blocking failures (a useful
 hard gate in CI).
 
@@ -118,7 +118,7 @@ Warnings:
 
 Each finding carries a stable `category`, a stable machine `code` (e.g.
 `EMAIL_FAKE`, `MANIFEST_ICON_WRONG_PATH`, `UNUSED_ASSET`), and a human
-`message`. The `code` is the thing to match on in tooling — the message wording
+`message`. The `code` is the thing to match on in tooling - the message wording
 may change, the code won't.
 
 `status`/`ok` give a quick branch, `counts` supports thresholds, and the arrays
@@ -133,7 +133,7 @@ rely on either.
 - **Warnings don't block** (exit stays 0). These are things worth a look but
   not necessarily wrong: unused image files, a stale metadata fallback (the
   engine overwrites it at runtime), missing image descriptions, very short hero
-  copy. Some warnings are judgment calls — e.g. a `CNAME` host differing from
+  copy. Some warnings are judgment calls - e.g. a `CNAME` host differing from
   `meta.domain` is flagged because it's *usually* a mistake, but is legitimate
   for www↔apex redirect setups.
 
@@ -152,82 +152,82 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
 
 ### `site-spec.json`
 
-- **Valid JSON** — a parse error is a hard fail and stops the run.
-- **Shape** — `sections` is a non-empty array; every section has a unique `id`;
+- **Valid JSON** - a parse error is a hard fail and stops the run.
+- **Shape** - `sections` is a non-empty array; every section has a unique `id`;
   no duplicate ids; `label` present (warning if not). Note `type` lives on
   **blocks**, not sections.
-- **Block types** — each block's `type` must be one the engine knows
+- **Block types** - each block's `type` must be one the engine knows
   (`hero, text, cards, links, map, slideshow, table, faq, gallery, photo, hours,
   review, video`). An unknown type is flagged because the engine silently skips
   it. The known list is the `BLOCK_RULES` map near the top of `launch-check.js`,
   which maps each type to its check function (it is the dispatch too - there is
   no separate `switch`); keep it in sync with `BLOCK_RENDERERS` in `engine.js`
   when you add a block type.
-- **Block-type registry drift** (`BLOCK_TYPE_DRIFT`) — cross-checks the four
+- **Block-type registry drift** (`BLOCK_TYPE_DRIFT`) - cross-checks the four
   places the type list is stated: `BLOCK_RENDERERS` in `engine.js`,
   `BLOCK_RULES` here, the `type` enum in `site-spec.schema.json`, and the
   block-types table in `docs/spec-format.md`. Any mismatch is a hard failure, so adding
   or removing a type without updating all four is caught before it ships.
-- **Generated artifacts freshness** (`GENERATED_STALE`) — runs
+- **Generated artifacts freshness** (`GENERATED_STALE`) - runs
   `generate-static.mjs --check`, which byte-compares `llms.txt`, `sitemap.xml`
   and the stamped tags in `index.html` (the static JSON-LD and the LCP-image
   preload) against what the current spec would generate. The one thing it
   does not compare is the sitemap's `<lastmod>` date, so the result does not
   depend on when or where the repo was checked out. A spec edit without a
-  re-run (or a hand edit of an artifact) is a hard failure — run
+  re-run (or a hand edit of an artifact) is a hard failure - run
   `node generate-static.mjs` to refresh them.
-- **Geo coordinates** (`GEO_INVALID`) — if `business.geo` is set, `lat`/`lng`
+- **Geo coordinates** (`GEO_INVALID`) - if `business.geo` is set, `lat`/`lng`
   must be numbers in valid ranges (±90 / ±180); anything else would pin the
   business at a wrong location in the JSON-LD.
-- **Table flags** (warnings) — `accentValue` and `offerCatalog` must be real
+- **Table flags** (warnings) - `accentValue` and `offerCatalog` must be real
   booleans when present (`TABLE_ACCENT_VALUE_NOT_BOOL`,
   `TABLE_OFFER_CATALOG_NOT_BOOL`).
-- **Block required fields** — `table` needs `headings` + `rows`; `cards` needs
+- **Block required fields** - `table` needs `headings` + `rows`; `cards` needs
   `items`; `links` needs `use` refs or `items` (a row with no `label` is only
   warned about when it also lacks a kind line, i.e. has neither `kind` nor
   `icon`, or has no `handle`); `slideshow` needs `slides`; `gallery` needs `images`
-  (and `columns`, if set, must be 2–4 — the only values the engine and CSS
+  (and `columns`, if set, must be 2–4 - the only values the engine and CSS
   honor); `photo` needs `src`; `map` needs `url`
   or `embed`; `faq` needs `items` (each with `q` + `a`); `review` needs `items`
   (each with `label` + `url`); `hours` reads `business.hours` rather than its own
   fields; `video` needs a recognizable YouTube `url` or `playlist`; etc. (a
   builder returns nothing on bad input, so these would vanish).
-- **Placeholder text** — scans every string for filler markers (`lorem`,
+- **Placeholder text** - scans every string for filler markers (`lorem`,
   `bla bla`, `nejaky`, `tbd`, `placeholder`, …) and reports the JSON path.
-- **Contact data** — emails (fake/invalid patterns like `r@r.sk`), phones (too
+- **Contact data** - emails (fake/invalid patterns like `r@r.sk`), phones (too
   short, all-zeros, sequential dummy), Slovak IČO (8 digits) and DIČ (10 digits)
   when present.
-- **Content quality** (warnings) — very short hero lead; a pricing-looking
+- **Content quality** (warnings) - very short hero lead; a pricing-looking
   section with no price-like content.
 - **Image alt / accessibility** (`IMAGE_MISSING_TEXT`, `accessibility`
-  category) — an image with no `title`/`caption`/`text` to derive alt text
+  category) - an image with no `title`/`caption`/`text` to derive alt text
   from. An error for a `photo` and for `gallery` images (nothing else carries
   their meaning), a warning for `slideshow` slides. There is no `alt` field:
   the engine never reads one.
 
 ### `index.html`
 
-- **SEO basics** (errors) — non-empty `<title>`, a description meta, a favicon
+- **SEO basics** (errors) - non-empty `<title>`, a description meta, a favicon
   link, and an `og:image` (either here or via `meta.ogImage`).
-- **Optional SEO** (warnings) — `og:title`, `og:description`, `<html lang>`,
+- **Optional SEO** (warnings) - `og:title`, `og:description`, `<html lang>`,
   canonical link.
-- **Domain match** (errors) — canonical and `og:url` must equal `meta.domain`.
+- **Domain match** (errors) - canonical and `og:url` must equal `meta.domain`.
   An absolute `og:image`/`twitter:image` on a different host is a **warning**:
   intended while only a dev/preview host serves the image, but it must move to
   `meta.domain` at launch (relative paths are always fine).
-- **Metadata consistency** (warnings) — the static fallback tags (title,
+- **Metadata consistency** (warnings) - the static fallback tags (title,
   description, author, og:*, twitter:card, theme-color, lang) should match
   `meta`. They're a crawler fallback the engine overwrites at runtime, so drift
-  isn't fatal — but crawlers that don't run JS see the stale value.
-- **Asset references** — any `assets/` image referenced here must exist.
+  isn't fatal - but crawlers that don't run JS see the stale value.
+- **Asset references** - any `assets/` image referenced here must exist.
 
 ### `site.webmanifest`
 
 - **Valid JSON**; has `name`; has icons.
-- **Icon paths resolve** (error) — every icon `src` must point at a file that
+- **Icon paths resolve** (error) - every icon `src` must point at a file that
   exists *as written*. Catches the common root-absolute mistake
   (`/web-app-manifest-192x192.png` when the file is at `assets/…`).
-- **Soft fields** (warnings) — `short_name`, `theme_color`, `background_color`;
+- **Soft fields** (warnings) - `short_name`, `theme_color`, `background_color`;
   `theme_color` drifting from `meta.themeColor`.
 
 ### Brand name mirrors (`BRAND_MIRROR_STALE`, warning)
@@ -247,7 +247,7 @@ or a previous client.
 - Note: parsed by regex, not validated as well-formed XML. The file itself is
   GENERATED by `generate-static.mjs` (`<lastmod>` = the date of the last commit
   that touched the spec, or the spec's mtime while it has uncommitted edits), so
-  don't hand-edit it — the freshness check above would flag it.
+  don't hand-edit it - the freshness check above would flag it.
 
 ### `robots.txt`
 
@@ -256,19 +256,19 @@ or a previous client.
 
 ### `CNAME` (only if present)
 
-- Host matches `meta.domain`'s host (warning — www↔apex setups legitimately
+- Host matches `meta.domain`'s host (warning - www↔apex setups legitimately
   differ).
 
 ### `assets/` (walked on disk)
 
-- **Referenced-but-missing** (error) — a block points at a file that isn't
+- **Referenced-but-missing** (error) - a block points at a file that isn't
   there. Besides the spec and `index.html`, root-level stylesheets
   (`styles.css`, `404.css`) are scanned for `url(...)` references (fonts,
-  backgrounds) — a missing one is a `CSS_ASSET_MISSING` error.
-- **Present-but-unused** (warning) — a file on disk nothing references
+  backgrounds) - a missing one is a `CSS_ASSET_MISSING` error.
+- **Present-but-unused** (warning) - a file on disk nothing references
   (spec, `index.html`, or a root-level stylesheet). The favicon family is
   exempt (referenced by convention).
-- **Oversized images** (warning, `performance` category) — images larger than
+- **Oversized images** (warning, `performance` category) - images larger than
   `--max-image-kb` (default 900 KB), and CSS/JS over `--max-css-kb` /
   `--max-js-kb` (default 250 KB), so heavy media gets compressed before ship.
 
@@ -278,28 +278,28 @@ The runtime language switch loads one spec per locale (see `docs/i18n.md`).
 Each is a full copy of the spec, so everything untranslated is duplicated. The
 default run compares that duplicated data against the default `site-spec.json`
 and checks each locale's asset paths (the content/contact/SEO checks still run
-on the default spec only — that's the single-language SEO mirror by design):
+on the default spec only - that's the single-language SEO mirror by design):
 
-- **Invalid locale spec** (`LOCALE_SPEC_INVALID`, `spec`) — a
+- **Invalid locale spec** (`LOCALE_SPEC_INVALID`, `spec`) - a
   `site-spec.<lang>.json` is not valid JSON.
-- **Missing `meta.lang`** (`LOCALE_LANG_MISSING`, `spec`) — needed for
+- **Missing `meta.lang`** (`LOCALE_LANG_MISSING`, `spec`) - needed for
   `<html lang>` and the switcher.
-- **Section drift** (`LOCALE_SECTION_DRIFT`, `content`) — a locale's section
+- **Section drift** (`LOCALE_SECTION_DRIFT`, `content`) - a locale's section
   `id`s differ from the default's, so a translation is missing or renaming a
   section (the current tab is preserved across a switch by id).
-- **Data drift** (`LOCALE_DATA_DRIFT`, `content`, warning) — something that must
+- **Data drift** (`LOCALE_DATA_DRIFT`, `content`, warning) - something that must
   be identical in every locale differs from the default spec: `meta.domain`,
   `meta.themeColor`, `meta.ogImage`, `brandImage`, `business.phone` / `email` /
   `ico` / `dic` / `mapUrl` / `mapEmbed` / `geo`, the `socials` list (icon + url,
   in order), `backgrounds`, or the block types inside a section (a block added
   to one language only).
-- **Missing asset** (`LOCALE_ASSET_MISSING`, `assets`, error) — a locale spec
+- **Missing asset** (`LOCALE_ASSET_MISSING`, `assets`, error) - a locale spec
   points at a file that isn't there. Files only a locale spec uses also count
   as referenced for the unused-asset warning.
 
 To run the **full** content/contact/SEO pass on a specific locale, point the
 validator at it: `node launch-check.js --site-spec site-spec.sk.json`. (Expect
-`HTML_*_STALE` there — the static `index.html` mirror is the default locale on
+`HTML_*_STALE` there - the static `index.html` mirror is the default locale on
 purpose.)
 
 ## How to use it in the workflow
@@ -321,13 +321,13 @@ real customer. (See `CLIENT-CHECKLIST.md` for the per-client fill-in steps the
 validator backs up.)
 
 A clean run on a fresh client typically still surfaces the obvious first-pass
-items — placeholder hero copy, template contact values, a not-yet-made
+items - placeholder hero copy, template contact values, a not-yet-made
 `og:image`, manifest icon paths. That's expected; work them down to `PASS`.
 
 ## Limitations (read these)
 
 - **It validates inputs, not the rendered result.** It can't tell you the site
-  *looks* right — only that the spec and metadata aren't obviously broken. The
+  *looks* right - only that the spec and metadata aren't obviously broken. The
   manual checks in `docs/gotchas.md` (open it, click every tab, test on a real phone)
   still matter.
 - **Heuristics false-positive and false-negative.** A real phone number that
@@ -336,7 +336,7 @@ items — placeholder hero copy, template contact values, a not-yet-made
 - **JSON validity is checked for `site-spec.json` and `site.webmanifest` only.**
   `sitemap.xml` is regex-scraped, not validated as well-formed XML.
 - **No network checks.** It does not fetch the live site, verify URLs resolve,
-  or inspect deployed headers. By design — that keeps it fast and offline.
+  or inspect deployed headers. By design - that keeps it fast and offline.
 
 ## Extending it
 
@@ -353,7 +353,7 @@ the `errors`/`warnings` arrays (tagged with a category) → print → exit on
    uppercase `code`.
 
 Keep it dependency-free, offline, and CommonJS. If a check would need a parser,
-a network call, or an npm package, it probably doesn't belong here — that's the
+a network call, or an npm package, it probably doesn't belong here - that's the
 line that keeps this a fast preflight rather than a slow test suite.
 
 Possible future additions (not yet built): well-formed-XML validation for

@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Explicit opt-IN for AI crawlers and assistants. The * group above already
-# admits everyone, so these stanzas change nothing functionally — but a bot
+# admits everyone, so these stanzas change nothing functionally - but a bot
 # that finds its own name picks this group over *, and an explicit Allow is
 # a deliberate, legible "yes, ingest this site" (many sites block these
 # agents, so silence reads as ambivalence). Machine-readable content lives

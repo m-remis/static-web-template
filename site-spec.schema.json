@@ -260,7 +260,7 @@
               "body": { "type": "string" },
               "meta": { "type": "string", "description": "Small accent label (shows a go-arrow on linked cards)." },
               "url": { "type": "string", "description": "Link target; required if the card should be clickable." },
-              "icon": { "type": "string", "description": "Optional monochrome icon shown to the left of the text, vertically centered — a black PNG on a transparent background. Auto-inverted to white in dark theme; one asset works on both themes." }
+              "icon": { "type": "string", "description": "Optional monochrome icon shown to the left of the text, vertically centered - a black PNG on a transparent background. Auto-inverted to white in dark theme; one asset works on both themes." }
             }
           }
         }
@@ -303,7 +303,7 @@
     "blockMap": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Map block. mode:\"embed\" (default) live iframe, or mode:\"static\" themed address card. url/embed are optional here — when omitted the engine falls back to business.mapUrl / business.mapEmbed (SSOT). launch-check.js flags a map that resolves to nothing.",
+      "description": "Map block. mode:\"embed\" (default) live iframe, or mode:\"static\" themed address card. url/embed are optional here - when omitted the engine falls back to business.mapUrl / business.mapEmbed (SSOT). launch-check.js flags a map that resolves to nothing.",
       "required": ["type"],
       "properties": {
         "type": { "const": "map" },
@@ -340,8 +340,8 @@
         "name": { "type": "string" },
         "blurb": { "type": "string" },
         "accentValue": { "type": "boolean", "default": true, "description": "false = no accent price styling on the last column (use for prose tables)." },
-        "offerCatalog": { "type": "boolean", "default": false, "description": "true = this table is a price list exported into the JSON-LD as a schema.org OfferCatalog (first cell = service name, last cell = price, middle cells = description). Not rendered by the engine — consumed by business-jsonld.mjs only. Leave off prose tables." },
-        "collapsible": { "type": "boolean", "default": false, "description": "true = the table renders collapsed behind its name as an accordion toggle (same pattern as faq); the blurb collapses with it. Requires `name` — without one the flag is ignored and the table renders expanded. Presentation only: JSON-LD/llms.txt exports are unaffected." },
+        "offerCatalog": { "type": "boolean", "default": false, "description": "true = this table is a price list exported into the JSON-LD as a schema.org OfferCatalog (first cell = service name, last cell = price, middle cells = description). Not rendered by the engine - consumed by business-jsonld.mjs only. Leave off prose tables." },
+        "collapsible": { "type": "boolean", "default": false, "description": "true = the table renders collapsed behind its name as an accordion toggle (same pattern as faq); the blurb collapses with it. Requires `name` - without one the flag is ignored and the table renders expanded. Presentation only: JSON-LD/llms.txt exports are unaffected." },
         "headings": {
           "type": "array",
           "minItems": 1,
@@ -384,13 +384,13 @@
     "blockGallery": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Paged responsive image grid sharing the slideshow lightbox. Tiles are image-only; per-image title/caption are NOT shown as visible captions — they feed alt text and the lightbox caption only.",
+      "description": "Paged responsive image grid sharing the slideshow lightbox. Tiles are image-only; per-image title/caption are NOT shown as visible captions - they feed alt text and the lightbox caption only.",
       "required": ["type", "images"],
       "properties": {
         "type": { "const": "gallery" },
         "name": { "type": "string" },
         "blurb": { "type": "string" },
-        "columns": { "type": "integer", "minimum": 2, "maximum": 4, "description": "Optional column count (2–4) — the engine and CSS only honor these values." },
+        "columns": { "type": "integer", "minimum": 2, "maximum": 4, "description": "Optional column count (2–4) - the engine and CSS only honor these values." },
         "perPage": { "type": "integer", "minimum": 1, "description": "Tiles shown per page before paging. Defaults to 12." },
         "images": {
           "type": "array",
@@ -418,7 +418,7 @@
     "blockHours": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Opening-hours table. Carries no hours data itself — reads SITE.business.hours (single source of truth) and highlights the current day.",
+      "description": "Opening-hours table. Carries no hours data itself - reads SITE.business.hours (single source of truth) and highlights the current day.",
       "required": ["type"],
       "properties": {
         "type": { "const": "hours" },
@@ -429,7 +429,7 @@
     "blockReview": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Leave-a-review CTA block. Renders outbound buttons to external review pages (Google, Facebook, …). No backend — it does not collect or store reviews.",
+      "description": "Leave-a-review CTA block. Renders outbound buttons to external review pages (Google, Facebook, …). No backend - it does not collect or store reviews.",
       "required": ["type", "items"],
       "properties": {
         "type": { "const": "review" },
@@ -454,7 +454,7 @@
     "blockVideo": {
       "type": "object",
       "additionalProperties": false,
-      "description": "YouTube embed via the privacy-enhanced youtube-nocookie.com player (no cookies until play). Give ONE source: `url` pins a specific video; `playlist` auto-plays the playlist's newest entry — point it at the channel's UULF… long-form uploads playlist (channel id with UC→UULF) for an always-current 'latest episode'. If both are set the engine uses `url`.",
+      "description": "YouTube embed via the privacy-enhanced youtube-nocookie.com player (no cookies until play). Give ONE source: `url` pins a specific video; `playlist` auto-plays the playlist's newest entry - point it at the channel's UULF… long-form uploads playlist (channel id with UC→UULF) for an always-current 'latest episode'. If both are set the engine uses `url`.",
       "required": ["type"],
       "anyOf": [
         { "required": ["url"] },

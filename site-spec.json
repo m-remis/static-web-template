@@ -4,8 +4,8 @@
   "meta": {
     "lang": "en",
     "domain": "https://example.com/",
-    "title": "Static Web Template — a JSON-driven static site engine",
-    "description": "A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.",
+    "title": "Static Web Template - a JSON-driven static site engine",
+    "description": "A small, fast static site engine: one site-spec.json renders the whole page - no framework, no build step, no dependencies.",
     "author": "Static Web Template",
     "themeColor": "#0e0f13",
     "ogType": "website",
@@ -43,7 +43,7 @@
           "type": "hero",
           "eyebrow": "Static Web Template",
           "title": "One <em>JSON file</em>. A whole website.",
-          "lead": "This entire site — every tab, every block, the metadata, even this sentence — is rendered at runtime from a single <strong>site-spec.json</strong>. No framework, no build step, no dependencies."
+          "lead": "This entire site - every tab, every block, the metadata, even this sentence - is rendered at runtime from a single <strong>site-spec.json</strong>. No framework, no build step, no dependencies."
         },
         {
           "type": "text",
@@ -98,22 +98,22 @@
         {
           "type": "text",
           "name": "The single source of truth",
-          "text": "Everything the visitor sees lives in <strong>site-spec.json</strong> — the brand, the nav tabs, every section and block, the footer, the socials, the background images, and the document metadata. <strong>index.html</strong> is an almost-empty shell; <strong>engine.js</strong> fetches the spec on load and builds the page from it. To change what the site says, you edit the spec, not the markup."
+          "text": "Everything the visitor sees lives in <strong>site-spec.json</strong> - the brand, the nav tabs, every section and block, the footer, the socials, the background images, and the document metadata. <strong>index.html</strong> is an almost-empty shell; <strong>engine.js</strong> fetches the spec on load and builds the page from it. To change what the site says, you edit the spec, not the markup."
         },
         {
           "type": "text",
           "name": "The block engine",
-          "text": "<strong>sections</strong> is an ordered array, and its order is both the nav order and the page order. Each section is a list of typed blocks, and rendering is one generic dispatch: the engine looks up each block's <em>type</em> in a renderer map and calls the matching builder. There is no per-section special-casing anywhere — which is exactly why adding a new kind of content stays a small change."
+          "text": "<strong>sections</strong> is an ordered array, and its order is both the nav order and the page order. Each section is a list of typed blocks, and rendering is one generic dispatch: the engine looks up each block's <em>type</em> in a renderer map and calls the matching builder. There is no per-section special-casing anywhere - which is exactly why adding a new kind of content stays a small change."
         },
         {
           "type": "text",
           "name": "Resilient by design",
-          "text": "Three failure modes — the spec fails to load, fails to parse, or has no usable sections — all land on the same calm <em>temporarily unavailable</em> screen with a contact escape hatch. The page never blanks and never throws. Unknown block types are skipped with a console warning, so one bad block can't take down the rest of the page."
+          "text": "Three failure modes - the spec fails to load, fails to parse, or has no usable sections - all land on the same calm <em>temporarily unavailable</em> screen with a contact escape hatch. The page never blanks and never throws. Unknown block types are skipped with a console warning, so one bad block can't take down the rest of the page."
         },
         {
           "type": "text",
           "name": "Built for machines too",
-          "text": "Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text <strong>llms.txt</strong>, a <strong>sitemap.xml</strong>, and a schema.org <strong>JSON-LD</strong> block — all stamped by <strong>generate-static.mjs</strong> so they can never drift from what visitors actually see. A dev-only <strong>launch-check.js</strong> validator refuses to let an inconsistent site ship."
+          "text": "Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text <strong>llms.txt</strong>, a <strong>sitemap.xml</strong>, and a schema.org <strong>JSON-LD</strong> block - all stamped by <strong>generate-static.mjs</strong> so they can never drift from what visitors actually see. A dev-only <strong>launch-check.js</strong> validator refuses to let an inconsistent site ship."
         },
         {
           "type": "table",
@@ -122,12 +122,12 @@
           "accentValue": false,
           "headings": ["File", "What it does"],
           "rows": [
-            ["site-spec.json", "All content and metadata — the single source of truth"],
+            ["site-spec.json", "All content and metadata - the single source of truth"],
             ["engine.js", "The runtime: block builders, rendering and all UI logic"],
             ["styles.css", "Styling, layout and the two theme token blocks"],
-            ["index.html", "The shell — header skeleton and an empty main, filled by JS"],
+            ["index.html", "The shell - header skeleton and an empty main, filled by JS"],
             ["generate-static.mjs", "Stamps llms.txt, sitemap.xml and the static JSON-LD"],
-            ["launch-check.js", "Pre-launch validator — the gate before you deploy"]
+            ["launch-check.js", "Pre-launch validator - the gate before you deploy"]
           ]
         },
         {
@@ -136,7 +136,7 @@
           "items": [
             {
               "q": "Do I need Node or a build tool to run the site?",
-              "a": "No. The deployed site is plain static files. Node is only used by the optional dev tools (generate-static and launch-check) — the live site never runs it."
+              "a": "No. The deployed site is plain static files. Node is only used by the optional dev tools (generate-static and launch-check) - the live site never runs it."
             },
             {
               "q": "Why does the page need a local web server?",
@@ -168,7 +168,7 @@
         {
           "type": "text",
           "name": "text",
-          "text": "This paragraph is a <strong>text</strong> block. It renders prose with a small set of trusted inline tags — <em>emphasis</em>, <strong>strong</strong>, and <a href=\"#/how\">links</a>. Set <em>format</em> to <strong>markdown</strong> for a tiny markdown subset, or <strong>plain</strong> to escape everything. Every rich-text field is sanitized before it reaches the page."
+          "text": "This paragraph is a <strong>text</strong> block. It renders prose with a small set of trusted inline tags - <em>emphasis</em>, <strong>strong</strong>, and <a href=\"#/how\">links</a>. Set <em>format</em> to <strong>markdown</strong> for a tiny markdown subset, or <strong>plain</strong> to escape everything. Every rich-text field is sanitized before it reaches the page."
         },
         {
           "type": "text",
@@ -198,7 +198,7 @@
         {
           "type": "text",
           "name": "links",
-          "text": "The <strong>links</strong> block renders contact rows — an icon, a label over the value, and an arrow cue. It's the same block that powers the Contact details below the fold."
+          "text": "The <strong>links</strong> block renders contact rows - an icon, a label over the value, and an arrow cue. It's the same block that powers the Contact details below the fold."
         },
         {
           "type": "links",
@@ -227,7 +227,7 @@
             },
             {
               "q": "Can I reorder blocks?",
-              "a": "Reorder a section by reordering its blocks array — order in the JSON is order on the page."
+              "a": "Reorder a section by reordering its blocks array - order in the JSON is order on the page."
             }
           ]
         }
@@ -268,7 +268,7 @@
         {
           "type": "text",
           "name": "photo",
-          "text": "The <strong>photo</strong> block is single-image sugar — it normalizes to a one-image gallery, so a lone picture still gets the frame and lightbox."
+          "text": "The <strong>photo</strong> block is single-image sugar - it normalizes to a one-image gallery, so a lone picture still gets the frame and lightbox."
         },
         {
           "type": "photo",
@@ -296,7 +296,7 @@
         {
           "type": "review",
           "name": "review",
-          "blurb": "Outbound call-to-action buttons that send visitors to review platforms — links only, no backend.",
+          "blurb": "Outbound call-to-action buttons that send visitors to review platforms - links only, no backend.",
           "items": [
             { "label": "Review us on Google", "url": "https://example.com/", "platform": "google" }
           ]
@@ -328,14 +328,14 @@
             { "title": "Edit the spec", "body": "Open site-spec.json and change the brand, tabs, blocks and contact details.", "meta": "1" },
             { "title": "Add your images", "body": "Drop backgrounds and photos into the assets folder and point the spec at them.", "meta": "2" },
             { "title": "Refresh the mirrors", "body": "Run node generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.", "meta": "3" },
-            { "title": "Run the gate", "body": "Run node launch-check.js and fix every error it reports — stray demo text, fake contact data, broken assets.", "meta": "4" },
+            { "title": "Run the gate", "body": "Run node launch-check.js and fix every error it reports - stray demo text, fake contact data, broken assets.", "meta": "4" },
             { "title": "Deploy", "body": "Push the folder to GitHub Pages, Netlify, Vercel, Cloudflare Pages or any static host.", "meta": "5" }
           ]
         },
         {
           "type": "text",
           "name": "Theming",
-          "text": "Colors live as CSS custom properties in <strong>styles.css</strong>, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request — and a site can override brand tokens per-client via an optional <em>theme</em> object in the spec."
+          "text": "Colors live as CSS custom properties in <strong>styles.css</strong>, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request - and a site can override brand tokens per-client via an optional <em>theme</em> object in the spec."
         },
         {
           "type": "text",
@@ -352,7 +352,7 @@
         {
           "type": "text",
           "name": "Find us on",
-          "text": "The same <strong>links</strong> block, laid out as tiles with brand-tinted icons — here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the <em>socials</em> list."
+          "text": "The same <strong>links</strong> block, laid out as tiles with brand-tinted icons - here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the <em>socials</em> list."
         },
         {
           "type": "links",

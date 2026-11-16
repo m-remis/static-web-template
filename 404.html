@@ -4,14 +4,14 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <title>404 — Page not found · Static Web Template</title>
+    <title>404 - Page not found · Static Web Template</title>
     <meta name="robots" content="noindex"/>
     <meta name="theme-color" content="#0e0f13" id="themeColorMeta"/>
     <meta name="color-scheme" content="dark light"/>
 
     <!--
       Asset paths here are ROOT-ABSOLUTE on purpose. This page is served for
-      ANY missing URL, including nested ones (/foo/bar) — a relative
+      ANY missing URL, including nested ones (/foo/bar) - a relative
       "styles.css" would resolve against the missing directory (/foo/styles.css),
       the host would answer that with this 404 page again, and the page would
       render unstyled. Absolute paths resolve from the domain root at every
@@ -21,7 +21,7 @@
     -->
 
     <link rel="icon" href="/assets/favicon.ico" sizes="any"/>
-    <!-- Fonts come self-hosted via the @font-face rules in styles.css — same
+    <!-- Fonts come self-hosted via the @font-face rules in styles.css - same
          as index.html; no Google Fonts request chain. -->
     <link rel="stylesheet" href="/styles.css"/>
     <link rel="stylesheet" href="/404.css"/>
@@ -30,7 +30,7 @@
 <main class="error">
     <p class="error__code">404</p>
     <h1 class="error__title">This page went for a walk.</h1>
-    <p class="error__lead">The link is broken, the page moved, or it never existed. Either way — let's get you back home.</p>
+    <p class="error__lead">The link is broken, the page moved, or it never existed. Either way - let's get you back home.</p>
     <a class="error__home" href="/">← Back to home</a>
 </main>
 
@@ -59,15 +59,15 @@
         // --- language --- (mirror the engine's chrome strings for the 404)
         var STRINGS = {
             en: {
-                docTitle: "404 — Page not found · Static Web Template",
+                docTitle: "404 - Page not found · Static Web Template",
                 title: "This page went for a walk.",
-                lead: "The link is broken, the page moved, or it never existed. Either way — let's get you back home.",
+                lead: "The link is broken, the page moved, or it never existed. Either way - let's get you back home.",
                 home: "← Back to home"
             },
             sk: {
-                docTitle: "404 — Stránka sa nenašla · Static Web Template",
+                docTitle: "404 - Stránka sa nenašla · Static Web Template",
                 title: "Táto stránka sa vybrala na prechádzku.",
-                lead: "Odkaz je nefunkčný, stránka sa presunula alebo nikdy neexistovala. Tak či onak — poďme ťa dostať späť domov.",
+                lead: "Odkaz je nefunkčný, stránka sa presunula alebo nikdy neexistovala. Tak či onak - poďme ťa dostať späť domov.",
                 home: "← Späť domov"
             }
         };
@@ -76,7 +76,7 @@
         try {
             if (localStorage.getItem("lang-preference") === "sk") lang = "sk";
         } catch (e) {
-            // storage unavailable — keep English default
+            // storage unavailable - keep English default
         }
 
         var s = STRINGS[lang];

@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 /* =========================================================
    Static site template
-   generate-static.mjs — dev-only generator for the static AI/crawler mirrors
+   generate-static.mjs - dev-only generator for the static AI/crawler mirrors
 
    Derives four artifacts from site-spec.json (the single source of truth):
 
-     1. The static JSON-LD <script> in index.html — the same schema.org
+     1. The static JSON-LD <script> in index.html - the same schema.org
         object renderJsonLd() emits at runtime, stamped statically so
         crawlers that don't run JS see it too. Built by the SAME code
         (business-jsonld.mjs), so the two can't drift; at boot the engine
         upserts this exact tag (matched by its data-jsonld marker).
 
-     2. The LCP-image <link rel="preload"> in index.html — the default tab's
+     2. The LCP-image <link rel="preload"> in index.html - the default tab's
         first carousel/gallery image, stamped so the browser starts the
         download at HTML-parse time instead of after the engine renders
         (matched by its data-preload marker).
 
-     3. llms.txt — the plain-text site summary for AI agents, generated
+     3. llms.txt - the plain-text site summary for AI agents, generated
         from the spec's sections instead of hand-maintained.
 
-     4. sitemap.xml — one <url> for the canonical root, with <lastmod>
+     4. sitemap.xml - one <url> for the canonical root, with <lastmod>
         taken from the spec's last edit (the spec IS the content, so its
-        last edit is the page's last modification) — see specLastModified().
+        last edit is the page's last modification) - see specLastModified().
 
    Usage:
      node generate-static.mjs           # rewrite whichever artifacts are stale
@@ -29,13 +29,13 @@
                                         # (launch-check runs this mode)
 
    Like launch-check.js this is a dev tool: Node built-ins only, never
-   served, run by hand (or by launch-check) — it does not violate the
+   served, run by hand (or by launch-check) - it does not violate the
    no-build rule; the runtime site stays plain static files.
 
    NOTE the scaffolding labels below (section headings, "Opening hours", the
    how-this-works note, weekday names) are in the DEFAULT locale (English):
    llms.txt is generated from the default site-spec.json, and the static
-   SEO/crawler mirror is single-language by design — the runtime language
+   SEO/crawler mirror is single-language by design - the runtime language
    switch does not restamp it (see docs/i18n.md). The
    CONTENT all comes from the spec.
    ========================================================= */
@@ -93,7 +93,7 @@ function buildLlmsTxt(spec) {
         out.push(`> ${stripHtml(meta.description)}`);
         out.push("");
     }
-    out.push("This site is a single-page app rendered by JavaScript — this file");
+    out.push("This site is a single-page app rendered by JavaScript - this file");
     out.push("summarizes its content in plain text." + (meta.author ? ` Operated by ${meta.author}.` : ""));
     out.push("");
 
@@ -145,7 +145,7 @@ function buildLlmsTxt(spec) {
                     break;
                 case "text":
                     if (block.name) lines.push(`### ${stripHtml(block.name)}`, "");
-                    // <br/> is a deliberate line break in the spec — keep each
+                    // <br/> is a deliberate line break in the spec - keep each
                     // line its own llms.txt line instead of fusing them.
                     if (block.text) {
                         lines.push(...String(block.text).split(/<br\s*\/?>/gi).map(stripHtml), "");
@@ -154,7 +154,7 @@ function buildLlmsTxt(spec) {
                 case "cards":
                     (block.items || []).forEach((it) => {
                         if (it && it.title && it.body) {
-                            lines.push(`- **${stripHtml(it.title)}** — ${stripHtml(it.body)}`);
+                            lines.push(`- **${stripHtml(it.title)}** - ${stripHtml(it.body)}`);
                         }
                     });
                     if (lines.length && lines[lines.length - 1] !== "") lines.push("");
@@ -203,7 +203,7 @@ function buildLlmsTxt(spec) {
                     break;
                 case "video": {
                     // `url` (pinned video) links as-is; `playlist` (auto-newest)
-                    // links the playlist page — a bare id gets wrapped into the
+                    // links the playlist page - a bare id gets wrapped into the
                     // canonical playlist URL, a full URL passes through.
                     const label = stripHtml(block.title || block.name || "Video");
                     const playlistId = block.playlist ? youtubePlaylistId(block.playlist) : null;
@@ -214,7 +214,7 @@ function buildLlmsTxt(spec) {
                 }
                 default:
                     // slideshow / gallery / photo / map / hours: images or data
-                    // already covered by the contact block — nothing to add.
+                    // already covered by the contact block - nothing to add.
                     break;
             }
         });
@@ -238,7 +238,7 @@ function buildLlmsTxt(spec) {
         out.push("");
     }
 
-    out.push("<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->");
+    out.push("<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->");
     return out.join("\n") + "\n";
 }
 
@@ -251,7 +251,7 @@ function buildLlmsTxt(spec) {
    engine's eager-image choice (renderContent()'s priority pass gives this
    same image fetchpriority=high): first slideshow/gallery/photo block of the
    FIRST section, in block order. Booting into another tab via #hash wastes
-   this one preload — accepted tradeoff, the default tab is the common entry. */
+   this one preload - accepted tradeoff, the default tab is the common entry. */
 
 function firstSectionLcpImage(spec) {
     const section = (spec.sections || [])[0];
@@ -276,7 +276,7 @@ const PRELOAD_TAG_RE = /<link rel="preload" data-preload="lcp"[^>]*\/>/;
 function buildLcpPreload(html, spec) {
     const src = firstSectionLcpImage(spec);
     if (!src) {
-        // No image-bearing block in the first section — drop a stale tag.
+        // No image-bearing block in the first section - drop a stale tag.
         return html.replace(PRELOAD_TAG_RE, "").replace(/\n +\n/g, "\n");
     }
 
@@ -289,7 +289,7 @@ function buildLcpPreload(html, spec) {
         "\n</head>",
         "\n    <!-- Preload of the default tab's first image (the likely LCP element),\n" +
         "         so it downloads in parallel with engine.js instead of waiting for\n" +
-        "         the render. GENERATED — do not edit: run `node generate-static.mjs`. -->\n" +
+        "         the render. GENERATED - do not edit: run `node generate-static.mjs`. -->\n" +
         `    ${tag}\n</head>`
     );
 }
@@ -303,7 +303,7 @@ function buildLcpPreload(html, spec) {
 /* Format a Date as YYYY-MM-DD in LOCAL time. Deliberately not
    toISOString().slice(0, 10): that converts to UTC first, so an evening edit
    east of Greenwich (or an early-morning one west of it) stamps the
-   neighbouring calendar day — e.g. 00:58 local in UTC+2 became the previous
+   neighbouring calendar day - e.g. 00:58 local in UTC+2 became the previous
    date. <lastmod> is a day-granularity field, so it should name the day the
    spec was actually edited. */
 function localDay(date) {
@@ -316,7 +316,7 @@ function localDay(date) {
    A file's mtime is NOT that: a fresh `git clone` stamps every file with the
    clone time, so an mtime-based <lastmod> changed on every checkout and a
    clean clone failed launch-check as stale. So: when the spec is committed and
-   unmodified, use the date of the last commit that touched it — the same on
+   unmodified, use the date of the last commit that touched it - the same on
    every machine. While it has uncommitted edits (or outside a git repo, or
    without git installed) fall back to the mtime, which is then a real edit
    time. Any git failure lands in the fallback; this never throws. */
@@ -340,7 +340,7 @@ function buildSitemapXml(spec) {
     const lastmod = specLastModified();
     return [
         `<?xml version="1.0" encoding="UTF-8"?>`,
-        `<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->`,
+        `<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->`,
         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
         `    <url>`,
         `        <loc>${domain}/</loc>`,
@@ -369,7 +369,7 @@ function buildIndexHtml(html, spec) {
     return html.replace(
         "\n</head>",
         "\n    <!-- Static mirror of the runtime JSON-LD for crawlers that don't run JS.\n" +
-        "         GENERATED — do not edit: run `node generate-static.mjs`. The engine\n" +
+        "         GENERATED - do not edit: run `node generate-static.mjs`. The engine\n" +
         "         upserts this same tag (by its data-jsonld marker) at boot. -->\n" +
         `    ${tag}\n</head>`
     );
@@ -379,7 +379,7 @@ function buildIndexHtml(html, spec) {
 
 const spec = JSON.parse(readFileSync(SPEC_PATH, "utf8"));
 
-// Sitemap is skipped (not marked stale) when meta.domain is unset — no
+// Sitemap is skipped (not marked stale) when meta.domain is unset - no
 // domain, no valid <loc> to emit.
 const sitemapNext = buildSitemapXml(spec);
 
@@ -408,7 +408,7 @@ const stale = outputs.filter((o) => {
 
 if (CHECK) {
     if (stale.length) {
-        console.error(`STALE: ${stale.map((o) => o.name).join(", ")} — run \`node generate-static.mjs\``);
+        console.error(`STALE: ${stale.map((o) => o.name).join(", ")} - run \`node generate-static.mjs\``);
         process.exit(2);
     }
     console.log("generated artifacts up to date");
@@ -416,7 +416,7 @@ if (CHECK) {
 }
 
 if (!stale.length) {
-    console.log("nothing to do — generated artifacts already up to date");
+    console.log("nothing to do - generated artifacts already up to date");
 } else {
     stale.forEach((o) => {
         writeFileSync(o.path, o.next);

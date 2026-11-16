@@ -12,12 +12,12 @@ Accents & lines, Background-image overlay & header, and Monochrome icon/logo
 inversion. Tokens that are identical in both themes (brand tints, the
 on-image/lightbox controls, `--panel-blur`) are defined once in `:root`.
 (One override layer sits on top: the optional spec-level `theme` object, whose
-brand tokens `renderTheme()` writes as `:root` vars at boot — see the spec
+brand tokens `renderTheme()` writes as `:root` vars at boot - see the spec
 shape in `docs/spec-format.md`. Structural colors still live only in `styles.css`.)
 There is intentionally **no duplication**:
 
 - `404.html` loads `styles.css`, so the 404 page re-themes automatically. Do
-  not re-add color variables to `404.css` — keep it layout-only.
+  not re-add color variables to `404.css` - keep it layout-only.
 - The browser `theme-color` meta is read from the `--bg-base` token at runtime
   (in `applyTheme()` in `engine.js`, and inline in `404.html`). Do not hardcode
   hex for it. Note `meta.themeColor` in `site-spec.json` is the *initial/static*
@@ -25,7 +25,7 @@ There is intentionally **no duplication**:
   active theme's `--bg-base`.
 
 Three fonts are tokenized: `--font-sans` (Inter, body), `--font-serif` (Oswald,
-headings — bold/condensed/uppercase), and `--font-brand` (system serif; the
+headings - bold/condensed/uppercase), and `--font-brand` (system serif; the
 brand renders as an image via `brandImage`, so no webfont is loaded for it and
 it only shows on the error screen's text fallback). When adding a color, add a
 named variable to
@@ -33,7 +33,7 @@ named variable to
 
 **Theme default:** dark. `initTheme()` uses the stored `localStorage` choice if
 present, else falls back to dark. (It does **not** follow the OS
-`prefers-color-scheme` — that's intentional in this build.) `404.html` mirrors
+`prefers-color-scheme` - that's intentional in this build.) `404.html` mirrors
 the same dark-default + stored-pref logic inline.
 
 **Exceptions - brand colors (NOT theme tokens).** Per-platform brand colors

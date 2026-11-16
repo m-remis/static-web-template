@@ -4,8 +4,8 @@
   "meta": {
     "lang": "sk",
     "domain": "https://example.com/",
-    "title": "Static Web Template — statický web poháňaný jedným JSON súborom",
-    "description": "Malý, rýchly engine pre statické weby: jeden site-spec.json vykreslí celú stránku — bez frameworku, bez build kroku, bez závislostí.",
+    "title": "Static Web Template - statický web poháňaný jedným JSON súborom",
+    "description": "Malý, rýchly engine pre statické weby: jeden site-spec.json vykreslí celú stránku - bez frameworku, bez build kroku, bez závislostí.",
     "author": "Static Web Template",
     "themeColor": "#0e0f13",
     "ogType": "website",
@@ -43,7 +43,7 @@
           "type": "hero",
           "eyebrow": "Static Web Template",
           "title": "Jeden <em>JSON súbor</em>. Celý web.",
-          "lead": "Celá táto stránka — každá záložka, každý blok, metadáta, aj táto veta — sa vykreslí za behu z jediného <strong>site-spec.json</strong>. Bez frameworku, bez build kroku, bez závislostí."
+          "lead": "Celá táto stránka - každá záložka, každý blok, metadáta, aj táto veta - sa vykreslí za behu z jediného <strong>site-spec.json</strong>. Bez frameworku, bez build kroku, bez závislostí."
         },
         {
           "type": "text",
@@ -98,22 +98,22 @@
         {
           "type": "text",
           "name": "Jediný zdroj pravdy",
-          "text": "Všetko, čo návštevník vidí, žije v <strong>site-spec.json</strong> — značka, navigačné záložky, každá sekcia a blok, pätička, sociálne siete, obrázky na pozadí aj metadáta dokumentu. <strong>index.html</strong> je takmer prázdna schránka; <strong>engine.js</strong> pri načítaní stiahne spec a z neho zostaví stránku. Ak chceš zmeniť, čo web hovorí, upravuješ spec, nie markup."
+          "text": "Všetko, čo návštevník vidí, žije v <strong>site-spec.json</strong> - značka, navigačné záložky, každá sekcia a blok, pätička, sociálne siete, obrázky na pozadí aj metadáta dokumentu. <strong>index.html</strong> je takmer prázdna schránka; <strong>engine.js</strong> pri načítaní stiahne spec a z neho zostaví stránku. Ak chceš zmeniť, čo web hovorí, upravuješ spec, nie markup."
         },
         {
           "type": "text",
           "name": "Blokový engine",
-          "text": "<strong>sections</strong> je usporiadané pole a jeho poradie je zároveň poradím navigácie aj poradím na stránke. Každá sekcia je zoznam typových blokov a vykresľovanie je jedno generické rozhodovanie: engine vyhľadá <em>type</em> každého bloku v mape rendererov a zavolá príslušný builder. Nikde nie je špeciálne vetvenie podľa sekcie — presne preto zostáva pridanie nového druhu obsahu malou zmenou."
+          "text": "<strong>sections</strong> je usporiadané pole a jeho poradie je zároveň poradím navigácie aj poradím na stránke. Každá sekcia je zoznam typových blokov a vykresľovanie je jedno generické rozhodovanie: engine vyhľadá <em>type</em> každého bloku v mape rendererov a zavolá príslušný builder. Nikde nie je špeciálne vetvenie podľa sekcie - presne preto zostáva pridanie nového druhu obsahu malou zmenou."
         },
         {
           "type": "text",
           "name": "Odolný už z princípu",
-          "text": "Tri režimy zlyhania — spec sa nenačíta, nedá sa naparsovať, alebo nemá použiteľné sekcie — všetky skončia na tej istej pokojnej obrazovke <em>dočasne nedostupné</em> s kontaktným únikovým východom. Stránka nikdy nezbelie a nikdy nevyhodí chybu. Neznáme typy blokov sa preskočia s varovaním v konzole, takže jeden zlý blok nezhodí zvyšok stránky."
+          "text": "Tri režimy zlyhania - spec sa nenačíta, nedá sa naparsovať, alebo nemá použiteľné sekcie - všetky skončia na tej istej pokojnej obrazovke <em>dočasne nedostupné</em> s kontaktným únikovým východom. Stránka nikdy nezbelie a nikdy nevyhodí chybu. Neznáme typy blokov sa preskočia s varovaním v konzole, takže jeden zlý blok nezhodí zvyšok stránky."
         },
         {
           "type": "text",
           "name": "Stavané aj pre stroje",
-          "text": "Keďže sa stránka vykresľuje JavaScriptom, engine tiež zrkadlí spec do formátov, ktoré prečíta aj crawler bez JS: čistý text <strong>llms.txt</strong>, <strong>sitemap.xml</strong> a schema.org <strong>JSON-LD</strong> blok — všetko razí <strong>generate-static.mjs</strong>, takže sa nikdy nerozídu s tým, čo návštevníci reálne vidia. Vývojársky validátor <strong>launch-check.js</strong> odmietne pustiť nekonzistentný web von."
+          "text": "Keďže sa stránka vykresľuje JavaScriptom, engine tiež zrkadlí spec do formátov, ktoré prečíta aj crawler bez JS: čistý text <strong>llms.txt</strong>, <strong>sitemap.xml</strong> a schema.org <strong>JSON-LD</strong> blok - všetko razí <strong>generate-static.mjs</strong>, takže sa nikdy nerozídu s tým, čo návštevníci reálne vidia. Vývojársky validátor <strong>launch-check.js</strong> odmietne pustiť nekonzistentný web von."
         },
         {
           "type": "table",
@@ -122,12 +122,12 @@
           "accentValue": false,
           "headings": ["Súbor", "Na čo slúži"],
           "rows": [
-            ["site-spec.json", "Všetok obsah a metadáta — jediný zdroj pravdy"],
+            ["site-spec.json", "Všetok obsah a metadáta - jediný zdroj pravdy"],
             ["engine.js", "Runtime: buildery blokov, vykresľovanie a všetka UI logika"],
             ["styles.css", "Štýly, rozloženie a dva bloky farebných tokenov"],
-            ["index.html", "Schránka — kostra hlavičky a prázdny main, ktorý dopĺňa JS"],
+            ["index.html", "Schránka - kostra hlavičky a prázdny main, ktorý dopĺňa JS"],
             ["generate-static.mjs", "Razí llms.txt, sitemap.xml a statický JSON-LD"],
-            ["launch-check.js", "Predštartový validátor — brána pred nasadením"]
+            ["launch-check.js", "Predštartový validátor - brána pred nasadením"]
           ]
         },
         {
@@ -136,7 +136,7 @@
           "items": [
             {
               "q": "Potrebujem Node alebo build nástroj na spustenie webu?",
-              "a": "Nie. Nasadený web sú čisté statické súbory. Node používajú len voliteľné vývojárske nástroje (generate-static a launch-check) — živý web ho nikdy nespúšťa."
+              "a": "Nie. Nasadený web sú čisté statické súbory. Node používajú len voliteľné vývojárske nástroje (generate-static a launch-check) - živý web ho nikdy nespúšťa."
             },
             {
               "q": "Prečo stránka potrebuje lokálny webový server?",
@@ -168,7 +168,7 @@
         {
           "type": "text",
           "name": "text",
-          "text": "Tento odsek je blok <strong>text</strong>. Vykresľuje prózu s malou sadou dôveryhodných inline značiek — <em>zvýraznenie</em>, <strong>strong</strong> a <a href=\"#/how\">odkazy</a>. Nastav <em>format</em> na <strong>markdown</strong> pre malú podmnožinu markdownu, alebo <strong>plain</strong> na escapovanie všetkého. Každé pole s formátovaným textom je pred vložením na stránku sanitizované."
+          "text": "Tento odsek je blok <strong>text</strong>. Vykresľuje prózu s malou sadou dôveryhodných inline značiek - <em>zvýraznenie</em>, <strong>strong</strong> a <a href=\"#/how\">odkazy</a>. Nastav <em>format</em> na <strong>markdown</strong> pre malú podmnožinu markdownu, alebo <strong>plain</strong> na escapovanie všetkého. Každé pole s formátovaným textom je pred vložením na stránku sanitizované."
         },
         {
           "type": "text",
@@ -198,7 +198,7 @@
         {
           "type": "text",
           "name": "links",
-          "text": "Blok <strong>links</strong> vykresľuje kontaktné riadky — ikona, popis nad hodnotou a šípkový náznak. Je to ten istý blok, ktorý poháňa kontaktné údaje nižšie."
+          "text": "Blok <strong>links</strong> vykresľuje kontaktné riadky - ikona, popis nad hodnotou a šípkový náznak. Je to ten istý blok, ktorý poháňa kontaktné údaje nižšie."
         },
         {
           "type": "links",
@@ -227,7 +227,7 @@
             },
             {
               "q": "Môžem preusporiadať bloky?",
-              "a": "Preusporiadaj sekciu preusporiadaním jej poľa blocks — poradie v JSON-e je poradie na stránke."
+              "a": "Preusporiadaj sekciu preusporiadaním jej poľa blocks - poradie v JSON-e je poradie na stránke."
             }
           ]
         }
@@ -268,7 +268,7 @@
         {
           "type": "text",
           "name": "photo",
-          "text": "Blok <strong>photo</strong> je cukrík pre jeden obrázok — normalizuje sa na jednoobrázkovú galériu, takže aj osamotená fotka dostane rám a lightbox."
+          "text": "Blok <strong>photo</strong> je cukrík pre jeden obrázok - normalizuje sa na jednoobrázkovú galériu, takže aj osamotená fotka dostane rám a lightbox."
         },
         {
           "type": "photo",
@@ -296,7 +296,7 @@
         {
           "type": "review",
           "name": "review",
-          "blurb": "Odchádzajúce tlačidlá výzvy na akciu, ktoré posielajú návštevníkov na recenzné platformy — len odkazy, žiadny backend.",
+          "blurb": "Odchádzajúce tlačidlá výzvy na akciu, ktoré posielajú návštevníkov na recenzné platformy - len odkazy, žiadny backend.",
           "items": [
             { "label": "Ohodnoťte nás na Google", "url": "https://example.com/", "platform": "google" }
           ]
@@ -328,14 +328,14 @@
             { "title": "Uprav spec", "body": "Otvor site-spec.json a zmeň značku, záložky, bloky a kontaktné údaje.", "meta": "1" },
             { "title": "Pridaj svoje obrázky", "body": "Vlož pozadia a fotky do priečinka assets a nasmeruj na ne spec.", "meta": "2" },
             { "title": "Obnov zrkadlá", "body": "Spusti node generate-static.mjs, aby sa prestavali llms.txt, sitemap a JSON-LD.", "meta": "3" },
-            { "title": "Spusti bránu", "body": "Spusti node launch-check.js a oprav každú chybu, ktorú nahlási — zvyšný demo text, falošné kontaktné údaje, rozbité assety.", "meta": "4" },
+            { "title": "Spusti bránu", "body": "Spusti node launch-check.js a oprav každú chybu, ktorú nahlási - zvyšný demo text, falošné kontaktné údaje, rozbité assety.", "meta": "4" },
             { "title": "Nasaď", "body": "Nahraj priečinok na GitHub Pages, Netlify, Vercel, Cloudflare Pages alebo ľubovoľný statický hosting.", "meta": "5" }
           ]
         },
         {
           "type": "text",
           "name": "Motív",
-          "text": "Farby žijú ako CSS custom properties v <strong>styles.css</strong>, zoskupené pod tmavým a svetlým blokom; zmena týchto premenných preskinuje celý web vrátane 404 stránky a farby prehliadačovej lišty. Tmavý režim je predvolený. Fonty (Inter a Oswald) sú self-hostované, takže žiadna požiadavka na Google Fonts — a web môže cez voliteľný objekt <em>theme</em> v spec-u prepísať tokeny značky pre konkrétneho klienta."
+          "text": "Farby žijú ako CSS custom properties v <strong>styles.css</strong>, zoskupené pod tmavým a svetlým blokom; zmena týchto premenných preskinuje celý web vrátane 404 stránky a farby prehliadačovej lišty. Tmavý režim je predvolený. Fonty (Inter a Oswald) sú self-hostované, takže žiadna požiadavka na Google Fonts - a web môže cez voliteľný objekt <em>theme</em> v spec-u prepísať tokeny značky pre konkrétneho klienta."
         },
         {
           "type": "text",
@@ -352,7 +352,7 @@
         {
           "type": "text",
           "name": "Nájdi nás na",
-          "text": "Ten istý blok <strong>links</strong>, rozložený ako dlaždice s ikonami vo farbách značiek — tu smerujúci na sociálne siete namiesto kontaktných metód. Hlavička a mobilná zásuvka vykresľujú tie isté platformy zo zoznamu <em>socials</em>."
+          "text": "Ten istý blok <strong>links</strong>, rozložený ako dlaždice s ikonami vo farbách značiek - tu smerujúci na sociálne siete namiesto kontaktných metód. Hlavička a mobilná zásuvka vykresľujú tie isté platformy zo zoznamu <em>socials</em>."
         },
         {
           "type": "links",

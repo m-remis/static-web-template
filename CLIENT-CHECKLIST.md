@@ -1,10 +1,10 @@
 # CLIENT-CHECKLIST.md
 
 Per-client personalization checklist for spinning up a new site from this
-template. This is the **exhaustive** list — every file that contains a
+template. This is the **exhaustive** list - every file that contains a
 placeholder, a hardcoded domain, a stock color, or boilerplate text. Work top
 to bottom; the site renders fine even half-finished (a bad spec shows a calm
-error screen, never a blank page), so nothing crashes if you skip ahead — but
+error screen, never a blank page), so nothing crashes if you skip ahead - but
 the SEO/sharing items must be done before the site is public.
 
 > Companion to `AGENTS.md` + `docs/` (architecture: how the engine works) and `README.md`
@@ -26,8 +26,8 @@ section, the footer, the socials, the backgrounds, and even the document
 `<head>` metadata from it.
 
 So ~90% of a new client is **one file: `site-spec.json`.** The rest of this
-checklist is the long tail — favicon, manifest, sitemap, robots, colors, deploy
-— the stuff that ships wrong silently because the page works without it.
+checklist is the long tail - favicon, manifest, sitemap, robots, colors, deploy
+- the stuff that ships wrong silently because the page works without it.
 
 ```text
 edit site-spec.json  →  node launch-check.js  →  fix every error  →  deploy
@@ -37,7 +37,7 @@ edit site-spec.json  →  node launch-check.js  →  fix every error  →  deplo
 
 ## 0. One-shot audit before you start (and before you deploy)
 
-The real gate is the validator — run it from the repo root:
+The real gate is the validator - run it from the repo root:
 
 ```bash
 node launch-check.js
@@ -58,12 +58,12 @@ grep -rni "example.com\|m-remis.github.io/static-web-template\|lorem ipsum\|Time
 ```
 
 Re-run both right before pushing. Do **not** add `m-remis/static-web-template`
-or `Built from m-remis/static-web-template` to the audit grep — those are
+or `Built from m-remis/static-web-template` to the audit grep - those are
 intentional fingerprint strings, not client placeholders.
 
 ---
 
-## 0.1. Template fingerprint — leave this alone
+## 0.1. Template fingerprint - leave this alone
 
 The template intentionally includes a small fingerprint:
 
@@ -85,7 +85,7 @@ visible credit was explicitly requested. It currently lives in `index.html`,
 `engine.js`, `styles.css`, `business-jsonld.mjs`, `generate-static.mjs`,
 `launch-check.js`, `README.md`, `AGENTS.md`, the `docs/` files,
 `LAUNCH-CHECK.md`, `_block-template.md`, and this file. (`404.html` does **not**
-carry it directly.) The grep below is the source of truth — run it rather than
+carry it directly.) The grep below is the source of truth - run it rather than
 trusting this list.
 
 Before deploy, verify it still exists somewhere intentional:
@@ -97,11 +97,11 @@ grep -rni "Built from m-remis/static-web-template\|m-remis/static-web-template" 
 
 ---
 
-## 1. Content — `site-spec.json` (the 90%)
+## 1. Content - `site-spec.json` (the 90%)
 
 This is the bulk of the work and almost the only file you touch for a typical
 client. The full shape and every block type are documented in
-`docs/spec-format.md` and in the long comment at the top of `engine.js` — keep
+`docs/spec-format.md` and in the long comment at the top of `engine.js` - keep
 both open while editing. Validate after every change:
 
 ```bash
@@ -110,17 +110,17 @@ node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
 
 ### 1a. Top-level fields
 
-- [ ] **`brand`** — the business name. Appears in the header and footer and is
+- [ ] **`brand`** - the business name. Appears in the header and footer and is
   reused in the metadata strings (§1b). One value, rendered in many places.
-- [ ] **`brandImage`** *(optional)* — path to a logo PNG (e.g.
+- [ ] **`brandImage`** *(optional)* - path to a logo PNG (e.g.
   `assets/logo.png`) that replaces the header brand **text**. Keep `brand` set:
   it becomes the logo's alt text and still drives the footer copyright and
   metadata. A monochrome black-on-transparent logo is auto-inverted to white in
   dark theme (same `--mono-icon-filter` as card icons); a colored logo needs
   that filter overridden for `.brand__img` in `styles.css`.
-- [ ] **`footer.note`** — footer tagline. `footer.year` is optional; the engine
+- [ ] **`footer.note`** - footer tagline. `footer.year` is optional; the engine
   fills the current year if you omit it.
-- [ ] **`socials[]`** — array of `{ label, headerLabel?, icon, url }`. Give each
+- [ ] **`socials[]`** - array of `{ label, headerLabel?, icon, url }`. Give each
   a **distinct `label`** (it doubles as the `aria-label`); the optional
   `headerLabel` replaces it in the header/drawer only. `icon` must match a key
   in the `SOCIAL_ICONS` map in `engine.js` (currently `instagram`, `youtube`,
@@ -129,116 +129,116 @@ node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
   - [ ] **New platform?** Add an inline SVG to `SOCIAL_ICONS` in `engine.js`
     **and** a `.socials__link--<icon> svg { color: … }` brand-tint rule in
     `styles.css`, then reference the key here. (See `docs/engine-internals.md` → "Socials".)
-- [ ] **`backgrounds[]`** — paths under `assets/background/`, cycled with a
+- [ ] **`backgrounds[]`** - paths under `assets/background/`, cycled with a
   crossfade. Each path must match a file you actually drop in (§4). A missing
-  file fails silently to a plain background — it won't crash, but you get no
+  file fails silently to a plain background - it won't crash, but you get no
   image.
 
-### 1b. Metadata — `site-spec.json` → `meta` (the SEO single source of truth)
+### 1b. Metadata - `site-spec.json` → `meta` (the SEO single source of truth)
 
-`renderHead()` writes the document `<head>` from `meta` at runtime, so this —
-not `index.html` — is the real source for title/description/OG/canonical. The
+`renderHead()` writes the document `<head>` from `meta` at runtime, so this -
+not `index.html` - is the real source for title/description/OG/canonical. The
 matching tags in `index.html` are only a crawler fallback (§3).
 
-- [ ] **`meta.lang`** — e.g. `"sk"`. Sets `<html lang>`.
-- [ ] **`meta.domain`** — the canonical URL, e.g. `"https://example.com/"`.
+- [ ] **`meta.lang`** - e.g. `"sk"`. Sets `<html lang>`.
+- [ ] **`meta.domain`** - the canonical URL, e.g. `"https://example.com/"`.
   Drives `og:url` and the canonical link, and `launch-check` makes the sitemap
   and robots agree with it. **Must be the real domain.**
-- [ ] **`meta.title`** — page title + `og:title`.
-- [ ] **`meta.description`** — meta description + `og:description` fallback.
-- [ ] **`meta.ogDescription`** — optional; only if you want the social text to
+- [ ] **`meta.title`** - page title + `og:title`.
+- [ ] **`meta.description`** - meta description + `og:description` fallback.
+- [ ] **`meta.ogDescription`** - optional; only if you want the social text to
   differ from `description`.
 - [ ] **`meta.author`**.
-- [ ] **`meta.themeColor`** — the **initial** browser chrome color; match your
+- [ ] **`meta.themeColor`** - the **initial** browser chrome color; match your
   dark `--bg-base` (§5). `applyTheme()` then keeps it in sync with the active
   theme at runtime.
-- [ ] **`meta.ogType`** — usually `"website"`.
-- [ ] **`meta.ogImage`** — path to the social-share preview image. **Until this
-  is set (or an `og:image` exists in `index.html`), `launch-check` fails** — no
+- [ ] **`meta.ogType`** - usually `"website"`.
+- [ ] **`meta.ogImage`** - path to the social-share preview image. **Until this
+  is set (or an `og:image` exists in `index.html`), `launch-check` fails** - no
   share preview is an error, not a warning. Make a real one.
-- [ ] **`meta.twitterCard`** — `"summary"` or `"summary_large_image"`.
-- [ ] **`meta.analytics`** (optional) — the footer visitor count. Shape:
+- [ ] **`meta.twitterCard`** - `"summary"` or `"summary_large_image"`.
+- [ ] **`meta.analytics`** (optional) - the footer visitor count. Shape:
   `{ countUrl, countLabel?, dashboardUrl? }` (e.g. a GoatCounter
   `/counter/TOTAL.json` endpoint). Omit the whole object for no count and no
-  request. Note the actual *tracking* script is separate and optional — add it
+  request. Note the actual *tracking* script is separate and optional - add it
   to `index.html` yourself (§3); this object only controls the displayed number.
 
 ### 1c. Sections + blocks (`sections[]`)
 
 `sections` is a **top-level** key (a sibling of `brand`, `meta`, `footer`), not
-nested under `meta`. It is an **ordered array** — the order IS the nav order and the page
+nested under `meta`. It is an **ordered array** - the order IS the nav order and the page
 order. Each entry is `{ id, label, title?, blocks: [...] }`:
 
-- [ ] **`id`** — unique, URL-hash-friendly (letters/numbers/`-`/`_`). Used as
+- [ ] **`id`** - unique, URL-hash-friendly (letters/numbers/`-`/`_`). Used as
   the tab id and the URL hash. There is **no** separate nav list and **no**
-  per-id render branch anymore — renaming an id is safe; just keep it unique.
-- [ ] **`label`** — the nav tab text. Missing label = blank tab (warned).
-- [ ] **`title`** — optional `<h2>` at the top of the section. A section that
+  per-id render branch anymore - renaming an id is safe; just keep it unique.
+- [ ] **`label`** - the nav tab text. Missing label = blank tab (warned).
+- [ ] **`title`** - optional `<h2>` at the top of the section. A section that
   leads with a `hero` block usually omits it.
-- [ ] **`blocks[]`** — ordered content blocks, each `{ "type": …, … }`.
+- [ ] **`blocks[]`** - ordered content blocks, each `{ "type": …, … }`.
   Reorder a section by reordering its blocks. Supported types: `hero`, `text`,
   `cards`, `links`, `map`, `slideshow`, `table`, `faq`, `gallery`, `photo`,
-  `hours`, `review`, `video` — shapes in `docs/spec-format.md` and the `engine.js`
+  `hours`, `review`, `video` - shapes in `docs/spec-format.md` and the `engine.js`
   header comment.
 
 Per-block placeholders to hunt down for a new client:
 
-- [ ] **`hero`** — `eyebrow` / `title` / `lead`. `<em>…</em>` in `title`/`lead`
+- [ ] **`hero`** - `eyebrow` / `title` / `lead`. `<em>…</em>` in `title`/`lead`
   renders in the accent color. Authored HTML only, never client-supplied raw
-  input. Don't leave a stub lead — short hero copy is warned.
-- [ ] **`text`** — replace any template prose. `<em>`/`<a>` allowed. If a `text`
+  input. Don't leave a stub lead - short hero copy is warned.
+- [ ] **`text`** - replace any template prose. `<em>`/`<a>` allowed. If a `text`
   block has a real outbound link, make sure it's the client's, not the
   template author's.
-- [ ] **`cards`** — `items[]` of `{ title, body, meta?, url?, icon? }`. With
+- [ ] **`cards`** - `items[]` of `{ title, body, meta?, url?, icon? }`. With
   `linked: true`, each card with a `url` becomes a link; replace `#`/dummy URLs.
-  An `icon` path adds a monochrome icon to the left of the text (vertically centered) — a **black PNG on a
+  An `icon` path adds a monochrome icon to the left of the text (vertically centered) - a **black PNG on a
   transparent background** (black-on-transparent style), pointing at a real file in
   `assets/`. It is auto-inverted to white in dark theme, so one asset covers
   both themes. Cards do not take background photos.
-- [ ] **`links`** (contact rows) — prefer **`use`**: a list of keys resolved
+- [ ] **`links`** (contact rows) - prefer **`use`**: a list of keys resolved
   against `business`/`socials` (e.g. `"use": ["phone","email","instagram"]`),
   so a number/handle is typed once in `business` and reused. You can also add
   explicit `items[]` of `{ label, handle, url, icon?, kind? }`. A `use` key that
   matches nothing is warned (`LINK_USE_UNRESOLVED`). Rows show a small kind
   label ("Phone", "Instagram", …) over the value automatically for known
-  icons — set `kind` on inline items to control it. `"layout": "grid"` renders
+  icons - set `kind` on inline items to control it. `"layout": "grid"` renders
   up to a handful of contacts as side-by-side tiles instead of stacked rows.
   **Replace the template
-  `name@example.com` / `+1 (000) 000-0000` defaults in `business`** — both are
+  `name@example.com` / `+1 (000) 000-0000` defaults in `business`** - both are
   caught as fake by `launch-check`.
-- [ ] **`map`** — `mode: "embed"` (Google Maps → Share → Embed → copy the
+- [ ] **`map`** - `mode: "embed"` (Google Maps → Share → Embed → copy the
   iframe `src` into `embed`) or `mode: "static"` (themed card, no iframe).
   `url`/`embed` can be omitted to **fall back to `business.mapUrl`/`mapEmbed`**
   (the single-source-of-truth path). Set `label`/`address` for the accessible
   fallback text. **Any template default location must be replaced.**
-- [ ] **`table`** (e.g. a price list) — `headings[]` + `rows[][]`. The last
+- [ ] **`table`** (e.g. a price list) - `headings[]` + `rows[][]`. The last
   column is right-aligned/accent-styled, which reads as a price column. A
   pricing-looking section with no price-like content (`€`, `od`, `dohodou`, …)
   is warned.
-- [ ] **`faq`** (accordion) — `items[]` of `{ q, a }` (both required). `q` is
+- [ ] **`faq`** (accordion) - `items[]` of `{ q, a }` (both required). `q` is
   plain text; `a` allows `<em>`/`<a>` (authored only). Optional `name`/`blurb`
   heading. A short answer (<15 chars) is warned.
-- [ ] **`slideshow`** — `slides[]` of `{ src, title?, caption?, text? }`
+- [ ] **`slideshow`** - `slides[]` of `{ src, title?, caption?, text? }`
   (`src` required). 1 slide = framed image; 2+ = carousel with lightbox.
-- [ ] **`gallery`** — `images[]` of `{ src, thumb?, title?, caption?, text? }`,
+- [ ] **`gallery`** - `images[]` of `{ src, thumb?, title?, caption?, text? }`,
   optional `columns` (2–4). Grid of tiles sharing the slideshow's lightbox.
   `thumb` is an optional smaller rendition used for the tile (the lightbox opens
-  the full `src`) — generate one for big photos so the grid loads fast. Give
-  images a `title`/`caption` — a gallery image with no text is flagged for
+  the full `src`) - generate one for big photos so the grid loads fast. Give
+  images a `title`/`caption` - a gallery image with no text is flagged for
   missing alt.
-- [ ] **`photo`** — single-image sugar: `{ src, title?, caption?, text? }`.
-- [ ] **`hours`** — opening-hours table. Carries **no** data of its own; it reads
+- [ ] **`photo`** - single-image sugar: `{ src, title?, caption?, text? }`.
+- [ ] **`hours`** - opening-hours table. Carries **no** data of its own; it reads
   `business.hours` (the single source of truth) and highlights the current day.
   Optional `name`/`blurb` heading. Make sure `business.hours` is filled in (§1a /
-  the `business` block) — an empty `hours` object renders nothing.
-- [ ] **`review`** — "leave a review" call-to-action. `items[]` of
+  the `business` block) - an empty `hours` object renders nothing.
+- [ ] **`review`** - "leave a review" call-to-action. `items[]` of
   `{ label, url, platform? }`. Each item is an **outbound link** to where reviews
-  actually live (Google, Facebook, …) — it does **not** collect or store reviews
+  actually live (Google, Facebook, …) - it does **not** collect or store reviews
   (there's no backend). `platform` (`google` / `facebook`) adds a brand icon;
   any other value renders a generic star. Replace any template URL with the
   client's real review page (for Google, the direct
   `https://search.google.com/local/writereview?placeid=…` deep link is best).
-- [ ] **`video`** — a YouTube embed. Give ONE source: `url` pins a specific
+- [ ] **`video`** - a YouTube embed. Give ONE source: `url` pins a specific
   video (any share form: `watch?v=`, `youtu.be/`, `shorts/`, `live/`), or
   `playlist` always shows the newest entry (use the channel's `UULF…` uploads
   playlist for "latest episode"). Set `title` (or `name`) for the player's
@@ -250,11 +250,11 @@ The site ships a runtime language switch (see `docs/i18n.md`). To offer a second
 
 - [ ] **Copy `site-spec.json` → `site-spec.<lang>.json`** (e.g.
   `site-spec.sk.json`) and translate its content. Keep the **same section
-  `id`s** — `launch-check` warns (`LOCALE_SECTION_DRIFT`) if they diverge, and
+  `id`s** - `launch-check` warns (`LOCALE_SECTION_DRIFT`) if they diverge, and
   the current tab is preserved across a language switch by id. Set the file's
   `meta.lang`. Everything that is not translated (domain, theme color, phone,
   email, socials, backgrounds, image paths, the blocks in each section) must
-  stay identical to `site-spec.json` — `launch-check` warns on a difference
+  stay identical to `site-spec.json` - `launch-check` warns on a difference
   (`LOCALE_DATA_DRIFT`), so a later contact change has to be made in every
   locale file.
 - [ ] **Register the locale in `engine.js`**: add it to `LOCALE_SPECS`, add its
@@ -273,11 +273,11 @@ The site ships a runtime language switch (see `docs/i18n.md`). To offer a second
 
 ## 2. New block *type* (only if the client needs one)
 
-Renaming/reordering sections is just a `site-spec.json` edit — never code. A
+Renaming/reordering sections is just a `site-spec.json` edit - never code. A
 genuinely new **kind** of block (opening hours, FAQ accordion, pricing card,
 class schedule) is the only thing that's ever real code, and it's small:
 
-- [ ] Write `buildX(block)` in `engine.js` (pure DOM builder — reads only its
+- [ ] Write `buildX(block)` in `engine.js` (pure DOM builder - reads only its
   `block` arg, never `SITE`), returning a node/fragment/`null`.
 - [ ] Add `yourtype: buildX` to the `BLOCK_RENDERERS` map.
 - [ ] Add the matching CSS in `styles.css`.
@@ -290,12 +290,12 @@ class schedule) is the only thing that's ever real code, and it's small:
 
 Full walkthrough in `docs/workflows.md` → Workflow B; `_block-template.md` is
 the copyable skeleton. Once built, the
-block is reusable across all future clients — growing a tested block library is
+block is reusable across all future clients - growing a tested block library is
 the real product value.
 
 ---
 
-## 3. Metadata mirrors / SEO files — the easy-to-forget ones
+## 3. Metadata mirrors / SEO files - the easy-to-forget ones
 
 `meta` in `site-spec.json` (§1b) is authoritative, but these files carry their
 own copies for crawlers, PWA, and search, and ship wrong if you're not
@@ -304,19 +304,19 @@ deliberate. `launch-check` cross-checks most of them against `meta.domain`.
 ### `index.html` (static crawler fallback)
 
 The engine overwrites these from `meta` at runtime, but crawlers/scrapers that
-don't run JS see the static values — keep them roughly matching `meta`:
+don't run JS see the static values - keep them roughly matching `meta`:
 
 - [ ] `<title>`, `<meta name="description">`, `<meta name="author">`.
-- [ ] `<meta name="theme-color">` — match your dark `--bg-base` (§5).
+- [ ] `<meta name="theme-color">` - match your dark `--bg-base` (§5).
 - [ ] `<meta property="og:title">` / `og:description` / `og:site_name` /
   **`og:url`**.
-- [ ] **`og:image` + `twitter:image`** — absolute URLs (crawlers don't reliably
+- [ ] **`og:image` + `twitter:image`** - absolute URLs (crawlers don't reliably
   resolve relative ones), so they state the domain explicitly; update at
   domain changes along with the canonical (see `docs/workflows.md` Workflow E).
-- [ ] **`<link rel="canonical">`** — must be the real domain.
-- [ ] **`<noscript>` heading** inside `<main>` — the business name shown to
+- [ ] **`<link rel="canonical">`** - must be the real domain.
+- [ ] **`<noscript>` heading** inside `<main>` - the business name shown to
   visitors without JavaScript.
-- [ ] **Analytics (optional)** — the template ships **without** an analytics
+- [ ] **Analytics (optional)** - the template ships **without** an analytics
   script. To add privacy-friendly tracking, drop a GoatCounter
   `<script ... data-goatcounter="…" src="https://gc.zgo.at/count.js">` into
   `<head>` (or your provider's equivalent). This is separate from
@@ -324,9 +324,9 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ### `404.html`
 
-- [ ] `<title>` (e.g. `404 — Not found · Brand`) **and** the matching
+- [ ] `<title>` (e.g. `404 - Not found · Brand`) **and** the matching
   `docTitle` strings in the inline script (one per language).
-- [ ] `<meta name="theme-color">` — also overwritten at runtime from
+- [ ] `<meta name="theme-color">` - also overwritten at runtime from
   `--bg-base`, but set the static fallback to match.
 - [ ] **Asset links stay root-absolute** (`/styles.css`, `/404.css`, the
   favicon, and the home link `/`). The page is served for
@@ -338,7 +338,7 @@ don't run JS see the static values — keep them roughly matching `meta`:
 ### `site.webmanifest`
 
 - [ ] `name`, `short_name`, `description`.
-- [ ] `background_color`, `theme_color` — match your dark `--bg-base`.
+- [ ] `background_color`, `theme_color` - match your dark `--bg-base`.
 - [ ] **Icons.** The template lists only `assets/favicon.ico`. For an
   installable site add real PNG icons (192x192 and 512x512) under `assets/`
   and list them here. **Each `src` must resolve as written** - a root-absolute
@@ -347,7 +347,7 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ### `sitemap.xml`
 
-- [ ] **Do not edit by hand — run `node generate-static.mjs`.** The `<loc>`
+- [ ] **Do not edit by hand - run `node generate-static.mjs`.** The `<loc>`
   comes from `meta.domain` and `<lastmod>` from the spec's last commit date
   (its mtime while it has uncommitted edits);
   `launch-check` still verifies the `<loc>` matches (error on mismatch) and
@@ -355,16 +355,16 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ### `robots.txt`
 
-- [ ] **`Sitemap:`** line — host must match `meta.domain`'s host.
-- [ ] **AI-crawler stanza** — the explicit `Allow: /` group for AI agents
+- [ ] **`Sitemap:`** line - host must match `meta.domain`'s host.
+- [ ] **AI-crawler stanza** - the explicit `Allow: /` group for AI agents
   (GPTBot, ClaudeBot, PerplexityBot, …) is an intentional opt-in signal; keep
   it unless the client wants AI crawlers blocked, in which case flip those
   groups to `Disallow: /`.
 
 ### `llms.txt`
 
-- [ ] **Do not edit by hand — run `node generate-static.mjs`.** This is a
-  plain-markdown summary of the site for LLM crawlers/agents — important here
+- [ ] **Do not edit by hand - run `node generate-static.mjs`.** This is a
+  plain-markdown summary of the site for LLM crawlers/agents - important here
   because `index.html` is an empty shell and non-JS crawlers see nothing. It
   is **generated from `site-spec.json`** (along with `sitemap.xml` and the
   static JSON-LD tag in `index.html`), and `launch-check` fails with
@@ -372,48 +372,48 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ### `LICENSE`
 
-- [ ] Copyright line — update the name/year, or swap the license entirely if a
+- [ ] Copyright line - update the name/year, or swap the license entirely if a
   client site shouldn't be MIT.
 
 ---
 
-## 4. Assets — `assets/`
+## 4. Assets - `assets/`
 
-- [ ] **`assets/favicon.ico`** — replace with the client's. Referenced by
+- [ ] **`assets/favicon.ico`** - replace with the client's. Referenced by
   `index.html`, `404.html` and the manifest. It is the only icon the template
   ships; a `favicon-96x96.png` / `apple-touch-icon.png` are optional extras you
   add yourself (with matching `<link>` tags in `index.html`).
-- [ ] **PWA icons (optional)** — 192x192 and 512x512 PNGs, listed in
+- [ ] **PWA icons (optional)** - 192x192 and 512x512 PNGs, listed in
   `site.webmanifest` (§3).
-- [ ] **`assets/background/`** — the client's background image(s); every file
+- [ ] **`assets/background/`** - the client's background image(s); every file
   must be listed in the top-level `backgrounds` array and vice versa.
-- [ ] **`assets/slides/`** — slideshow/gallery images referenced by those
+- [ ] **`assets/slides/`** - slideshow/gallery images referenced by those
   blocks. Unreferenced files here are warned (`UNUSED_ASSET`); referenced-but-
   missing files are a hard failure.
-- [ ] **Social-share image** — create the `meta.ogImage` file (§1b).
-- [ ] **Sizes** — `launch-check` warns on images over ~900 KB
+- [ ] **Social-share image** - create the `meta.ogImage` file (§1b).
+- [ ] **Sizes** - `launch-check` warns on images over ~900 KB
   (`--max-image-kb`). Compress large slides/backgrounds before shipping.
 
 ---
 
-## 5. Colors / branding — `styles.css` (single source of truth)
+## 5. Colors / branding - `styles.css` (single source of truth)
 
 All color lives in **two token blocks**: `[data-theme="dark"]` and
 `[data-theme="light"]`, grouped by comment (Backgrounds, Text, Menu/nav,
 Accents & lines, Background-image overlay & header, Monochrome icon
 inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the whole site
-— both themes, the 404 page, the browser chrome — happens here and nowhere else.
+- both themes, the 404 page, the browser chrome - happens here and nowhere else.
 
-- [ ] **`--accent`** (both themes) — carries most of the brand feel; the
+- [ ] **`--accent`** (both themes) - carries most of the brand feel; the
   fastest high-impact change. `--accent-soft` is derived from it
   automatically. (A spec-level `theme.accent` overrides it per client with no
   CSS edit, but applies to both themes.)
-- [ ] **`--bg-base`** (both themes) — page background. If you change the dark
+- [ ] **`--bg-base`** (both themes) - page background. If you change the dark
   one, update its mirrors: `index.html` theme-color, `404.html` theme-color,
   and `site.webmanifest` `theme_color` + `background_color` (§3).
-- [ ] Remaining tokens (text, menu, border, overlays) — adjust to taste;
+- [ ] Remaining tokens (text, menu, border, overlays) - adjust to taste;
   defaults are a sane neutral.
-- [ ] **Do NOT** inline hex into individual rules — add a named variable to
+- [ ] **Do NOT** inline hex into individual rules - add a named variable to
   **both** theme blocks instead.
 - [ ] **Exception:** social brand colors are intentionally the platform's own
   color, identical in both themes, so they live once in `:root` as
@@ -422,10 +422,10 @@ inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the
 
 ---
 
-## 6. Deploy — GitHub Pages (or any static host)
+## 6. Deploy - GitHub Pages (or any static host)
 
 - [ ] Push to a repo, enable Pages (Settings → Pages → deploy from branch).
-- [ ] `.nojekyll` is already present — leave it; it makes Pages serve files
+- [ ] `.nojekyll` is already present - leave it; it makes Pages serve files
   as-is (otherwise files/directories beginning with `_` would be
   Jekyll-processed).
 - [ ] **Custom domain?** Create a `CNAME` file (no extension) in the repo root
@@ -434,25 +434,25 @@ inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the
   `meta.domain`'s host (legitimate for www↔apex redirects, so it's a warning).
 - [ ] If using the default `username.github.io/repo` URL instead of a custom
   domain, `meta.domain` and the §3 mirrors must reflect *that* path.
-- [ ] Works identically on Netlify / Vercel / Cloudflare Pages — point at the
+- [ ] Works identically on Netlify / Vercel / Cloudflare Pages - point at the
   folder, no build command.
 
 ---
 
-## 7. Verify (no build, no tests — manual + the validator)
+## 7. Verify (no build, no tests - manual + the validator)
 
 - [ ] **Validate + preflight:**
   `node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"`,
   `node --check engine.js`, then `node launch-check.js` to `PASS`. Tip: editing
   `site-spec.json` in VS Code / IntelliJ gives live validation against
-  `site-spec.schema.json` (wrong block type or field shows red as you type) —
+  `site-spec.schema.json` (wrong block type or field shows red as you type) -
   the fastest way to catch shape mistakes before the preflight.
-- [ ] **Serve and click through** — `python3 -m http.server 8000` (not
+- [ ] **Serve and click through** - `python3 -m http.server 8000` (not
   `file://`, which fails the fetch and shows the error screen). Check: light/dark
   toggle, every nav tab, each block type renders, the mobile menu at a narrow
   viewport, the 404 page (`/404.html`), and a clean console.
 - [ ] **Mobile scroll test (iOS Safari especially):** open a tab other than the
-  first, scroll down, refresh — it must land at the top of that tab, not
+  first, scroll down, refresh - it must land at the top of that tab, not
   pre-scrolled to a card. Don't touch the scroll-restoration logic
   (`history.scrollRestoration` + the instant top-scroll in `show()`); it
   exists for exactly this.
@@ -460,11 +460,11 @@ inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the
   wide). The header must flip to the hamburger the instant the nav and socials
   approach, no overlap frame, and flip back when widened. Confirm the socials
   show (stacked, with labels) in the drawer in that mode.
-- [ ] Re-run the §0 audit — confirm no boilerplate survived.
+- [ ] Re-run the §0 audit - confirm no boilerplate survived.
 
 ---
 
-## Quick reference — every placeholder, by file
+## Quick reference - every placeholder, by file
 
 | File               | Placeholder(s) to change                                                             |
 |--------------------|--------------------------------------------------------------------------------------|
@@ -474,18 +474,18 @@ inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the
 | `index.html`       | Static meta fallback + canonical + the `<noscript>` heading + optional analytics script (§3) |
 | `404.html`         | `<title>`, the per-language `docTitle` strings in its inline script, theme-color     |
 | `site.webmanifest` | name, short_name, description, background_color, theme_color, icon paths             |
-| `sitemap.xml`      | nothing by hand — GENERATED from `meta.domain` by `generate-static.mjs`              |
+| `sitemap.xml`      | nothing by hand - GENERATED from `meta.domain` by `generate-static.mjs`              |
 | `robots.txt`       | `Sitemap:` URL host (= `meta.domain` host)                                           |
-| `llms.txt`         | nothing by hand — GENERATED from the spec by `generate-static.mjs` (§3)              |
+| `llms.txt`         | nothing by hand - GENERATED from the spec by `generate-static.mjs` (§3)              |
 | `LICENSE`          | copyright name/year (or whole license)                                               |
 | `assets/`          | favicons, PWA icons, backgrounds, slides/gallery images, the `og:image`              |
 | `CNAME`            | create per client (custom domain only)                                               |
-| Fingerprint        | `Built from m-remis/static-web-template` — keep; do not replace or remove            |
+| Fingerprint        | `Built from m-remis/static-web-template` - keep; do not replace or remove            |
 
-**Hardcoded values that appear in more than one place — change together:**
+**Hardcoded values that appear in more than one place - change together:**
 
 - **Domain** → `meta.domain`, `index.html` (canonical + og:url + the absolute
-  og:image/twitter:image URLs), `robots.txt` `Sitemap:`, and `CNAME` if used —
+  og:image/twitter:image URLs), `robots.txt` `Sitemap:`, and `CNAME` if used -
   plus a `node generate-static.mjs` run for the sitemap `<loc>`.
   (`launch-check` cross-checks most of these.)
 - **Dark bg `--bg-base`** → `styles.css` (both you change), `index.html`

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->
+<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>https://example.com/</loc>
-        <lastmod>2026-07-26</lastmod>
+        <lastmod>2026-11-16</lastmod>
         <changefreq>monthly</changefreq>
         <priority>1.0</priority>
     </url>

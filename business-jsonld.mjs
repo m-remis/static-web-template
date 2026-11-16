@@ -1,13 +1,13 @@
 /* =========================================================
    Static site template
-   business-jsonld.mjs — pure spec → schema.org JSON-LD derivation
+   business-jsonld.mjs - pure spec → schema.org JSON-LD derivation
 
    ONE implementation, TWO consumers:
      - engine.js (browser) imports it for the runtime <script> tag
        (renderJsonLd), and reuses isExternalUrl/absoluteUrl generally.
      - generate-static.mjs (Node, dev-only) imports it to stamp the same
        object statically into index.html for crawlers that don't run JS.
-   Keeping the builder here is what stops the two copies from drifting —
+   Keeping the builder here is what stops the two copies from drifting -
    don't duplicate this logic into either consumer.
 
    It is also the home of the small PURE helpers more than one of
@@ -58,23 +58,23 @@ export const JSONLD_DAY_NAMES = {
 
 /* Parse a "9:00–17:00" style range (en/em dash or hyphen) into zero-padded
    {opens, closes}. Free-form values ("Closed", "By appointment") return
-   null — those days are simply not emitted, which schema.org reads as
+   null - those days are simply not emitted, which schema.org reads as
    closed/unspecified. */
 export function parseHoursRange(value) {
-    const m = /^\s*(\d{1,2})[:.](\d{2})\s*[–—-]\s*(\d{1,2})[:.](\d{2})\s*$/.exec(String(value || ""));
+    const m = /^\s*(\d{1,2})[:.](\d{2})\s*[–-]\s*(\d{1,2})[:.](\d{2})\s*$/.exec(String(value || ""));
     if (!m) return null;
     const pad = (h) => h.padStart(2, "0");
     return {opens: `${pad(m[1])}:${m[2]}`, closes: `${pad(m[3])}:${m[4]}`};
 }
 
-/* Strip the spec's small inline HTML (<em>, <a>…) — table cells may carry it,
+/* Strip the spec's small inline HTML (<em>, <a>…) - table cells may carry it,
    JSON-LD strings must not. Deliberately minimal; mirrors the fuller
    stripHtml() in generate-static.mjs for the tag-removal part only. */
 const stripTags = (s = "") => String(s).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
 /* Parse a price cell into {price, unit}. Whole prices ("12 €", "9,50 €")
    give unit: null; per-unit prices ("35 €/hod") carry the unit text.
-   Free-form cells ("dohodou") return null — the offer is emitted without a
+   Free-form cells ("dohodou") return null - the offer is emitted without a
    price, which schema.org reads as price-on-request. */
 export function parsePriceCell(value) {
     const m = /^(\d+(?:[.,]\d+)?)\s*€(?:\s*\/\s*(.+))?$/.exec(String(value == null ? "" : value).trim());
@@ -147,7 +147,7 @@ export function buildBusinessJsonLd(site) {
     if (meta.domain) data.url = meta.domain;
 
     // Image must be absolute for crawlers; same resolution rule as og:image
-    // in renderHead() — one helper owns it.
+    // in renderHead() - one helper owns it.
     if (meta.ogImage) {
         data.image = absoluteUrl(meta.ogImage, meta.domain);
     }
@@ -164,7 +164,7 @@ export function buildBusinessJsonLd(site) {
 
     if (b.mapUrl) data.hasMap = b.mapUrl;
 
-    // Exact pin coordinates — local "near me" queries resolve on these, not
+    // Exact pin coordinates - local "near me" queries resolve on these, not
     // on the street string. Both must be present and numeric.
     if (b.geo && Number.isFinite(b.geo.lat) && Number.isFinite(b.geo.lng)) {
         data.geo = {"@type": "GeoCoordinates", latitude: b.geo.lat, longitude: b.geo.lng};

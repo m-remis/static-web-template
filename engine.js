@@ -1,8 +1,8 @@
 /* =========================================================
    Static site template
-   engine.js — runtime engine + UI logic (content lives in site-spec.json)
+   engine.js - runtime engine + UI logic (content lives in site-spec.json)
 
-   SECTION INDEX — search for the "N. TITLE" line to jump to a section.
+   SECTION INDEX - search for the "N. TITLE" line to jump to a section.
      1. CONTENT (the spec shape)         16. RENDER CONTENT SECTIONS (+ warm-up)
      2. I18N (locales, UI strings, t())  17. RENDER FOOTER
      3. RENDER LIFECYCLE (teardown)      18. RENDER THEME
@@ -31,7 +31,7 @@ import {
 /* ----------------------------------------------------------------------
    1. CONTENT (the spec shape)
 
-   There is NO inline content. All content lives in an external JSON file —
+   There is NO inline content. All content lives in an external JSON file -
    one per locale (LOCALE_SPECS in the I18N section below; the default locale's
    file is site-spec.json). The site loads the active locale's file on boot; if
    it can't be loaded or parsed, or contains no usable sections, the visitor
@@ -43,10 +43,10 @@ import {
      "$schema": "site-spec.schema.json", "schemaVersion": "…",
      "brand": "Company",
      "brandImage": "assets/logo/….png", // optional; replaces header brand text
-     "meta": { … },                // <head> metadata — see renderHead()
-     "theme": { … },               // optional brand tokens — see renderTheme()
-     "business": { … },            // SSOT contact/legal data — see getBusiness()
-     "sections": [                 // ORDERED — order IS the nav + page order
+     "meta": { … },                // <head> metadata - see renderHead()
+     "theme": { … },               // optional brand tokens - see renderTheme()
+     "business": { … },            // SSOT contact/legal data - see getBusiness()
+     "sections": [                 // ORDERED - order IS the nav + page order
        {
          "id": "home",             // unique; used in the URL hash
          "label": "Domov",         // text shown in the nav tab
@@ -81,27 +81,27 @@ import {
 
    IMPORTANT: block text supports small inline HTML (<em>, <a>, <strong>…).
    EVERY spec-authored rich-text field is passed through sanitizeInline()
-   before reaching innerHTML — disallowed tags/attributes and js/data: hrefs
+   before reaching innerHTML - disallowed tags/attributes and js/data: hrefs
    are stripped, so a compromised or LLM-generated spec can't inject scripts.
    Still author these values yourself; the sanitizer is defense in depth,
    not permission to feed it untrusted input.
 ---------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   2. I18N — runtime language switch (localStorage, no URL/build)
+   2. I18N - runtime language switch (localStorage, no URL/build)
 
    Two layers are internationalized:
-     1. CONTENT — one full spec file per locale (LOCALE_SPECS). The default
+     1. CONTENT - one full spec file per locale (LOCALE_SPECS). The default
         locale's file is the canonical `site-spec.json` that the dev tools
         (generate-static.mjs, launch-check.js) and the static crawler mirror
         target; alternate locales are runtime-only.
-     2. CHROME — the engine's own strings (aria-labels, error screen, weekday
+     2. CHROME - the engine's own strings (aria-labels, error screen, weekday
         names, the language switcher) live in the UI table below, keyed by
         locale with an English fallback. Reach them with t("key").
 
    The active locale is read from localStorage at boot (LANG_KEY); switching
    saves the choice and re-renders the site in place (switchLocale → renderSite),
-   instantly and with no fade — no page reload, no separate URLs. The background,
+   instantly and with no fade - no page reload, no separate URLs. The background,
    theme, current tab and scroll position survive the switch; see the teardown
    registry (section 3) for the contract that makes a second render safe.
    Because the switch is runtime-only, the static SEO mirror reflects the
@@ -228,7 +228,7 @@ function resolveLocale() {
     try {
         stored = localStorage.getItem(LANG_KEY);
     } catch {
-        // storage unavailable — fall back to default
+        // storage unavailable - fall back to default
     }
     return stored && LOCALE_SPECS[stored] ? stored : DEFAULT_LOCALE;
 }
@@ -242,20 +242,20 @@ let SITE = {};
 
    The site is rendered more than once per page load: the language switch
    re-renders in place (switchLocale) instead of reloading, because a reload
-   blinks the whole page — the shell repaints empty behind html.site-booting,
+   blinks the whole page - the shell repaints empty behind html.site-booting,
    the background layers restart from nothing, and the boot fade-in replays,
    all for what is really just a text swap.
 
    In-place means anything an init* function installs on a target that OUTLIVES
-   a render — window, document, a media query, or one of the static shell
+   a render - window, document, a media query, or one of the static shell
    elements index.html ships (#brand, #themeToggle, #menuToggle, #navDesktop,
-   #navScrim, the bg layers) — would stack up a second copy on the next render.
+   #navScrim, the bg layers) - would stack up a second copy on the next render.
    Install those with on() / onTeardown(), never a bare addEventListener:
    teardownSite() undoes them all before the next render.
 
    Listeners on nodes the render itself replaces (everything the build*
    functions wire: carousels, galleries, faq toggles, nav links) need no
-   registration — they are collected along with their DOM.
+   registration - they are collected along with their DOM.
 ---------------------------------------------------------------------- */
 
 const TEARDOWN = [];
@@ -341,7 +341,7 @@ function scrollToTopInstant() {
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
-/* The JS side of the `prefers-reduced-motion` guards the CSS already honors —
+/* The JS side of the `prefers-reduced-motion` guards the CSS already honors -
    for the motion CSS can't switch off, like a timed fade the code waits on.
    Read live rather than cached at boot, so flipping the OS setting takes effect
    without a reload. */
@@ -362,7 +362,7 @@ const el = (tag, attrs = {}, html = "") => {
 };
 
 /* Round ❮ / ❯ arrow button shared by the lightbox, the carousel, and the
-   gallery pager — same glyphs and type/aria wiring everywhere, only the
+   gallery pager - same glyphs and type/aria wiring everywhere, only the
    class differs. */
 const navButton = (className, label, dir) =>
     el("button", {type: "button", class: className, "aria-label": label},
@@ -389,11 +389,11 @@ function rovingKeydown(e, count, getIndex, onMove) {
 }
 
 /* Shared horizontal-swipe gesture (carousel + lightbox). Pointer Events give
-   one code path for touch and pen; mouse is skipped on purpose — those users
+   one code path for touch and pen; mouse is skipped on purpose - those users
    have the arrow buttons, and hijacking a mouse drag breaks text/image select.
 
    The CSS `touch-action` on `target` decides which axis the browser keeps and
-   which one reaches us — see the swipe gotcha in docs/gotchas.md. Get it wrong and
+   which one reaches us - see the swipe gotcha in docs/gotchas.md. Get it wrong and
    the browser claims the gesture for scrolling, ending the pointer stream in a
    pointercancel before any swipe can complete.
 
@@ -407,7 +407,7 @@ function initSwipe(target, {onSwipe, onDismiss} = {}) {
     let pointerId = null;
     let startX = 0;
     let startY = 0;
-    let dragging = false;      // travelled past SWIPE_SLOP — no longer a tap
+    let dragging = false;      // travelled past SWIPE_SLOP - no longer a tap
     let swallowClick = false;
 
     const reset = () => {
@@ -438,7 +438,7 @@ function initSwipe(target, {onSwipe, onDismiss} = {}) {
         try {
             target.setPointerCapture(pointerId);
         } catch {
-            /* pointer already gone — the up/cancel handlers still run */
+            /* pointer already gone - the up/cancel handlers still run */
         }
     });
 
@@ -483,7 +483,7 @@ function initSwipe(target, {onSwipe, onDismiss} = {}) {
 // external (http/https) targets open in a new tab with rel="noopener
 // noreferrer"; internal/relative ones are left untouched. `base` carries any
 // other attrs (class, aria-label, …). One place owns this so every outbound
-// link is decorated identically — see also the sanitizer, which applies the
+// link is decorated identically - see also the sanitizer, which applies the
 // same rel to authored <a> tags in rich text.
 const linkAttrs = (url, base = {}) => {
     const attrs = {...base, href: url};
@@ -495,7 +495,7 @@ const linkAttrs = (url, base = {}) => {
 };
 
 /* ----------------------------------------------------------------------
-   5. SINGLE SOURCE OF TRUTH — business resolution
+   5. SINGLE SOURCE OF TRUTH - business resolution
 
    Contact + legal data lives in exactly one place: SITE.business. Blocks that
    need a phone/email/social reference it by KEY instead of restating the
@@ -512,7 +512,7 @@ function getBusiness() {
 const telHref = (phone = "") => "tel:" + String(phone).replace(/[^\d+]/g, "");
 
 /* Localized display names for what KIND of contact a row is ("Phone" over the
-   number) — the active locale's `kinds` map from the UI table. Used by
+   number) - the active locale's `kinds` map from the UI table. Used by
    resolveRef() for SSOT rows and as the icon-key fallback for inline links
    items (an explicit item `kind` always wins). */
 const kindLabels = () => t("kinds");
@@ -595,7 +595,7 @@ function sanitizeInline(html = "") {
    coerce to string (nullish → "") and sanitize. Every builder uses this;
    a bare sanitizeInline() call means the value is already a string (built
    HTML, template literals). NOT for values set via el()/setAttribute
-   (alt, aria-label, …) — those never parse HTML and must stay raw. */
+   (alt, aria-label, …) - those never parse HTML and must stay raw. */
 const safeText = (v) => sanitizeInline(String(v ?? ""));
 
 /* Render spec text honoring its declared `format`. Defaults to the sanitized
@@ -629,13 +629,13 @@ function getSections() {
     return list.filter((s) => s && s.id);
 }
 
-/* Derive the nav (tabs) from the sections array — the array IS the nav.
+/* Derive the nav (tabs) from the sections array - the array IS the nav.
    Falls back to the id when a section has no explicit label. */
 function navItems() {
     return getSections().map((s) => ({id: s.id, label: s.label || s.id}));
 }
 
-/* HTML-escape a string before interpolating it into an innerHTML template —
+/* HTML-escape a string before interpolating it into an innerHTML template -
    as plain-text content (hours values, the error screen's technical detail)
    or inside a quoted attribute (the map block's href). NOT needed for values
    set via el()/setAttribute, which never parse HTML. */
@@ -646,7 +646,7 @@ const escapeHtml = (str = "") =>
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
-/* Inline SVG icons — no icon library (keeps the no-deps rule). Each uses
+/* Inline SVG icons - no icon library (keeps the no-deps rule). Each uses
    fill="currentColor" so it inherits the surrounding text color and re-themes
    automatically. Add a new key here to support a new social platform. */
 const SOCIAL_ICONS = {
@@ -746,7 +746,7 @@ function appendBlockHeader(wrapper, block, type, nameAttrs = {}) {
 /* Native-button disclosure pair shared by the FAQ rows and collapsible
    tables: a toggle <button> (label + plus/minus icon spans) wired to a
    hidden panel via aria-expanded/aria-controls; click flips both. The
-   type-specific classes come from the caller — the ARIA contract and the
+   type-specific classes come from the caller - the ARIA contract and the
    flip handler live here once (same deduplication as appendBlockHeader).
    The label is plain text, set via textContent. */
 function makeToggle(label, id, cls) {
@@ -777,9 +777,9 @@ function makeToggle(label, id, cls) {
     return {btn, panel};
 }
 
-/* hero — the big intro/landing block: eyebrow + headline + lead paragraph.
+/* hero - the big intro/landing block: eyebrow + headline + lead paragraph.
    Only the FIRST hero on the page gets an <h1>; later heroes render an <h2>
-   (same .intro__title styling — CSS targets the class, not the element), so
+   (same .intro__title styling - CSS targets the class, not the element), so
    a document with several hero sections keeps a single H1 for SEO. The
    counter is reset by renderContent() before each full render. */
 let heroCount = 0;
@@ -795,7 +795,7 @@ function buildHero(block) {
     return wrap;
 }
 
-/* text — a prose paragraph, optionally opened by the shared serif block
+/* text - a prose paragraph, optionally opened by the shared serif block
    heading (`name`, same look as table/faq names). Inline HTML is sanitized to
    an allowlist; set `format: "markdown"` for a small markdown subset or
    "plain" to escape all. */
@@ -810,7 +810,7 @@ function buildText(block) {
     return wrap;
 }
 
-/* cards — a responsive card grid. `linked: true` + an item `url` makes the
+/* cards - a responsive card grid. `linked: true` + an item `url` makes the
    whole card a link. An item `icon` adds a monochrome icon (a black PNG on a
    transparent background) to the left of the text,
    vertically centered; styles.css owns
@@ -856,15 +856,15 @@ function buildCards(block) {
     return grid;
 }
 
-/* links — the contact/social link rows.
+/* links - the contact/social link rows.
    Row anatomy: icon | (kind label over value) | optional handle | arrow cue.
    The kind ("Phone", "Instagram", …) comes from kindLabels() via the icon
    key, or an explicit item `kind`; the persistent arrow is the same
    clickability cue redirect cards use, so rows never need explaining.
    `layout: "grid"` renders the rows as side-by-side tiles instead. */
 function buildLinks(block) {
-    // Resolve `use: ["phone","email","instagram"]` against business/socials —
-    // the SSOT path — then append any explicit inline items after them.
+    // Resolve `use: ["phone","email","instagram"]` against business/socials -
+    // the SSOT path - then append any explicit inline items after them.
     const fromRefs = (block.use || [])
         .map(resolveRef)
         .filter(Boolean);
@@ -880,7 +880,7 @@ function buildLinks(block) {
             class: it.icon ? `link-list--${it.icon}` : null,
         });
 
-        // Optional leading icon — `icon` must match a key in SOCIAL_ICONS.
+        // Optional leading icon - `icon` must match a key in SOCIAL_ICONS.
         const icon = it.icon && SOCIAL_ICONS[it.icon]
             ? `<span class="link-list__icon" aria-hidden="true">${SOCIAL_ICONS[it.icon]}</span>`
             : "";
@@ -890,7 +890,7 @@ function buildLinks(block) {
         const kind = it.kind || kindLabels()[it.icon] || "";
         const kindHtml = kind ? `<span class="link-list__kind">${safeText(kind)}</span>` : "";
         const labelHtml = it.label ? `<span class="label">${safeText(it.label)}</span>` : "";
-        // Only render the handle span when there is one — an empty span here
+        // Only render the handle span when there is one - an empty span here
         // breaks the :has() spacing in CSS.
         const handleHtml = it.handle ? `<span class="handle">${safeText(it.handle)}</span>` : "";
 
@@ -908,11 +908,11 @@ function buildLinks(block) {
     return ul.children.length ? ul : null;
 }
 
-/* map — location block with two modes:
+/* map - location block with two modes:
    - "embed" (default): the live Google Maps iframe + an "Open in Maps" button.
-   - "static": a clean themed card with no iframe — the location name, an
+   - "static": a clean themed card with no iframe - the location name, an
      optional address line (only if `address` is set), and the button. */
-/* The "open in Maps" button row shared by both map modes — one place owns
+/* The "open in Maps" button row shared by both map modes - one place owns
    the label and the link decoration. */
 const mapOpenRow = (href) =>
     el(
@@ -930,7 +930,7 @@ function buildMap(block) {
 
     // ---- Static card mode (no iframe) ----
     if (mode === "static") {
-        if (!href) return null; // nothing to point at — skip silently.
+        if (!href) return null; // nothing to point at - skip silently.
 
         const card = el("div", {class: "map-card"});
         if (block.label) card.appendChild(el("p", {class: "map-card__name"}, safeText(block.label)));
@@ -961,13 +961,13 @@ function buildMap(block) {
     return frag;
 }
 
-/* table — a structured table (e.g. a price list).
+/* table - a structured table (e.g. a price list).
    Block shape: { name?, blurb?, headings: [...], rows: [[...], ...], accentValue?, offerCatalog? }
-   offerCatalog is NOT read here — business-jsonld.mjs exports flagged tables
+   offerCatalog is NOT read here - business-jsonld.mjs exports flagged tables
    into the schema.org OfferCatalog; this builder renders them like any other.
    Short rows are padded with empty cells and extra cells are ignored, so a
    ragged row never breaks the grid. By default the LAST column gets the
-   accent price/value treatment (accent color, semibold) — right for short
+   accent price/value treatment (accent color, semibold) - right for short
    numeric values like prices. Set accentValue: false on prose tables
    (conditions, company data), where a whole column of bold accent sentences
    drowns the page and reads as links. */
@@ -982,7 +982,7 @@ function buildTable(block) {
     const valueCol = block.accentValue === false ? -1 : headings.length - 1;
 
     // Collapsible (opt-in via `collapsible: true`): the name becomes an
-    // accordion toggle and the blurb + table collapse behind it — the shared
+    // accordion toggle and the blurb + table collapse behind it - the shared
     // makeToggle pair, same as the FAQ. The name is the thing you click,
     // so without one the flag is ignored and the table renders expanded.
     const collapsible = block.collapsible === true && !!block.name;
@@ -1063,7 +1063,7 @@ function buildTable(block) {
     // its first cell (the name) + a +/- toggle and expands to the remaining
     // columns as labelled rows. CSS shows the <table> on desktop and this on
     // mobile (each is display:none on the other), so exactly one is ever in the
-    // a11y tree — no duplicated content for screen readers. Reuses makeToggle,
+    // a11y tree - no duplicated content for screen readers. Reuses makeToggle,
     // the same disclosure pair as the FAQ and the collapsible-table header.
     if (multicol) {
         const gid = ++tableSeq;
@@ -1104,11 +1104,11 @@ function buildTable(block) {
 
    buildFaq(block) returns a list of expand/collapse question rows.
    Shape: { name?, blurb?, items: [ { q, a }, ... ] }  (q + a required per item)
-   Each row is a native <button> toggling an answer panel — keyboard-operable
+   Each row is a native <button> toggling an answer panel - keyboard-operable
    and screen-reader-labelled via aria-expanded + aria-controls, no JS state
    machine needed (the click handler just flips the attribute + hidden). `q`
    is plain text; `a` allows the same trusted inline HTML as text/table blurbs
-   (authored content only — never raw user/LLM input). Returns null if empty so
+   (authored content only - never raw user/LLM input). Returns null if empty so
    a misfilled block disappears instead of rendering broken; the validator
    flags the emptiness separately.
 ---------------------------------------------------------------------- */
@@ -1157,7 +1157,7 @@ function buildFaq(block) {
    (only `src` is required per slide).
 
    Navigation is arrows + dots + keyboard, plus touch swipe via the shared
-   initSwipe (which the lightbox below uses too). Swipe is additive — every
+   initSwipe (which the lightbox below uses too). Swipe is additive - every
    control stays, so nothing regresses for keyboard or mouse.
 ---------------------------------------------------------------------- */
 
@@ -1300,7 +1300,7 @@ function getLightbox() {
     });
 
     // The overlay is page-level, so it survives a re-render unless we say
-    // otherwise — but its labels are localized at build time, so a locale swap
+    // otherwise - but its labels are localized at build time, so a locale swap
     // has to discard it and let the next open build a localized one.
     onTeardown(() => {
         finish();
@@ -1308,7 +1308,7 @@ function getLightbox() {
         lightboxApi = null;
     });
 
-    // Touch: flick sideways to step through the set, down to dismiss — the
+    // Touch: flick sideways to step through the set, down to dismiss - the
     // same two moves the arrows and Escape provide. This is the gallery's
     // only navigation on a phone: its tiles open straight into here.
     initSwipe(overlay, {onSwipe: go, onDismiss: () => close()});
@@ -1317,7 +1317,7 @@ function getLightbox() {
     return lightboxApi;
 }
 
-/* Close the shared lightbox if one is open — and never create it just to ask.
+/* Close the shared lightbox if one is open - and never create it just to ask.
    The overlay is page-level, not owned by any panel, so a tab change beneath
    it (browser back/forward while an image is expanded) would otherwise leave
    it floating over the newly shown panel with page scroll still locked by
@@ -1334,7 +1334,7 @@ function closeLightbox() {
 function toLightboxSlides(list) {
     return (list || []).map((s, i) => ({
         src: s.src,
-        caption: [s.title, s.caption, s.text].filter(Boolean).join(" — ") || `${t("image")} ${i + 1}`,
+        caption: [s.title, s.caption, s.text].filter(Boolean).join(" - ") || `${t("image")} ${i + 1}`,
     }));
 }
 
@@ -1385,7 +1385,7 @@ function buildCarousel(block) {
         const img = el("img", {
             class: "carousel__img",
             src: s.src,
-            alt: altText, // set via setAttribute — no escaping needed (or wanted)
+            alt: altText, // set via setAttribute - no escaping needed (or wanted)
             loading: i === 0 ? "eager" : "lazy",
             decoding: "async",
         });
@@ -1455,7 +1455,7 @@ function buildCarousel(block) {
     };
 
     // The carousel's own listeners ride along when the render replaces its DOM,
-    // but a timer doesn't — an autoplay left running would keep ticking against
+    // but a timer doesn't - an autoplay left running would keep ticking against
     // a detached carousel, one extra interval per language switch.
     onTeardown(stop);
 
@@ -1476,7 +1476,7 @@ function buildCarousel(block) {
     prevBtn.addEventListener("click", manual(() => setActive(index - 1)));
     nextBtn.addEventListener("click", manual(() => setActive(index + 1)));
 
-    // Touch swipe on the slide area (not the whole root — the arrows and dots
+    // Touch swipe on the slide area (not the whole root - the arrows and dots
     // keep their own taps). Routed through manual() so a swipe resets the
     // autoplay timer exactly like pressing an arrow does.
     initSwipe(viewport, {onSwipe: (dir) => manual(() => setActive(index + dir))()});
@@ -1528,7 +1528,7 @@ function buildCarousel(block) {
    buildGallery(block) renders a responsive grid of image tiles. Same theme
    tokens and the SAME shared lightbox as the carousel (getLightbox), but every
    tiles are shown one page at a time (see perPage); a pager steps between pages.
-   Tiles are image-only — no caption strip under them. Click any tile → the
+   Tiles are image-only - no caption strip under them. Click any tile → the
    lightbox opens at that image's absolute index, then arrow through the WHOLE
    set (across pages). Broken images fail silently (panel background shows
    through), matching the carousel.
@@ -1536,10 +1536,10 @@ function buildCarousel(block) {
    Block shape:
    { "type": "gallery", "name"?, "blurb"?, "columns"?: 2|3|4, "perPage"?: int,
      "images": [ { "src", "thumb"?, "title"?, "caption"? } ] }  // src required;
-   optional `thumb` is a smaller rendition used for the grid tile only — the
+   optional `thumb` is a smaller rendition used for the grid tile only - the
    lightbox always opens the full `src`.
 
-   title/caption are NOT rendered as visible tile captions — they feed the
+   title/caption are NOT rendered as visible tile captions - they feed the
    image alt text and the lightbox caption only. perPage defaults to 12.
 
    buildPhoto(block) is single-image sugar: normalizes to a one-image gallery so
@@ -1556,7 +1556,7 @@ function buildGallery(block) {
     const name = block.name;
     const uid = `gallery-${++carouselSeq}`; // reuse the carousel sequence counter
 
-    // Same data the carousel feeds the lightbox — identical preview experience.
+    // Same data the carousel feeds the lightbox - identical preview experience.
     // Built once over the FULL list so lightbox indices are absolute: arrowing
     // in the lightbox traverses every image regardless of the visible page.
     const lightboxSlides = toLightboxSlides(list);
@@ -1599,10 +1599,10 @@ function buildGallery(block) {
 
         const img = el("img", {
             class: "gallery__img",
-            // Tiles are small — serve the optional `thumb` rendition when the
+            // Tiles are small - serve the optional `thumb` rendition when the
             // spec provides one; the lightbox always opens the full `src`.
             src: s.thumb || s.src,
-            alt: altText, // set via setAttribute — no escaping needed (or wanted)
+            alt: altText, // set via setAttribute - no escaping needed (or wanted)
             // First row of the FIRST page eager; everything else lazy.
             loading: absI < 4 ? "eager" : "lazy",
             decoding: "async",
@@ -1693,7 +1693,7 @@ function buildPhoto(block) {
 
    Renders SITE.business.hours as a seven-row week (Monday…Sunday). Hours
    are single-source-of-truth: the block carries no hours data, only an
-   optional name/blurb, and reads business.hours by key — same philosophy as
+   optional name/blurb, and reads business.hours by key - same philosophy as
    the links block referencing phone/email. Today's row is highlighted
    (is-today + aria-current); no open/closed-now logic.
 
@@ -1728,7 +1728,7 @@ function buildHours(block) {
 
     HOURS_DAY_KEYS.forEach((key, i) => {
         const raw = hours[key];
-        const value = (typeof raw === "string" && raw.trim()) ? raw.trim() : "—";
+        const value = (typeof raw === "string" && raw.trim()) ? raw.trim() : "-";
         const isToday = key === todayKey;
 
         const row = el("div", {
@@ -1749,11 +1749,11 @@ function buildHours(block) {
    13. REVIEW + VIDEO
 ---------------------------------------------------------------------- */
 
-/* review — a "leave a review" call-to-action. Pure builder.
+/* review - a "leave a review" call-to-action. Pure builder.
 
    This block does NOT collect or store reviews (the engine is no-build and
    has no backend). It renders one or more outbound buttons that send the
-   visitor to where reviews actually live and are moderated — Google Business,
+   visitor to where reviews actually live and are moderated - Google Business,
    Facebook, etc. The "submission" happens on the platform's own page.
 
    Shape: { name?, blurb?, items: [ { label, url, platform? } ] }
@@ -1815,28 +1815,28 @@ function buildReview(block) {
     return wrapper;
 }
 
-/* video — an embedded YouTube player. Pure builder.
+/* video - an embedded YouTube player. Pure builder.
    Shape: { name?, blurb?, url? | playlist?, title? }   (one source required)
 
    Two source modes:
-   - `url` — a PINNED video: a normal YouTube link in any of the shapes people
+   - `url` - a PINNED video: a normal YouTube link in any of the shapes people
      actually copy (watch?v=, youtu.be/, shorts/, live/, embed/); the 11-char
      video id is extracted from it.
-   - `playlist` — an AUTO-UPDATING player: a playlist id or any URL with
+   - `playlist` - an AUTO-UPDATING player: a playlist id or any URL with
      ?list=. The player opens on the playlist's FIRST entry, and YouTube's
-     synthetic channel playlists are ordered newest-first — so pointing this
+     synthetic channel playlists are ordered newest-first - so pointing this
      at a channel's uploads playlist always shows the latest video with no
      spec edit per upload. Playlist ids: take the channel id (UC…) and swap
-     the prefix — UU… = all uploads (includes Shorts), UULF… = long-form
+     the prefix - UU… = all uploads (includes Shorts), UULF… = long-form
      videos only (the right one for "latest episode").
-   When both are set, `url` wins — an explicit pin beats auto-latest.
+   When both are set, `url` wins - an explicit pin beats auto-latest.
 
    Served from the privacy-enhanced youtube-nocookie.com host, which sets no
    cookies until the visitor presses play (same privacy posture as picking
-   GoatCounter over GA). The iframe is lazy-loaded like the map embed —
+   GoatCounter over GA). The iframe is lazy-loaded like the map embed -
    and, like it, warmed up in the background after page load when it sits in
-   a hidden tab (see warmUpIframes) — but stays interactive (no
-   pointer-events trick — you have to be able to click play). `title` is the
+   a hidden tab (see warmUpIframes) - but stays interactive (no
+   pointer-events trick - you have to be able to click play). `title` is the
    iframe's accessible name; falls back to the block `name`.
 
    Returns null when no id can be extracted from either source, so a
@@ -1899,7 +1899,7 @@ function renderBlock(block) {
 
     const builder = BLOCK_RENDERERS[block.type];
     if (!builder) {
-        console.warn(`Unknown block type: "${block.type}" — skipped.`);
+        console.warn(`Unknown block type: "${block.type}" - skipped.`);
         return null;
     }
 
@@ -1922,7 +1922,7 @@ function renderNav() {
 
     // Start from empty: this runs again on a locale swap, and appending to the
     // previous render's nav would stack two sets of tabs. Clearing the drawer
-    // also drops its injected close button — initMobileMenu(), which runs after
+    // also drops its injected close button - initMobileMenu(), which runs after
     // this, puts a freshly localized one back.
     desktop.innerHTML = "";
     mobile.innerHTML = "";
@@ -1930,7 +1930,7 @@ function renderNav() {
 
     // Header brand: text by default; an optional spec-level `brandImage`
     // (e.g. a PNG logo) replaces the text visually. The brand string still
-    // matters — it becomes the image's alt, and keeps feeding the footer
+    // matters - it becomes the image's alt, and keeps feeding the footer
     // copyright and metadata, so it stays the single source of truth for the
     // name. Monochrome black-on-transparent logos are auto-inverted in dark
     // theme by CSS (--mono-icon-filter on .brand__img).
@@ -1954,7 +1954,7 @@ function renderNav() {
 
     // Wrap the brand and optional socials into one left-side header cluster
     // so header-fit measures brand + socials as a single unit. On a re-render
-    // the cluster already exists — reuse it (a second replaceWith() would nest
+    // the cluster already exists - reuse it (a second replaceWith() would nest
     // a wrap inside the old one) and rebuild its contents from scratch.
     let brandWrap = brand.parentElement && brand.parentElement.classList.contains("brand-wrap")
         ? brand.parentElement
@@ -2059,18 +2059,18 @@ function renderContent() {
     // One panel per section, in array order.
     const panels = sections.map((section) => buildSection(section));
 
-    // Image priority pass — must run BEFORE the nodes hit the DOM (the
+    // Image priority pass - must run BEFORE the nodes hit the DOM (the
     // browser reads `loading` at insertion). Builders mark the first image
     // of every carousel/gallery "eager" so an opened tab feels instant, but
     // at boot only ONE panel is visible: the hidden panels' eager images
     // (~0.5 MB each) would compete with the visible one for bandwidth. So
-    // the panel shown first keeps its eager images — its first one is the
-    // likely LCP element and gets fetchpriority=high — and every other
+    // the panel shown first keeps its eager images - its first one is the
+    // likely LCP element and gets fetchpriority=high - and every other
     // panel is demoted to lazy, then warmed back up after `load` (below)
     // so tab switches still hit the HTTP cache. Hidden panels' lazy iframes
     // (map/video embeds) are collected for the same warm-up: lazy iframes in
     // a display:none panel never intersect, so they'd only start loading on
-    // tab switch — the delay warmUpIframes() exists to remove.
+    // tab switch - the delay warmUpIframes() exists to remove.
     const hash = readTabHash();
     const initialId = sections.some((s) => s.id === hash) ? hash : sections[0].id;
     const warmupSrcs = [];
@@ -2095,7 +2095,7 @@ function renderContent() {
 }
 
 /* Prefetch the images the priority pass demoted, once the page has fully
-   loaded and the browser is idle — the first open of another tab then reads
+   loaded and the browser is idle - the first open of another tab then reads
    them from the HTTP cache instead of a cold fetch. Best-effort by design:
    skipped when the user asked for reduced data (Save-Data), and a miss just
    means that tab loads its image on open, like any lazy image. */
@@ -2109,14 +2109,14 @@ function warmUpImages(srcs) {
 
 /* Same idea for hidden tabs' embeds (the Maps iframe, the YouTube player).
    A lazy iframe inside a display:none panel never intersects, so the browser
-   doesn't even open a connection until the tab is switched to — the visitor
+   doesn't even open a connection until the tab is switched to - the visitor
    then sits through the whole player load. Flipping `loading` to "eager"
    after load+idle starts that load in the background instead.
 
    The catch, and why this is more than a one-line attribute flip: a
    display:none panel gives its iframes NO BOX, so the embed initializes at
    zero size. YouTube then picks its smallest poster rendition (a 4:3 crop)
-   and never upgrades it when the tab is finally shown — the thumbnail
+   and never upgrades it when the tab is finally shown - the thumbnail
    renders visibly cropped and pixelated. So the panel is laid out at its
    real content width for the duration of the warm-up, parked off-screen via
    the `.is-warming` class, and put back to display:none once the embeds have
@@ -2142,7 +2142,7 @@ function warmUpIframes(frames) {
             if (width > 0) panel.style.setProperty("--warm-width", `${width}px`);
             // A laid-out panel is back in the tab order and the a11y tree
             // even though it's invisible ([hidden] only removes it via
-            // display:none, which .is-warming overrides) — inert keeps
+            // display:none, which .is-warming overrides) - inert keeps
             // keyboard focus and screen readers out of it, same as the
             // closed mobile drawer. show() lifts it if the tab is opened
             // mid-warm, so a revealed panel is never left dead.
@@ -2158,13 +2158,13 @@ function warmUpIframes(frames) {
             const done = () => {
                 if (--pending > 0) return;
                 // The frame is loaded, but the player fetches its poster
-                // after that — hold the box a moment longer so it lands at
+                // after that - hold the box a moment longer so it lands at
                 // full size rather than at the zero-size fallback.
                 setTimeout(stop, 1500);
             };
 
             list.forEach((f) => {
-                // `error` counts as settled too (offline / blocked host) —
+                // `error` counts as settled too (offline / blocked host) -
                 // the guard keeps a frame from decrementing twice if both
                 // events manage to fire.
                 let settled = false;
@@ -2178,7 +2178,7 @@ function warmUpIframes(frames) {
                 f.setAttribute("loading", "eager");
             });
             // Safety net: never leave a panel parked off-screen (and inert)
-            // because an embed never settled — including browsers without
+            // because an embed never settled - including browsers without
             // lazy-iframe support, where `load` fired at boot, before these
             // listeners existed.
             setTimeout(stop, 20000);
@@ -2186,7 +2186,7 @@ function warmUpIframes(frames) {
     });
 }
 
-/* The pixel width a section gets inside the content column — the warm-up has
+/* The pixel width a section gets inside the content column - the warm-up has
    to state it explicitly because a position:fixed panel no longer inherits it
    from `.content`. Read from the live element rather than restating the
    `max-width`/`--gutter` math, so it can't drift from the CSS. */
@@ -2265,7 +2265,7 @@ async function renderVisitorCount(target, url, label) {
         if (count == null || count === "") return;
         target.textContent = label ? `${count} ${label}` : String(count);
     } catch (err) {
-        // Network/parse failure — leave the footer count empty, never break.
+        // Network/parse failure - leave the footer count empty, never break.
         console.warn("Visitor count unavailable:", err);
     }
 }
@@ -2276,7 +2276,7 @@ async function renderVisitorCount(target, url, label) {
    Brand-defining design tokens live in SITE.theme so one engine can produce
    differently-branded sites from config alone. This writes them as :root
    custom properties at boot; styles.css holds the defaults, so any token the
-   spec omits simply keeps its CSS value. Structural CSS is NOT touched here —
+   spec omits simply keeps its CSS value. Structural CSS is NOT touched here -
    only the brand knobs (accent, fonts, sizing, social tints).
 ---------------------------------------------------------------------- */
 
@@ -2311,17 +2311,17 @@ function renderTheme() {
 
    Single source of truth for the page's metadata: everything here is driven
    by SITE.meta. The tags also exist statically in index.html so crawlers and
-   social scrapers (which don't run JS) still see them — this function keeps
+   social scrapers (which don't run JS) still see them - this function keeps
    them in sync with the config and is the canonical place to change them.
 
    Idempotent: each tag is found-or-created by a stable selector and only its
    value is updated, so running this never duplicates tags. To change the
-   title/description/OG/etc., edit SITE.meta in site-spec.json — not the HTML.
+   title/description/OG/etc., edit SITE.meta in site-spec.json - not the HTML.
 ---------------------------------------------------------------------- */
 
 /* Find-or-create a <head> tag: query by a stable selector; when absent, build
    it via `create` and append. The caller sets only the value, so this is the
-   one place that owns the head renderers' idempotency contract — one tag per
+   one place that owns the head renderers' idempotency contract - one tag per
    key, no duplicates on re-run (setMeta/setLink here, renderJsonLd below). */
 function upsertHead(selector, create) {
     let node = document.head.querySelector(selector);
@@ -2364,7 +2364,7 @@ function renderHead() {
 
     // Open Graph (property="..."). og:description can differ from the plain
     // meta description; fall back to it when not separately specified.
-    // og:site_name comes from the brand (single source of truth) — shown by
+    // og:site_name comes from the brand (single source of truth) - shown by
     // Discord & co. above the card title. twitter:image mirrors og:image for
     // scrapers that don't fall back between the two tag families.
     setMeta("property", "og:type", "content", meta.ogType);
@@ -2373,7 +2373,7 @@ function renderHead() {
     setMeta("property", "og:description", "content", meta.ogDescription || meta.description);
     setMeta("property", "og:url", "content", meta.domain);
     if (meta.ogImage) {
-        // Scrapers need an absolute image URL — resolve a relative spec path
+        // Scrapers need an absolute image URL - resolve a relative spec path
         // against the canonical domain (same rule as JSON-LD's `image`), so
         // this never downgrades the absolute URL in the static HTML fallback.
         const ogImage = absoluteUrl(meta.ogImage, meta.domain);
@@ -2405,7 +2405,7 @@ function renderHead() {
    data-jsonld marker), so browsers always end with the fresh value.
 ---------------------------------------------------------------------- */
 
-/* The JSON-LD script tag, found by its data-jsonld marker — idempotent via
+/* The JSON-LD script tag, found by its data-jsonld marker - idempotent via
    upsertHead like every other head renderer. */
 function renderJsonLd() {
     const data = buildBusinessJsonLd(SITE);
@@ -2508,7 +2508,7 @@ function initTheme() {
         try {
             localStorage.setItem(THEME_KEY, next);
         } catch {
-            // storage unavailable — fail silently
+            // storage unavailable - fail silently
         }
     });
 }
@@ -2534,7 +2534,7 @@ function applyChromeStrings() {
     set("#navMobile", "aria-label", t("mobileNav"));
     set("#brand", "aria-label", t("home"));
 
-    // Only relabel the menu toggle if the drawer is closed — initMobileMenu()
+    // Only relabel the menu toggle if the drawer is closed - initMobileMenu()
     // owns the open/closed aria-label swap while it's active.
     const menu = $("#menuToggle");
     if (menu && menu.getAttribute("aria-expanded") !== "true") {
@@ -2567,7 +2567,7 @@ async function switchLocale(target) {
     try {
         localStorage.setItem(LANG_KEY, target);
     } catch {
-        // storage unavailable — session-only switch
+        // storage unavailable - session-only switch
     }
 
     // Transient UI that must not outlive the swap: an expanded image, and the
@@ -2599,7 +2599,7 @@ async function switchLocale(target) {
         await renderSite(loaded);
 
         // initTabs' first show() lands the new render at the top; put the
-        // reader back where they were — this is a text swap, not navigation.
+        // reader back where they were - this is a text swap, not navigation.
         // Same frame as the render, so the jump is never painted.
         scrollInstantTo(scrollY);
 
@@ -2641,7 +2641,7 @@ function initLang() {
     container.innerHTML = "";
 
     // The switcher ships hidden. A single-locale site has nothing to switch
-    // to, so leave it hidden and bail — no switcher at all.
+    // to, so leave it hidden and bail - no switcher at all.
     const locales = Object.keys(LOCALE_SPECS);
     if (locales.length < 2) return;
 
@@ -2677,7 +2677,7 @@ function initLang() {
     // specs are a few KB, and a touch user can open the dropdown and tap an
     // option faster than a round-trip, so waiting for intent alone would leave
     // the first swap cold. Hover / `toggle` stay as a backstop for a click that
-    // beats the idle callback. Cheap and idempotent — SPEC_CACHE collapses
+    // beats the idle callback. Cheap and idempotent - SPEC_CACHE collapses
     // repeats (including a re-render's call) into one request.
     const warmOthers = () => {
         Object.keys(LOCALE_SPECS).forEach((loc) => {
@@ -2711,7 +2711,7 @@ function initLang() {
             if (s) s.focus();
         }
     });
-    // Document-level, so it outlives the dropdown it belongs to — must be
+    // Document-level, so it outlives the dropdown it belongs to - must be
     // registered for teardown or every swap would add another copy.
     on(document, "click", (e) => {
         if (details.open && !details.contains(e.target)) details.open = false;
@@ -2777,7 +2777,7 @@ function initMobileMenu() {
 
     // All of these hang off shell elements that outlive a render (the drawer and
     // scrim are in index.html; the close button is re-injected above), so they
-    // go through on() — see the teardown registry.
+    // go through on() - see the teardown registry.
     on(toggle, "click", () => (nav.classList.contains("is-open") ? close() : open()));
     on(scrim, "click", close);
     on(closeBtn, "click", close);
@@ -2803,8 +2803,8 @@ function initMobileMenu() {
     on(mq, "change", onDesktop);
 
     // close() hides the scrim on a 220ms delay (it fades first). If a render
-    // lands inside that window — closing the drawer is the first thing a locale
-    // swap does — the timer must not simply be dropped: the scrim is
+    // lands inside that window - closing the drawer is the first thing a locale
+    // swap does - the timer must not simply be dropped: the scrim is
     // position:fixed inset:0 and only stops covering the page once `hidden` is
     // set, so cancelling without finishing the job leaves an invisible sheet
     // swallowing every click on the new render.
@@ -2867,7 +2867,7 @@ function initTabs() {
             const active = p.id === panelId(id);
             p.hidden = !active;
             // A panel may still be inert from the embed warm-up
-            // (warmUpIframes) — the shown panel must never stay that way.
+            // (warmUpIframes) - the shown panel must never stay that way.
             if (active) p.inert = false;
 
             // Do not animate the initial render. Only animate real tab changes.
@@ -2893,7 +2893,7 @@ function initTabs() {
     };
 
     // Click / tap. The links themselves are rebuilt by every renderNav(), so
-    // their listeners are collected with them — no teardown needed here.
+    // their listeners are collected with them - no teardown needed here.
     links.forEach((link) => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
@@ -3046,14 +3046,14 @@ function initBackground() {
         };
 
         img.onerror = () => {
-            // Image missing — skip to the next one on the next tick.
+            // Image missing - skip to the next one on the next tick.
         };
 
         img.src = src;
     };
 
-    // On a re-render the background is already on screen. Adopt what it shows —
-    // which layer is active, and where in the list it is — instead of starting
+    // On a re-render the background is already on screen. Adopt what it shows -
+    // which layer is active, and where in the list it is - instead of starting
     // over: re-showing list[0] would either crossfade the background for no
     // reason or dip it to black re-fading the image that's already up.
     const activeLayer = layers.findIndex((l) => l.classList.contains("is-active"));
@@ -3084,7 +3084,7 @@ function initBackground() {
 /* Parsed specs, keyed by URL, for the life of the page.
 
    Worth it because the swap's one unavoidable cost is the network: the specs
-   are a few KB, so fetching one is all latency and no transfer — and `_headers`
+   are a few KB, so fetching one is all latency and no transfer - and `_headers`
    serves them `max-age=0, must-revalidate`, so even a warm HTTP cache still
    pays a round-trip to be told "not modified". Cached here, switching back to a
    locale you've already seen costs nothing, and `warmLocale()` can move the
@@ -3094,7 +3094,7 @@ function initBackground() {
    stick for the whole session), and the in-flight promise is cached as well, so
    a prefetch and the swap that follows it share one request instead of racing.
 
-   Session-scoped on purpose — a reload still revalidates, so a content push
+   Session-scoped on purpose - a reload still revalidates, so a content push
    shows up as fast as the headers promise. */
 const SPEC_CACHE = new Map();
 
@@ -3118,7 +3118,7 @@ function warmLocale(locale) {
     if (url) loadContent(url);
 }
 
-/* Fetch + parse one spec file (the raw request behind loadContent). JSON is the single source of truth — there is no
+/* Fetch + parse one spec file (the raw request behind loadContent). JSON is the single source of truth - there is no
    inline fallback to merge onto, so this just loads + parses + returns it.
 
    Returns { data, error }:
@@ -3128,8 +3128,8 @@ function warmLocale(locale) {
               screen.
 
    Failure shapes:
-     - "fetch" — couldn't load it at all (404 / network / file:// CORS).
-     - "parse" — loaded, but the body wasn't valid JSON. */
+     - "fetch" - couldn't load it at all (404 / network / file:// CORS).
+     - "parse" - loaded, but the body wasn't valid JSON. */
 async function fetchSpec(url) {
     let res;
     try {
@@ -3163,7 +3163,7 @@ async function fetchSpec(url) {
    skips the nav/tabs/background wiring that assume real sections exist.
 
    Note: when the JSON failed to load, SITE is empty, so the brand and the
-   contact escape hatch below simply render nothing — that's fine. If the JSON
+   contact escape hatch below simply render nothing - that's fine. If the JSON
    loaded but was merely missing sections, brand/socials may still show. */
 function renderErrorState(reason) {
     const main = $("#main");
@@ -3173,7 +3173,7 @@ function renderErrorState(reason) {
     if (brand) brand.textContent = SITE.brand || "";
 
     // Empty at boot, but a locale swap onto a broken spec lands here with the
-    // previous render's tabs still in the header — and their handlers already
+    // previous render's tabs still in the header - and their handlers already
     // torn down. Clear them so nothing dead is left clickable.
     [$("#navDesktop"), $("#navMobile")].forEach((nav) => {
         if (nav) nav.innerHTML = "";
@@ -3193,7 +3193,7 @@ function renderErrorState(reason) {
         ));
 
         // Contact escape hatch from socials, if any survived (none if the JSON
-        // failed to load) — so the visitor isn't fully stuck.
+        // failed to load) - so the visitor isn't fully stuck.
         const socials = (SITE.socials || []).filter((s) => s && s.url);
         if (socials.length) {
             box.appendChild(buildSocials(socials));
@@ -3259,7 +3259,7 @@ async function renderSite(loaded) {
             kind: "empty",
             detail: `${currentSpecUrl()} loaded but contained no usable "sections".`,
         };
-        console.error("No renderable content — showing error screen:", reason.detail);
+        console.error("No renderable content - showing error screen:", reason.detail);
 
         renderErrorState(reason);
         initInputMode();
@@ -3285,7 +3285,7 @@ async function init() {
     // (normal render OR the error screen). The shell starts hidden via
     // html.site-booting (set inline in index.html before first paint) to avoid a
     // flash of the empty layout; we swap to site-ready here so the finished page
-    // fades in. Must run on every exit, or the page would stay invisible —
+    // fades in. Must run on every exit, or the page would stay invisible -
     // hence finally.
     const reveal = () => {
         const html = document.documentElement;

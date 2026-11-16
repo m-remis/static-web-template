@@ -25,7 +25,7 @@ npm-debug.log*
 .env
 .env.*
 
-# This is a no-build static site — there shouldn't be any of these,
+# This is a no-build static site - there shouldn't be any of these,
 # but ignore them in case a tool ever drops them in.
 node_modules/
 dist/

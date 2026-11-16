@@ -1,4 +1,4 @@
-# _headers — Cloudflare Pages
+# _headers - Cloudflare Pages
 
 # Security headers, applied to every response. Doesn't affect caching/perf,
 # just cheap hardening while we're in this file.
@@ -28,14 +28,14 @@
 /styles.css
   Cache-Control: public, max-age=300, must-revalidate
 
-# Self-hosted webfonts — effectively immutable; a font change should ship
+# Self-hosted webfonts - effectively immutable; a font change should ship
 # under a new filename (see the tradeoff note below).
 /assets/fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Heavy art that rarely changes — cache hard. `immutable` skips revalidation
+# Heavy art that rarely changes - cache hard. `immutable` skips revalidation
 # on a manual browser reload; we already accept the tradeoff (rename or purge
-# once if you swap a file under the same name — see repo docs).
+# once if you swap a file under the same name - see repo docs).
 /assets/background/*
   Cache-Control: public, max-age=2592000, immutable
 /assets/slides/*
@@ -51,7 +51,7 @@
   Cache-Control: public, max-age=2592000, immutable
 
 # HTML stays revalidating so a redeploy is seen immediately.
-# The root path is matched separately from /*.html — Cloudflare Pages matches
+# The root path is matched separately from /*.html - Cloudflare Pages matches
 # _headers against the raw request path, and "/" is never rewritten to
 # "/index.html" before that match happens.
 #
@@ -59,9 +59,9 @@
 # Early Hints toggle in the dashboard, Speed → Optimization), so the browser
 # starts these downloads DURING the HTML round-trip instead of after it.
 # Only stable, always-needed resources belong here: stylesheets, fonts, the
-# spec. NOT engine.js (a module — `as=script` preload uses a different
+# spec. NOT engine.js (a module - `as=script` preload uses a different
 # credential mode and would double-fetch; the <link rel="modulepreload"> in
-# index.html covers it) and NOT the LCP image (spec-derived — it would drift;
+# index.html covers it) and NOT the LCP image (spec-derived - it would drift;
 # generate-static.mjs stamps that preload into index.html instead).
 /
   Cache-Control: public, max-age=0, must-revalidate

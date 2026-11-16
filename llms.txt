@@ -1,8 +1,8 @@
-# Static Web Template — a JSON-driven static site engine
+# Static Web Template - a JSON-driven static site engine
 
-> A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies.
+> A small, fast static site engine: one site-spec.json renders the whole page - no framework, no build step, no dependencies.
 
-This site is a single-page app rendered by JavaScript — this file
+This site is a single-page app rendered by JavaScript - this file
 summarizes its content in plain text. Operated by Static Web Template.
 
 ## Contact & opening hours
@@ -27,46 +27,46 @@ summarizes its content in plain text. Operated by Static Web Template.
 
 ## Overview
 
-This entire site — every tab, every block, the metadata, even this sentence — is rendered at runtime from a single site-spec.json. No framework, no build step, no dependencies.
+This entire site - every tab, every block, the metadata, even this sentence - is rendered at runtime from a single site-spec.json. No framework, no build step, no dependencies.
 
 You are looking at the engine documenting itself. Each tab is a section, and each section is an ordered list of typed blocks. Open Content blocks and Media blocks to see every block type the engine ships, then read How it works for the architecture behind it.
 
-- **No build step** — Plain HTML, CSS and vanilla JS served as files. Clone it, edit the spec, deploy to any static host.
-- **Config-driven blocks** — Add a section or rearrange content by editing JSON. Adding a brand-new block type is a small, local code change.
-- **Resilient by design** — A broken or missing spec shows a calm error screen, never a blank page. A typo in one block never blanks the rest.
+- **No build step** - Plain HTML, CSS and vanilla JS served as files. Clone it, edit the spec, deploy to any static host.
+- **Config-driven blocks** - Add a section or rearrange content by editing JSON. Adding a brand-new block type is a small, local code change.
+- **Resilient by design** - A broken or missing spec shows a calm error screen, never a blank page. A typo in one block never blanks the rest.
 
 ## How it works
 
 ### The single source of truth
 
-Everything the visitor sees lives in site-spec.json — the brand, the nav tabs, every section and block, the footer, the socials, the background images, and the document metadata. index.html is an almost-empty shell; engine.js fetches the spec on load and builds the page from it. To change what the site says, you edit the spec, not the markup.
+Everything the visitor sees lives in site-spec.json - the brand, the nav tabs, every section and block, the footer, the socials, the background images, and the document metadata. index.html is an almost-empty shell; engine.js fetches the spec on load and builds the page from it. To change what the site says, you edit the spec, not the markup.
 
 ### The block engine
 
-sections is an ordered array, and its order is both the nav order and the page order. Each section is a list of typed blocks, and rendering is one generic dispatch: the engine looks up each block's type in a renderer map and calls the matching builder. There is no per-section special-casing anywhere — which is exactly why adding a new kind of content stays a small change.
+sections is an ordered array, and its order is both the nav order and the page order. Each section is a list of typed blocks, and rendering is one generic dispatch: the engine looks up each block's type in a renderer map and calls the matching builder. There is no per-section special-casing anywhere - which is exactly why adding a new kind of content stays a small change.
 
 ### Resilient by design
 
-Three failure modes — the spec fails to load, fails to parse, or has no usable sections — all land on the same calm temporarily unavailable screen with a contact escape hatch. The page never blanks and never throws. Unknown block types are skipped with a console warning, so one bad block can't take down the rest of the page.
+Three failure modes - the spec fails to load, fails to parse, or has no usable sections - all land on the same calm temporarily unavailable screen with a contact escape hatch. The page never blanks and never throws. Unknown block types are skipped with a console warning, so one bad block can't take down the rest of the page.
 
 ### Built for machines too
 
-Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text llms.txt, a sitemap.xml, and a schema.org JSON-LD block — all stamped by generate-static.mjs so they can never drift from what visitors actually see. A dev-only launch-check.js validator refuses to let an inconsistent site ship.
+Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text llms.txt, a sitemap.xml, and a schema.org JSON-LD block - all stamped by generate-static.mjs so they can never drift from what visitors actually see. A dev-only launch-check.js validator refuses to let an inconsistent site ship.
 
 ### What's in the project
 
 The files you touch, and the ones the engine owns.
 
-- site-spec.json: All content and metadata — the single source of truth
+- site-spec.json: All content and metadata - the single source of truth
 - engine.js: The runtime: block builders, rendering and all UI logic
 - styles.css: Styling, layout and the two theme token blocks
-- index.html: The shell — header skeleton and an empty main, filled by JS
+- index.html: The shell - header skeleton and an empty main, filled by JS
 - generate-static.mjs: Stamps llms.txt, sitemap.xml and the static JSON-LD
-- launch-check.js: Pre-launch validator — the gate before you deploy
+- launch-check.js: Pre-launch validator - the gate before you deploy
 
 ### Architecture FAQ
 
-- **Do I need Node or a build tool to run the site?** No. The deployed site is plain static files. Node is only used by the optional dev tools (generate-static and launch-check) — the live site never runs it.
+- **Do I need Node or a build tool to run the site?** No. The deployed site is plain static files. Node is only used by the optional dev tools (generate-static and launch-check) - the live site never runs it.
 - **Why does the page need a local web server?** The engine fetches site-spec.json, and browsers block that fetch over file://. Serve the folder with any static server, e.g. python3 -m http.server 8000, then open the localhost URL.
 - **How do I add a brand-new kind of block?** Write a builder in engine.js and register it in the renderer map, add its CSS, document its shape, then add a validator rule and a schema entry. AGENTS.md walks through the full ripple so nothing drifts.
 
@@ -78,19 +78,19 @@ The hero renders an eyebrow, a large headline and a lead paragraph. The first he
 
 ### text
 
-This paragraph is a text block. It renders prose with a small set of trusted inline tags — emphasis, strong, and links. Set format to markdown for a tiny markdown subset, or plain to escape everything. Every rich-text field is sanitized before it reaches the page.
+This paragraph is a text block. It renders prose with a small set of trusted inline tags - emphasis, strong, and links. Set format to markdown for a tiny markdown subset, or plain to escape everything. Every rich-text field is sanitized before it reaches the page.
 
 ### cards
 
 The cards block is a responsive grid. Cards can carry an optional meta line and, with linked set, become clickable.
 
-- **Grid layout** — Cards reflow from three columns down to one as the viewport narrows.
-- **Optional link** — Set linked: true and give an item a url to make the whole card a link.
-- **Optional icon** — An item icon adds a monochrome badge that auto-inverts in dark mode.
+- **Grid layout** - Cards reflow from three columns down to one as the viewport narrows.
+- **Optional link** - Set linked: true and give an item a url to make the whole card a link.
+- **Optional icon** - An item icon adds a monochrome badge that auto-inverts in dark mode.
 
 ### links
 
-The links block renders contact rows — an icon, a label over the value, and an arrow cue. It's the same block that powers the Contact details below the fold.
+The links block renders contact rows - an icon, a label over the value, and an arrow cue. It's the same block that powers the Contact details below the fold.
 
 - [Email](mailto:name@example.com)
 - [Phone](tel:+10000000000)
@@ -105,7 +105,7 @@ The last column is styled as a price by default; set accentValue: false for pros
 ### faq
 
 - **Is this block accessible?** Yes. It uses native button toggles and is fully ARIA-wired and keyboard operable.
-- **Can I reorder blocks?** Reorder a section by reordering its blocks array — order in the JSON is order on the page.
+- **Can I reorder blocks?** Reorder a section by reordering its blocks array - order in the JSON is order on the page.
 
 ## Media blocks
 
@@ -113,7 +113,7 @@ Blocks that render images, embeds and structured data. All image blocks feed the
 
 ### photo
 
-The photo block is single-image sugar — it normalizes to a one-image gallery, so a lone picture still gets the frame and lightbox.
+The photo block is single-image sugar - it normalizes to a one-image gallery, so a lone picture still gets the frame and lightbox.
 
 ### map
 
@@ -131,15 +131,15 @@ The video block embeds a privacy-enhanced, lazy-loaded YouTube player. Point it 
 
 Getting your own site live takes about five minutes.
 
-- **Edit the spec** — Open site-spec.json and change the brand, tabs, blocks and contact details.
-- **Add your images** — Drop backgrounds and photos into the assets folder and point the spec at them.
-- **Refresh the mirrors** — Run node generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.
-- **Run the gate** — Run node launch-check.js and fix every error it reports — stray demo text, fake contact data, broken assets.
-- **Deploy** — Push the folder to GitHub Pages, Netlify, Vercel, Cloudflare Pages or any static host.
+- **Edit the spec** - Open site-spec.json and change the brand, tabs, blocks and contact details.
+- **Add your images** - Drop backgrounds and photos into the assets folder and point the spec at them.
+- **Refresh the mirrors** - Run node generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.
+- **Run the gate** - Run node launch-check.js and fix every error it reports - stray demo text, fake contact data, broken assets.
+- **Deploy** - Push the folder to GitHub Pages, Netlify, Vercel, Cloudflare Pages or any static host.
 
 ### Theming
 
-Colors live as CSS custom properties in styles.css, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request — and a site can override brand tokens per-client via an optional theme object in the spec.
+Colors live as CSS custom properties in styles.css, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request - and a site can override brand tokens per-client via an optional theme object in the spec.
 
 ### Where to go next
 
@@ -150,7 +150,7 @@ Read README.md for the human quick-start, AGENTS.md for the architecture and how
 
 ### Find us on
 
-The same links block, laid out as tiles with brand-tinted icons — here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the socials list.
+The same links block, laid out as tiles with brand-tinted icons - here pointing at social platforms instead of contact methods. The header and mobile drawer render these same platforms from the socials list.
 
 - [https://youtube.com/](https://youtube.com/)
 - [https://instagram.com/](https://instagram.com/)
@@ -161,4 +161,4 @@ The same links block, laid out as tiles with brand-tinted icons — here pointin
 - [Web](https://example.com/): main page (content rendered by JavaScript from site-spec.json)
 - [site-spec.json](https://example.com/site-spec.json): the full site content in machine-readable JSON
 
-<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->
+<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->
