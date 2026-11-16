@@ -7,7 +7,7 @@ to bottom; the site renders fine even half-finished (a bad spec shows a calm
 error screen, never a blank page), so nothing crashes if you skip ahead — but
 the SEO/sharing items must be done before the site is public.
 
-> Companion to `AGENTS.md` (architecture: how the engine works) and `README.md`
+> Companion to `AGENTS.md` + `docs/` (architecture: how the engine works) and `README.md`
 > (human quick-start). This file answers one question only: **what do I change
 > for each new client?**
 >
@@ -43,8 +43,8 @@ The real gate is the validator — run it from the repo root:
 node launch-check.js
 ```
 
-It catches placeholder text, fake contact data (`r@r.sk`, `+421 000…`, IČO/DIČ
-of `0`), broken/missing asset paths, manifest icon paths, a domain that doesn't
+It catches placeholder text, fake contact data (`name@example.com`,
+`+1 (000) 000-0000`, IČO/DIČ of `0`), broken/missing asset paths, manifest icon paths, a domain that doesn't
 match across files, and a missing `og:image`. Drive it to `PASS` before
 shipping. Full details (every check, the flags, the error codes) are in
 `LAUNCH-CHECK.md`.
@@ -82,7 +82,8 @@ name. Do not treat it as forgotten boilerplate. It is source attribution and a
 searchable marker for sites built from this template. Keep it in source
 comments or documentation; it does not need to be visible in the UI unless a
 visible credit was explicitly requested. It currently lives in `index.html`,
-`engine.js`, `styles.css`, `launch-check.js`, `README.md`, `AGENTS.md`,
+`engine.js`, `styles.css`, `business-jsonld.mjs`, `generate-static.mjs`,
+`launch-check.js`, `README.md`, `AGENTS.md`, the `docs/` files,
 `LAUNCH-CHECK.md`, `_block-template.md`, and this file. (`404.html` does **not**
 carry it directly.) The grep below is the source of truth — run it rather than
 trusting this list.
@@ -99,8 +100,8 @@ grep -rni "Built from m-remis/static-web-template\|m-remis/static-web-template" 
 ## 1. Content — `site-spec.json` (the 90%)
 
 This is the bulk of the work and almost the only file you touch for a typical
-client. The full shape and every block type are documented in `AGENTS.md`
-("The block engine") and in the long comment at the top of `engine.js` — keep
+client. The full shape and every block type are documented in
+`docs/spec-format.md` and in the long comment at the top of `engine.js` — keep
 both open while editing. Validate after every change:
 
 ```bash
@@ -127,7 +128,7 @@ node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
   client doesn't have.
   - [ ] **New platform?** Add an inline SVG to `SOCIAL_ICONS` in `engine.js`
     **and** a `.socials__link--<icon> svg { color: … }` brand-tint rule in
-    `styles.css`, then reference the key here. (See `AGENTS.md` → "Socials".)
+    `styles.css`, then reference the key here. (See `docs/engine-internals.md` → "Socials".)
 - [ ] **`backgrounds[]`** — paths under `assets/background/`, cycled with a
   crossfade. Each path must match a file you actually drop in (§4). A missing
   file fails silently to a plain background — it won't crash, but you get no
@@ -177,7 +178,7 @@ order. Each entry is `{ id, label, title?, blocks: [...] }`:
 - [ ] **`blocks[]`** — ordered content blocks, each `{ "type": …, … }`.
   Reorder a section by reordering its blocks. Supported types: `hero`, `text`,
   `cards`, `links`, `map`, `slideshow`, `table`, `faq`, `gallery`, `photo`,
-  `hours`, `review`, `video` — shapes in `AGENTS.md` and the `engine.js`
+  `hours`, `review`, `video` — shapes in `docs/spec-format.md` and the `engine.js`
   header comment.
 
 Per-block placeholders to hunt down for a new client:
@@ -203,8 +204,8 @@ Per-block placeholders to hunt down for a new client:
   icons — set `kind` on inline items to control it. `"layout": "grid"` renders
   up to a handful of contacts as side-by-side tiles instead of stacked rows.
   **Replace the template
-  `r@r.sk` / `+421 000 000 00` defaults in `business`** — both are caught as
-  fake by `launch-check`.
+  `name@example.com` / `+1 (000) 000-0000` defaults in `business`** — both are
+  caught as fake by `launch-check`.
 - [ ] **`map`** — `mode: "embed"` (Google Maps → Share → Embed → copy the
   iframe `src` into `embed`) or `mode: "static"` (themed card, no iframe).
   `url`/`embed` can be omitted to **fall back to `business.mapUrl`/`mapEmbed`**
@@ -237,22 +238,31 @@ Per-block placeholders to hunt down for a new client:
   any other value renders a generic star. Replace any template URL with the
   client's real review page (for Google, the direct
   `https://search.google.com/local/writereview?placeid=…` deep link is best).
+- [ ] **`video`** — a YouTube embed. Give ONE source: `url` pins a specific
+  video (any share form: `watch?v=`, `youtu.be/`, `shorts/`, `live/`), or
+  `playlist` always shows the newest entry (use the channel's `UULF…` uploads
+  playlist for "latest episode"). Set `title` (or `name`) for the player's
+  accessible name. **Replace the template's demo clip.**
 
 ### 1d. Multiple languages (optional)
 
-The site ships a runtime language switch (see `AGENTS.md` →
-"Internationalization"). To offer a second language:
+The site ships a runtime language switch (see `docs/i18n.md`). To offer a second language:
 
 - [ ] **Copy `site-spec.json` → `site-spec.<lang>.json`** (e.g.
   `site-spec.sk.json`) and translate its content. Keep the **same section
   `id`s** — `launch-check` warns (`LOCALE_SECTION_DRIFT`) if they diverge, and
   the current tab is preserved across a language switch by id. Set the file's
-  `meta.lang`.
+  `meta.lang`. Everything that is not translated (domain, theme color, phone,
+  email, socials, backgrounds, image paths, the blocks in each section) must
+  stay identical to `site-spec.json` — `launch-check` warns on a difference
+  (`LOCALE_DATA_DRIFT`), so a later contact change has to be made in every
+  locale file.
 - [ ] **Register the locale in `engine.js`**: add it to `LOCALE_SPECS`, add its
   endonym to `LOCALE_NAMES`, and add a `UI` block (translate every chrome string
   incl. the weekday `days`). The header switcher is a dropdown that lists every
   registered locale, so any number of languages works with no switcher code to
-  touch. Mirror the strings in `404.html`'s inline map.
+  touch. Mirror the strings in `404.html`'s inline map, and add a cache rule
+  for the new spec file in `_headers` (next to `/site-spec.sk.json`).
 - [ ] **Validate the translation**: `node launch-check.js --site-spec
   site-spec.<lang>.json`.
 - [ ] Note the **default locale is the SEO one**: `llms.txt`, `sitemap.xml` and
@@ -272,11 +282,14 @@ class schedule) is the only thing that's ever real code, and it's small:
 - [ ] Add `yourtype: buildX` to the `BLOCK_RENDERERS` map.
 - [ ] Add the matching CSS in `styles.css`.
 - [ ] Document the block's fields in the top-of-file `BLOCK TYPES` comment in
-  `engine.js`, the block table in `AGENTS.md`, and `BLOCK_RULES` in
-  `launch-check.js` (so the validator doesn't false-fail on the new type).
+  `engine.js` and the block table in `docs/spec-format.md`.
+- [ ] Add a check + a `BLOCK_RULES` entry in `launch-check.js` (so the
+  validator doesn't false-fail on the new type) and a `blockX` subschema in
+  `site-spec.schema.json` (so the editor doesn't either).
 - [ ] Use `{ "type": "yourtype", … }` in any section's `blocks`.
 
-Full walkthrough in `AGENTS.md` → "Adding a NEW block type". Once built, the
+Full walkthrough in `docs/workflows.md` → Workflow B; `_block-template.md` is
+the copyable skeleton. Once built, the
 block is reusable across all future clients — growing a tested block library is
 the real product value.
 
@@ -299,8 +312,10 @@ don't run JS see the static values — keep them roughly matching `meta`:
   **`og:url`**.
 - [ ] **`og:image` + `twitter:image`** — absolute URLs (crawlers don't reliably
   resolve relative ones), so they state the domain explicitly; update at
-  domain changes along with the canonical (see `AGENTS.md` Workflow E).
+  domain changes along with the canonical (see `docs/workflows.md` Workflow E).
 - [ ] **`<link rel="canonical">`** — must be the real domain.
+- [ ] **`<noscript>` heading** inside `<main>` — the business name shown to
+  visitors without JavaScript.
 - [ ] **Analytics (optional)** — the template ships **without** an analytics
   script. To add privacy-friendly tracking, drop a GoatCounter
   `<script ... data-goatcounter="…" src="https://gc.zgo.at/count.js">` into
@@ -309,7 +324,8 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ### `404.html`
 
-- [ ] `<title>` (e.g. `404 — Not found · Brand`).
+- [ ] `<title>` (e.g. `404 — Not found · Brand`) **and** the matching
+  `docTitle` strings in the inline script (one per language).
 - [ ] `<meta name="theme-color">` — also overwritten at runtime from
   `--bg-base`, but set the static fallback to match.
 - [ ] **Asset links stay root-absolute** (`/styles.css`, `/404.css`, the
@@ -323,14 +339,17 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 - [ ] `name`, `short_name`, `description`.
 - [ ] `background_color`, `theme_color` — match your dark `--bg-base`.
-- [ ] **Icon `src` paths must resolve as written.** They currently point at
-  `assets/web-app-manifest-…png`; a root-absolute `/web-app-manifest-…png` is a
-  common mistake and is a hard `launch-check` failure.
+- [ ] **Icons.** The template lists only `assets/favicon.ico`. For an
+  installable site add real PNG icons (192x192 and 512x512) under `assets/`
+  and list them here. **Each `src` must resolve as written** - a root-absolute
+  `/icon-192.png` when the file is at `assets/icon-192.png` is a common mistake
+  and a hard `launch-check` failure.
 
 ### `sitemap.xml`
 
 - [ ] **Do not edit by hand — run `node generate-static.mjs`.** The `<loc>`
-  comes from `meta.domain` and `<lastmod>` from the spec file's mtime;
+  comes from `meta.domain` and `<lastmod>` from the spec's last commit date
+  (its mtime while it has uncommitted edits);
   `launch-check` still verifies the `<loc>` matches (error on mismatch) and
   fails `GENERATED_STALE` on a hand edit.
 
@@ -360,10 +379,12 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 ## 4. Assets — `assets/`
 
-- [ ] **`assets/favicon.ico`** + `favicon-96x96.png` + `apple-touch-icon.png` —
-  replace with the client's. Referenced by `index.html`/`404.html`/manifest.
-- [ ] **`assets/web-app-manifest-192x192.png` / `-512x512.png`** — the PWA
-  icons referenced by `site.webmanifest` (§3).
+- [ ] **`assets/favicon.ico`** — replace with the client's. Referenced by
+  `index.html`, `404.html` and the manifest. It is the only icon the template
+  ships; a `favicon-96x96.png` / `apple-touch-icon.png` are optional extras you
+  add yourself (with matching `<link>` tags in `index.html`).
+- [ ] **PWA icons (optional)** — 192x192 and 512x512 PNGs, listed in
+  `site.webmanifest` (§3).
 - [ ] **`assets/background/`** — the client's background image(s); every file
   must be listed in the top-level `backgrounds` array and vice versa.
 - [ ] **`assets/slides/`** — slideshow/gallery images referenced by those
@@ -379,11 +400,14 @@ don't run JS see the static values — keep them roughly matching `meta`:
 
 All color lives in **two token blocks**: `[data-theme="dark"]` and
 `[data-theme="light"]`, grouped by comment (Backgrounds, Text, Menu/nav,
-Accents & lines, advanced overlay/header, Carousel). Re-skinning the whole site
+Accents & lines, Background-image overlay & header, Monochrome icon
+inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the whole site
 — both themes, the 404 page, the browser chrome — happens here and nowhere else.
 
-- [ ] **`--accent`** + **`--accent-soft`** (both themes) — carries most of the
-  brand feel; the fastest high-impact change.
+- [ ] **`--accent`** (both themes) — carries most of the brand feel; the
+  fastest high-impact change. `--accent-soft` is derived from it
+  automatically. (A spec-level `theme.accent` overrides it per client with no
+  CSS edit, but applies to both themes.)
 - [ ] **`--bg-base`** (both themes) — page background. If you change the dark
   one, update its mirrors: `index.html` theme-color, `404.html` theme-color,
   and `site.webmanifest` `theme_color` + `background_color` (§3).
@@ -391,10 +415,10 @@ Accents & lines, advanced overlay/header, Carousel). Re-skinning the whole site
   defaults are a sane neutral.
 - [ ] **Do NOT** inline hex into individual rules — add a named variable to
   **both** theme blocks instead.
-- [ ] **Exception:** social brand colors (`.socials__link--instagram svg`, etc.)
-  are intentionally the platform's brand color, identical in both themes, and
-  live as per-platform rules — not in the token blocks. Leave them unless adding
-  a platform (§1a).
+- [ ] **Exception:** social brand colors are intentionally the platform's own
+  color, identical in both themes, so they live once in `:root` as
+  `--brand-<platform>` tokens - not in the two theme blocks. Leave them unless
+  adding a platform (§1a); a spec can override one via `theme.socialColors`.
 
 ---
 
@@ -447,12 +471,12 @@ Accents & lines, advanced overlay/header, Carousel). Re-skinning the whole site
 | `site-spec.json`   | Everything (§1): `brand`, `meta` (incl. domain/og:image/analytics), `sections`, `socials`, `backgrounds` |
 | `engine.js`        | Only for a new block type (§2) or a new social platform's `SOCIAL_ICONS` entry       |
 | `styles.css`       | The two `[data-theme]` token blocks (§5); a new platform's brand-tint rule           |
-| `index.html`       | Static meta fallback + canonical + optional analytics script (§3)                    |
-| `404.html`         | title, theme-color                                                                   |
+| `index.html`       | Static meta fallback + canonical + the `<noscript>` heading + optional analytics script (§3) |
+| `404.html`         | `<title>`, the per-language `docTitle` strings in its inline script, theme-color     |
 | `site.webmanifest` | name, short_name, description, background_color, theme_color, icon paths             |
 | `sitemap.xml`      | nothing by hand — GENERATED from `meta.domain` by `generate-static.mjs`              |
 | `robots.txt`       | `Sitemap:` URL host (= `meta.domain` host)                                           |
-| `llms.txt`         | whole file — rewrite for the client (plain-text mirror of the spec's content, §3)    |
+| `llms.txt`         | nothing by hand — GENERATED from the spec by `generate-static.mjs` (§3)              |
 | `LICENSE`          | copyright name/year (or whole license)                                               |
 | `assets/`          | favicons, PWA icons, backgrounds, slides/gallery images, the `og:image`              |
 | `CNAME`            | create per client (custom domain only)                                               |
@@ -467,8 +491,10 @@ Accents & lines, advanced overlay/header, Carousel). Re-skinning the whole site
 - **Dark bg `--bg-base`** → `styles.css` (both you change), `index.html`
   theme-color, `404.html` theme-color, `site.webmanifest` `theme_color` +
   `background_color`.
-- **Business name** → `brand`, `meta.title`/`meta.description`/og, `404.html`
-  title, `site.webmanifest` `name`/`short_name`.
+- **Business name** → `brand`, `meta.title`/`meta.description`/og,
+  `site.webmanifest` `name`/`short_name`, `index.html` `og:site_name` + the
+  `<noscript>` heading, `404.html` `<title>` + its `docTitle` strings.
+  (`launch-check` warns on a leftover: `BRAND_MIRROR_STALE`.)
 - **Template fingerprint** → intentional; do not replace or remove.
 
 <!-- Built from m-remis/static-web-template -->

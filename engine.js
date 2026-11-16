@@ -1,20 +1,35 @@
 /* =========================================================
    Static site template
    engine.js — runtime engine + UI logic (content lives in site-spec.json)
+
+   SECTION INDEX — search for the "N. TITLE" line to jump to a section.
+     1. CONTENT (the spec shape)         16. RENDER CONTENT SECTIONS (+ warm-up)
+     2. I18N (locales, UI strings, t())  17. RENDER FOOTER
+     3. RENDER LIFECYCLE (teardown)      18. RENDER THEME
+     4. SMALL HELPERS                    19. RENDER DOCUMENT HEAD
+     5. SINGLE SOURCE OF TRUTH           20. STRUCTURED DATA (JSON-LD)
+     6. SAFE INLINE HTML                 21. INPUT MODE
+     7. SPEC ACCESSORS, SOCIAL ICONS     22. THEME
+     8. BLOCK BUILDERS                   23. LANGUAGE (switchLocale, initLang)
+     9. FAQ / ACCORDION                  24. MOBILE MENU
+    10. LIGHTBOX + SLIDESHOW             25. TABS
+    11. GALLERY / PHOTO                  26. HEADER FIT
+    12. OPENING HOURS                    27. BACKGROUND
+    13. REVIEW + VIDEO                   28. CONTENT LOADING
+    14. BLOCK DISPATCH                   29. ERROR SCREEN
+    15. RENDER NAVIGATION                30. BOOT (renderSite, init)
+   Adding a section? Keep the numbers in one sequence and add it here.
    ========================================================= */
 
-"use strict";
-
-// Pure spec→JSON-LD derivation + URL helpers, shared with the dev-only
-// generate-static.mjs so the runtime and the static mirror can't drift.
-import {isExternalUrl, absoluteUrl, buildBusinessJsonLd} from "./business-jsonld.mjs";
-
-console.log(
-    "If you are reading this, get a life for fuck's sake"
-);
+// Pure, DOM-free logic shared with the dev tools (generate-static.mjs,
+// launch-check.js) so the runtime, the static mirror and the validator can't
+// drift: the spec→JSON-LD derivation, URL helpers, YouTube id parsing.
+import {
+    isExternalUrl, absoluteUrl, buildBusinessJsonLd, youtubeVideoId, youtubePlaylistId,
+} from "./business-jsonld.mjs";
 
 /* ----------------------------------------------------------------------
-   1. CONTENT
+   1. CONTENT (the spec shape)
 
    There is NO inline content. All content lives in an external JSON file —
    one per locale (LOCALE_SPECS in the I18N section below; the default locale's
@@ -22,7 +37,7 @@ console.log(
    it can't be loaded or parsed, or contains no usable sections, the visitor
    sees the error screen instead. JSON is the single source of truth.
 
-   site-spec.json SHAPE (full field list: AGENTS.md + site-spec.schema.json)
+   site-spec.json SHAPE (full field list: docs/spec-format.md + site-spec.schema.json)
    --------------------
    {
      "$schema": "site-spec.schema.json", "schemaVersion": "…",
@@ -51,10 +66,10 @@ console.log(
      { "type": "links", "layout": "rows"|"grid", "use": ["phone","email",…], "items": [ { "label","handle","url","icon","kind" } ] }
      { "type": "map", "mode": "embed", "embed","url","label","address" }
      { "type": "slideshow", "name","blurb", "slides": [ { "src","title","caption","text" } ] }
-     { "type": "table", "name","blurb", "headings": [...], "rows": [ [...], ... ], "accentValue": false, "offerCatalog": true }   // accentValue: false = no price styling on the last column; offerCatalog: true = exported as a JSON-LD OfferCatalog by business-jsonld.mjs (ignored by this builder)
+     { "type": "table", "name","blurb", "headings": [...], "rows": [ [...], ... ], "accentValue": false, "offerCatalog": true, "collapsible": true }   // collapsible: true = collapsed behind its name (needs name); accentValue: false = no price styling on the last column; offerCatalog: true = exported as a JSON-LD OfferCatalog by business-jsonld.mjs (ignored by this builder)
      { "type": "faq", "name","blurb", "items": [ { "q","a" } ] }
      { "type": "gallery", "name","blurb","columns","perPage", "images": [ { "src","thumb","title","caption","text" } ] }
-     { "type": "photo", "src","title","caption","text" }
+     { "type": "photo", "name","blurb", "src","thumb","title","caption","text" }
      { "type": "hours", "name","blurb" }   // reads SITE.business.hours
      { "type": "review", "name","blurb", "items": [ { "label","url","platform" } ] }   // outbound CTAs; no backend
      { "type": "video", "name","blurb", "url"|"playlist", "title" }   // YouTube embed; url = pinned video, playlist = auto-newest (UULF… uploads playlist)
@@ -73,7 +88,7 @@ console.log(
 ---------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   I18N — runtime language switch (localStorage, no URL/build)
+   2. I18N — runtime language switch (localStorage, no URL/build)
 
    Two layers are internationalized:
      1. CONTENT — one full spec file per locale (LOCALE_SPECS). The default
@@ -85,10 +100,10 @@ console.log(
         locale with an English fallback. Reach them with t("key").
 
    The active locale is read from localStorage at boot (LANG_KEY); switching
-   saves the choice and re-renders the site in place (switchLocale → renderSite)
-   behind a short crossfade — no page reload, no separate URLs. The background,
+   saves the choice and re-renders the site in place (switchLocale → renderSite),
+   instantly and with no fade — no page reload, no separate URLs. The background,
    theme, current tab and scroll position survive the switch; see the teardown
-   registry (section 1C) for the contract that makes a second render safe.
+   registry (section 3) for the contract that makes a second render safe.
    Because the switch is runtime-only, the static SEO mirror reflects the
    DEFAULT locale; that's the accepted trade-off of a switcher over per-locale
    URLs.
@@ -131,6 +146,9 @@ const UI = {
         chooseSlide: "Choose slide",
         image: "Image",
         imageCarousel: (n) => `Image carousel, ${n} slides`,
+        slideOf: (i, n) => `${i} of ${n}`,
+        goToSlide: (n) => `Go to slide ${n}`,
+        video: "YouTube video",
         lightboxLabel: "Enlarged image",
         lightboxClose: "Close",
         lightboxPrev: "Previous image",
@@ -143,7 +161,7 @@ const UI = {
         galleryPagination: "Gallery pagination",
         prevPage: "Previous page",
         nextPage: "Next page",
-        kinds: {phone: "Phone", email: "Email", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify"},
+        kinds: {phone: "Phone", email: "Email", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify", github: "GitHub", linkedin: "LinkedIn"},
         errorTitle: "This page is temporarily unavailable",
         errorLead: "The content couldn't be loaded right now. Please try again in a moment. ",
         errorDetails: "Technical details",
@@ -165,6 +183,9 @@ const UI = {
         chooseSlide: "Vybrať snímku",
         image: "Obrázok",
         imageCarousel: (n) => `Fotogaléria, ${n} snímok`,
+        slideOf: (i, n) => `${i} z ${n}`,
+        goToSlide: (n) => `Prejsť na snímku ${n}`,
+        video: "YouTube video",
         lightboxLabel: "Zväčšený obrázok",
         lightboxClose: "Zavrieť",
         lightboxPrev: "Predchádzajúci obrázok",
@@ -177,7 +198,7 @@ const UI = {
         galleryPagination: "Stránkovanie galérie",
         prevPage: "Predchádzajúca strana",
         nextPage: "Ďalšia strana",
-        kinds: {phone: "Telefón", email: "E-mail", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify"},
+        kinds: {phone: "Telefón", email: "E-mail", instagram: "Instagram", youtube: "YouTube", spotify: "Spotify", github: "GitHub", linkedin: "LinkedIn"},
         errorTitle: "Stránka je dočasne nedostupná",
         errorLead: "Obsah sa práve nepodarilo načítať. Skús to prosím o chvíľu znova. ",
         errorDetails: "Technické detaily",
@@ -217,7 +238,7 @@ function resolveLocale() {
 let SITE = {};
 
 /* ----------------------------------------------------------------------
-   1C. RENDER LIFECYCLE (teardown registry)
+   3. RENDER LIFECYCLE (teardown registry)
 
    The site is rendered more than once per page load: the language switch
    re-renders in place (switchLocale) instead of reloading, because a reload
@@ -264,7 +285,7 @@ function teardownSite() {
 }
 
 /* ----------------------------------------------------------------------
-   2. SMALL HELPERS
+   4. SMALL HELPERS
 ---------------------------------------------------------------------- */
 
 const TAB_HASH_PREFIX = "#/";
@@ -294,8 +315,8 @@ function readTabHash() {
         return decode(hash.slice(TAB_HASH_PREFIX.length));
     }
 
-    // Legacy support for old URLs like #kontakt.
-    // After we rename panels to panel-kontakt, this no longer causes native anchor scrolling.
+    // Legacy "#id" form, kept so older links still land on their tab. Panels
+    // are id'd "panel-<id>", so the browser finds no anchor to scroll to.
     if (hash.startsWith("#")) {
         return decode(hash.slice(1));
     }
@@ -372,7 +393,7 @@ function rovingKeydown(e, count, getIndex, onMove) {
    have the arrow buttons, and hijacking a mouse drag breaks text/image select.
 
    The CSS `touch-action` on `target` decides which axis the browser keeps and
-   which one reaches us — see the swipe gotcha in AGENTS.md. Get it wrong and
+   which one reaches us — see the swipe gotcha in docs/gotchas.md. Get it wrong and
    the browser claims the gesture for scrolling, ending the pointer stream in a
    pointercancel before any swipe can complete.
 
@@ -474,7 +495,7 @@ const linkAttrs = (url, base = {}) => {
 };
 
 /* ----------------------------------------------------------------------
-   3. SINGLE SOURCE OF TRUTH — business resolution
+   5. SINGLE SOURCE OF TRUTH — business resolution
 
    Contact + legal data lives in exactly one place: SITE.business. Blocks that
    need a phone/email/social reference it by KEY instead of restating the
@@ -516,7 +537,7 @@ function resolveRef(key) {
 }
 
 /* ----------------------------------------------------------------------
-   4. SAFE INLINE HTML
+   6. SAFE INLINE HTML
 
    Several blocks accept small inline HTML authored in the spec. As soon as
    that text can come from an LLM or a client intake form, raw innerHTML is a
@@ -591,6 +612,13 @@ function renderRichText(text = "", format = "html") {
     }
     return sanitizeInline(text);
 }
+
+/* ----------------------------------------------------------------------
+   7. SPEC ACCESSORS, ESCAPING, SOCIAL ICONS
+
+   getSections / navItems (the section list every render path reads),
+   escapeHtml, the SOCIAL_ICONS map and buildSocials.
+---------------------------------------------------------------------- */
 
 /* The ordered list of sections, normalized + guarded. Every render path and
    the tab logic go through this, so a missing/empty `sections` array degrades
@@ -687,7 +715,7 @@ function buildSocials(items, {useHeaderLabel = false} = {}) {
 }
 
 /* ----------------------------------------------------------------------
-   5. BLOCK BUILDERS
+   8. BLOCK BUILDERS (hero, text, cards, links, map, table)
 
    Small functions that each turn one block's data into a DOM node. Most are
    pure builders (no SITE access), so they can be reused and tested; the two
@@ -863,7 +891,7 @@ function buildLinks(block) {
         const kindHtml = kind ? `<span class="link-list__kind">${safeText(kind)}</span>` : "";
         const labelHtml = it.label ? `<span class="label">${safeText(it.label)}</span>` : "";
         // Only render the handle span when there is one — an empty span here
-        // breaks the :has() spacing in CSS (and `undefined` used to leak in).
+        // breaks the :has() spacing in CSS.
         const handleHtml = it.handle ? `<span class="handle">${safeText(it.handle)}</span>` : "";
 
         const a = el(
@@ -966,7 +994,7 @@ function buildTable(block) {
     // Where the blurb + table land: the wrapper itself, or the hidden panel.
     let panel = wrapper;
     if (collapsible) {
-        const t = makeToggle(block.name, `table-${++tableSeq}`, {
+        const toggle = makeToggle(block.name, `table-${++tableSeq}`, {
             button: "table__toggle",
             text: "table__toggle-text",
             icon: "table__toggle-icon",
@@ -975,9 +1003,9 @@ function buildTable(block) {
 
         wrapper
             .appendChild(el("h3", {class: "block__name table__name table__name--toggle"}))
-            .appendChild(t.btn);
+            .appendChild(toggle.btn);
 
-        panel = t.panel;
+        panel = toggle.panel;
         if (block.blurb) {
             panel.appendChild(
                 el("div", {class: "prose block__blurb table__blurb"}, `<p>${safeText(block.blurb)}</p>`)
@@ -1072,7 +1100,7 @@ function buildTable(block) {
 }
 
 /* ----------------------------------------------------------------------
-   5B. FAQ / ACCORDION
+   9. FAQ / ACCORDION
 
    buildFaq(block) returns a list of expand/collapse question rows.
    Shape: { name?, blurb?, items: [ { q, a }, ... ] }  (q + a required per item)
@@ -1104,16 +1132,16 @@ function buildFaq(block) {
 
         // Question via the shared toggle pair (plain text, keyboard-native);
         // answer: trusted inline HTML (matches text/table), hidden until opened.
-        const t = makeToggle(it.q, `faq-${seq}-${i}`, {
+        const toggle = makeToggle(it.q, `faq-${seq}-${i}`, {
             button: "faq__q",
             text: "faq__q-text",
             icon: "faq__icon",
             panel: "faq__a",
         });
-        t.panel.innerHTML = `<div class="prose">${safeText(it.a)}</div>`;
+        toggle.panel.innerHTML = `<div class="prose">${safeText(it.a)}</div>`;
 
-        item.appendChild(t.btn);
-        item.appendChild(t.panel);
+        item.appendChild(toggle.btn);
+        item.appendChild(toggle.panel);
         list.appendChild(item);
     });
 
@@ -1122,7 +1150,7 @@ function buildFaq(block) {
 }
 
 /* ----------------------------------------------------------------------
-   6. SLIDESHOW / CAROUSEL (reusable)
+   10. LIGHTBOX + SLIDESHOW / CAROUSEL
 
    buildCarousel(block) returns a self-contained carousel node for a slideshow
    block: { name?, blurb?, slides: [ {src, title, caption, text}, ... ] }
@@ -1142,18 +1170,19 @@ let lightboxApi = null;
 function getLightbox() {
     if (lightboxApi) return lightboxApi;
 
-    const overlay = el("div", {
-        class: "lightbox",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-label": t("lightboxLabel"),
-        hidden: true,
-    });
+    // A native modal <dialog>. showModal() puts it in the top layer, makes the
+    // rest of the page inert (Tab cannot wander into the page behind), closes
+    // on Escape / the back gesture, and returns focus to the opener on close.
+    // So there is deliberately NO role/aria-modal, no focus trap, no Escape
+    // key handler and no focus-restore code here - adding them back would
+    // fight the browser.
+    const overlay = el("dialog", {class: "lightbox", "aria-label": t("lightboxLabel")});
 
     const closeBtn = el("button", {
         type: "button",
         class: "lightbox__close",
         "aria-label": t("lightboxClose"),
+        autofocus: true,
     }, "&times;");
 
     const prevBtn = navButton("lightbox__nav lightbox__nav--prev", t("lightboxPrev"), "prev");
@@ -1169,9 +1198,8 @@ function getLightbox() {
     overlay.appendChild(cap);
     document.body.appendChild(overlay);
 
-    let lastFocused = null;
-    let isOpen = false;        // tracked independently of `hidden`
-    let hideTimer = null;      // pending fade-out → hide
+    const FADE_MS = 200;       // matches the .lightbox opacity transition
+    let closeTimer = null;     // pending fade-out → dialog.close()
     let slides = [];           // current carousel's slides
     let index = 0;
 
@@ -1194,40 +1222,52 @@ function getLightbox() {
         render();
     };
 
-    const close = () => {
-        isOpen = false;
+    // The ONE place a close is completed, whichever way it started: our
+    // fade-out timer, an instant close, or the browser closing the dialog
+    // itself (the `close` event below). Safe to run twice.
+    const finish = () => {
+        if (closeTimer) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
+        }
         overlay.classList.remove("is-open");
         document.body.classList.remove("lightbox-open");
-        if (hideTimer) clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => {
-            if (!isOpen) {
-                overlay.hidden = true;
-                img.removeAttribute("src");
-            }
-            hideTimer = null;
-        }, 200);
-        if (lastFocused && lastFocused.focus) lastFocused.focus();
+        if (overlay.open) overlay.close();
+        img.removeAttribute("src");
+    };
+
+    // Fade out, then close. `instant` skips the fade: used when the page under
+    // the overlay is about to change (tab switch, language switch), where the
+    // dialog must hand focus back to its opener NOW, while that opener is
+    // still visible.
+    const close = ({instant = false} = {}) => {
+        if (!overlay.open) return;
+        if (instant || reducedMotion()) {
+            finish();
+            return;
+        }
+        if (closeTimer) return; // already fading out
+        overlay.classList.remove("is-open");
+        closeTimer = setTimeout(finish, FADE_MS);
     };
 
     const open = (slideList, startIndex) => {
-        if (hideTimer) {
-            clearTimeout(hideTimer);
-            hideTimer = null;
+        // Re-opened during a fade-out: cancel the pending close and carry on.
+        if (closeTimer) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
         }
 
         slides = Array.isArray(slideList) ? slideList : [];
         index = Math.max(0, Math.min(startIndex || 0, slides.length - 1));
-        lastFocused = document.activeElement;
-        isOpen = true;
 
         render();
-        overlay.hidden = false;
+        if (!overlay.open) overlay.showModal();
         document.body.classList.add("lightbox-open");
         requestAnimationFrame(() => overlay.classList.add("is-open"));
-        closeBtn.focus();
     };
 
-    closeBtn.addEventListener("click", close);
+    closeBtn.addEventListener("click", () => close());
     prevBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         go(-1);
@@ -1237,15 +1277,25 @@ function getLightbox() {
         go(1);
     });
 
-    // Click on the backdrop (but not the image or any control) closes.
+    // Click on the backdrop (but not the image or any control) closes. The
+    // dialog fills the viewport, so "the backdrop" is the dialog element itself.
     overlay.addEventListener("click", (e) => {
         if (e.target === overlay) close();
     });
 
-    on(document, "keydown", (e) => {
-        if (!isOpen) return;
-        if (e.key === "Escape") close();
-        else if (e.key === "ArrowRight") go(1);
+    // Escape / back gesture arrive as `cancel`. Take them through our own
+    // close() so they fade like every other close; if the browser closes the
+    // dialog regardless, the `close` event still tidies up.
+    overlay.addEventListener("cancel", (e) => {
+        e.preventDefault();
+        close();
+    });
+    overlay.addEventListener("close", finish);
+
+    // Arrow keys step through the set. Focus is always inside the modal, so
+    // the listener lives on the dialog - no document-level handler to tear down.
+    overlay.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") go(1);
         else if (e.key === "ArrowLeft") go(-1);
     });
 
@@ -1253,17 +1303,17 @@ function getLightbox() {
     // otherwise — but its labels are localized at build time, so a locale swap
     // has to discard it and let the next open build a localized one.
     onTeardown(() => {
+        finish();
         overlay.remove();
-        document.body.classList.remove("lightbox-open");
         lightboxApi = null;
     });
 
     // Touch: flick sideways to step through the set, down to dismiss — the
     // same two moves the arrows and Escape provide. This is the gallery's
     // only navigation on a phone: its tiles open straight into here.
-    initSwipe(overlay, {onSwipe: go, onDismiss: close});
+    initSwipe(overlay, {onSwipe: go, onDismiss: () => close()});
 
-    lightboxApi = {open, close, isOpen: () => isOpen};
+    lightboxApi = {open, close, isOpen: () => overlay.open};
     return lightboxApi;
 }
 
@@ -1271,10 +1321,11 @@ function getLightbox() {
    The overlay is page-level, not owned by any panel, so a tab change beneath
    it (browser back/forward while an image is expanded) would otherwise leave
    it floating over the newly shown panel with page scroll still locked by
-   .lightbox-open. Called by show() in initTabs; the null check is what keeps
-   the lightbox lazy for visitors who never open one. */
+   .lightbox-open. Called by show() in initTabs and by switchLocale; the null
+   check is what keeps the lightbox lazy for visitors who never open one.
+   Instant (no fade), so focus returns to the opener before its panel hides. */
 function closeLightbox() {
-    if (lightboxApi && lightboxApi.isOpen()) lightboxApi.close();
+    if (lightboxApi && lightboxApi.isOpen()) lightboxApi.close({instant: true});
 }
 
 /* Normalize image entries ({src,title,caption,text}) into the {src,caption}
@@ -1318,19 +1369,12 @@ function buildCarousel(block) {
             class: "carousel__slide",
             role: "group",
             "aria-roledescription": multi ? "slide" : null,
-            "aria-label": multi ? `${i + 1} of ${list.length}` : null,
+            "aria-label": multi ? t("slideOf")(i + 1, list.length) : null,
             "aria-hidden": multi && i !== 0 ? "true" : null,
             id: `${uid}-slide-${i}`,
         });
 
         const altText = s.title || s.caption || `${t("slide")} ${i + 1}`;
-
-        if (multi) {
-            slide.appendChild(
-                el("span", {class: "carousel__counter", "aria-hidden": "true"},
-                    `${i + 1} / ${list.length}`)
-            );
-        }
 
         const trigger = el("button", {
             type: "button",
@@ -1451,7 +1495,7 @@ function buildCarousel(block) {
             type: "button",
             class: "carousel__dot",
             role: "tab",
-            "aria-label": `Go to slide ${i + 1}`,
+            "aria-label": t("goToSlide")(i + 1),
             "aria-selected": i === 0 ? "true" : "false",
             "aria-controls": `${uid}-slide-${i}`,
             tabindex: i === 0 ? "0" : "-1",
@@ -1479,7 +1523,7 @@ function buildCarousel(block) {
 }
 
 /* ----------------------------------------------------------------------
-   6B. GALLERY / PHOTO (image grid, shares the carousel's lightbox)
+   11. GALLERY / PHOTO (image grid, shares the carousel's lightbox)
 
    buildGallery(block) renders a responsive grid of image tiles. Same theme
    tokens and the SAME shared lightbox as the carousel (getLightbox), but every
@@ -1645,7 +1689,7 @@ function buildPhoto(block) {
 }
 
 /* ----------------------------------------------------------------------
-   6C. OPENING HOURS
+   12. OPENING HOURS
 
    Renders SITE.business.hours as a seven-row week (Monday…Sunday). Hours
    are single-source-of-truth: the block carries no hours data, only an
@@ -1700,6 +1744,10 @@ function buildHours(block) {
     wrapper.appendChild(dl);
     return wrapper;
 }
+
+/* ----------------------------------------------------------------------
+   13. REVIEW + VIDEO
+---------------------------------------------------------------------- */
 
 /* review — a "leave a review" call-to-action. Pure builder.
 
@@ -1794,24 +1842,9 @@ function buildReview(block) {
    Returns null when no id can be extracted from either source, so a
    misfilled block disappears instead of rendering a broken frame;
    launch-check flags it separately (VIDEO_URL_NOT_YOUTUBE /
-   VIDEO_PLAYLIST_INVALID). */
-const YOUTUBE_ID_RE =
-    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/;
-
-function youtubeVideoId(url = "") {
-    const m = YOUTUBE_ID_RE.exec(String(url));
-    return m ? m[1] : null;
-}
-
-/* Accepts a bare playlist id (PL…/UU…/UULF…, 13–42 id chars) or any URL
-   carrying a ?list= param, and returns the id, or null. */
-function youtubePlaylistId(value = "") {
-    const s = String(value).trim();
-    if (/^[A-Za-z0-9_-]{13,42}$/.test(s)) return s;
-    const m = /[?&]list=([A-Za-z0-9_-]{13,42})(?![A-Za-z0-9_-])/.exec(s);
-    return m ? m[1] : null;
-}
-
+   VIDEO_PLAYLIST_INVALID). The id parsing (youtubeVideoId /
+   youtubePlaylistId) lives in business-jsonld.mjs, shared with the validator
+   and the llms.txt generator. */
 function buildVideo(block) {
     const videoId = youtubeVideoId(block.url);
     const playlistId = videoId ? null : youtubePlaylistId(block.playlist);
@@ -1830,7 +1863,7 @@ function buildVideo(block) {
     frame.appendChild(
         el("iframe", {
             src,
-            title: block.title || block.name || "YouTube video",
+            title: block.title || block.name || t("video"),
             loading: "lazy",
             allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
             referrerpolicy: "strict-origin-when-cross-origin",
@@ -1842,7 +1875,7 @@ function buildVideo(block) {
 }
 
 /* ----------------------------------------------------------------------
-   7. BLOCK DISPATCH
+   14. BLOCK DISPATCH
 ---------------------------------------------------------------------- */
 
 const BLOCK_RENDERERS = {
@@ -1874,7 +1907,7 @@ function renderBlock(block) {
 }
 
 /* ----------------------------------------------------------------------
-   8. RENDER NAVIGATION
+   15. RENDER NAVIGATION
 
    Tabs are derived from the sections array (navItems()), so there is no
    separate nav list to keep in sync.
@@ -1979,7 +2012,7 @@ function renderNav() {
 }
 
 /* ----------------------------------------------------------------------
-   9. RENDER CONTENT SECTIONS
+   16. RENDER CONTENT SECTIONS (+ image / embed warm-up)
 
    Each section in the array is rendered as its optional title followed by its
    blocks, in order. Reorder a section by reordering its `blocks`; reorder the
@@ -2179,6 +2212,10 @@ function whenLoadedAndIdle(fn) {
     }
 }
 
+/* ----------------------------------------------------------------------
+   17. RENDER FOOTER (+ optional visitor count)
+---------------------------------------------------------------------- */
+
 function renderFooter() {
     const f = $("#siteFooter");
     if (!f) return;
@@ -2234,7 +2271,7 @@ async function renderVisitorCount(target, url, label) {
 }
 
 /* ----------------------------------------------------------------------
-   10. RENDER THEME
+   18. RENDER THEME
 
    Brand-defining design tokens live in SITE.theme so one engine can produce
    differently-branded sites from config alone. This writes them as :root
@@ -2244,8 +2281,8 @@ async function renderVisitorCount(target, url, label) {
 ---------------------------------------------------------------------- */
 
 function renderTheme() {
-    const t = SITE.theme;
-    if (!t || typeof t !== "object") return;
+    const theme = SITE.theme;
+    if (!theme || typeof theme !== "object") return;
 
     const root = document.documentElement.style;
     const setVar = (name, value) => {
@@ -2253,24 +2290,24 @@ function renderTheme() {
         root.setProperty(name, String(value));
     };
 
-    setVar("--accent", t.accent);
-    setVar("--root-scale", t.rootScale);
-    setVar("--content-width", t.contentWidth);
-    setVar("--radius", t.radius);
-    setVar("--font-sans", t.fontSans);
-    setVar("--font-serif", t.fontHeading);
-    setVar("--font-brand", t.fontBrand);
+    setVar("--accent", theme.accent);
+    setVar("--root-scale", theme.rootScale);
+    setVar("--content-width", theme.contentWidth);
+    setVar("--radius", theme.radius);
+    setVar("--font-sans", theme.fontSans);
+    setVar("--font-serif", theme.fontHeading);
+    setVar("--font-brand", theme.fontBrand);
 
     // Per-platform social brand tints, e.g. { instagram: "#e1306c" }.
-    if (t.socialColors && typeof t.socialColors === "object") {
-        Object.entries(t.socialColors).forEach(([key, color]) => {
+    if (theme.socialColors && typeof theme.socialColors === "object") {
+        Object.entries(theme.socialColors).forEach(([key, color]) => {
             setVar(`--brand-${key}`, color);
         });
     }
 }
 
 /* ----------------------------------------------------------------------
-   11. RENDER DOCUMENT HEAD
+   19. RENDER DOCUMENT HEAD
 
    Single source of truth for the page's metadata: everything here is driven
    by SITE.meta. The tags also exist statically in index.html so crawlers and
@@ -2355,7 +2392,7 @@ function renderHead() {
 }
 
 /* ----------------------------------------------------------------------
-   11B. STRUCTURED DATA (JSON-LD)
+   20. STRUCTURED DATA (JSON-LD)
 
    Emits a schema.org Store description of the business as a
    <script type="application/ld+json"> tag, built entirely from data that
@@ -2382,7 +2419,7 @@ function renderJsonLd() {
 }
 
 /* ----------------------------------------------------------------------
-   12. INPUT MODE
+   21. INPUT MODE
 ---------------------------------------------------------------------- */
 
 function initInputMode() {
@@ -2415,7 +2452,7 @@ function initInputMode() {
 }
 
 /* ----------------------------------------------------------------------
-   13. THEME (light / dark + localStorage)
+   22. THEME (light / dark + localStorage)
 ---------------------------------------------------------------------- */
 
 const THEME_KEY = "theme-preference";
@@ -2452,7 +2489,21 @@ function initTheme() {
 
     on(toggle, "click", () => {
         const next = document.body.getAttribute("data-theme") === "light" ? "dark" : "light";
+
+        // Flip the whole page in ONE frame. Components have their own
+        // color/border transitions (for hover feedback); left running, a theme
+        // change would ripple through them at different speeds. So transitions
+        // are switched off (html.theme-switching in styles.css) while the
+        // theme changes, the new styles are flushed with them still off, and
+        // only then are transitions allowed again.
+        const html = document.documentElement;
+        html.classList.add("theme-switching");
         applyTheme(next);
+        // Reading a layout property flushes the new styles NOW, with
+        // transitions still off - so every value is already at its end state
+        // and removing the class afterwards has nothing left to animate.
+        void html.offsetWidth;
+        html.classList.remove("theme-switching");
 
         try {
             localStorage.setItem(THEME_KEY, next);
@@ -2463,7 +2514,7 @@ function initTheme() {
 }
 
 /* ----------------------------------------------------------------------
-   13B. LANGUAGE (runtime switch + localStorage)
+   23. LANGUAGE (runtime switch + localStorage)
 ---------------------------------------------------------------------- */
 
 // Push the active locale's chrome strings onto the static shell elements that
@@ -2491,25 +2542,20 @@ function applyChromeStrings() {
     }
 }
 
-/* Swap the active language without reloading the page.
+/* Swap the active language without reloading the page: undo the previous
+   render (teardownSite) and re-render from the new locale's spec in place. The
+   background, the header chrome, the theme, the current tab and the scroll
+   position all stay put.
 
-   The obvious implementation — persist + location.reload() — is what this used
-   to do, and it flashes: the whole shell is torn down and rebuilt, so the
-   background restarts, the boot fade replays, and the reader loses their scroll
-   position, all to change some text. Instead: fade out only the parts that
-   change, undo the previous render (teardownSite), re-render from the new
-   locale's spec, fade back in. The background, the header chrome, the theme,
-   the current tab and the scroll position all stay put.
+   Instant - there is no fade. The other locales' specs are prefetched at idle
+   (initLang), so the swap normally never touches the network, and with the
+   spec in hand the only awaits between teardownSite() and the end of
+   renderSite() are on settled promises (microtasks), so the browser never
+   paints the torn-down state. DO NOT add a setTimeout / requestAnimationFrame
+   wait inside that path: an empty #main would become visible. On a cold cache
+   the old copy simply stays up until the spec lands. Background: docs/i18n.md.
 
    Sequential by design: a second pick mid-swap is ignored. */
-
-// Must match the .site-swapping opacity transition in styles.css — the fade-out
-// has to have finished before the DOM underneath it is rebuilt. It is also the
-// swap's entire self-imposed cost (paid twice, out and back), so it's kept just
-// long enough to read as a crossfade rather than a cut. Don't raise it without
-// a reason; the fetch it used to hide is prefetched now.
-const SWAP_FADE_MS = 90;
-
 let localeSwapping = false;
 
 async function switchLocale(target) {
@@ -2517,8 +2563,7 @@ async function switchLocale(target) {
     localeSwapping = true;
 
     // Persist first, so a later reload agrees with what the page is about to
-    // show. Unlike the reload version, storage failure is no longer fatal —
-    // the swap still happens, it just won't outlive the tab.
+    // show. A storage failure only means the choice won't outlive the tab.
     try {
         localStorage.setItem(LANG_KEY, target);
     } catch {
@@ -2540,44 +2585,47 @@ async function switchLocale(target) {
         && document.activeElement.closest
         && document.activeElement.closest("#langSwitcher"));
 
-    const html = document.documentElement;
     const scrollY = window.scrollY;
 
-    // Point the engine at the new locale and start its fetch NOW, so the load
-    // overlaps the fade-out instead of following it — otherwise a cold spec file
-    // leaves the content area sitting empty behind the fade. The old render is
-    // still live for these few frames; nothing it can do in that window matters
-    // beyond a chrome string resolving in the incoming language.
-    LOCALE = target;
-    const loading = loadContent();
+    try {
+        // Point the engine at the new locale and get its spec - normally a
+        // cache hit. The old render stays live while a cold one loads; the
+        // only side effect is a chrome string resolving in the incoming
+        // language a moment early.
+        LOCALE = target;
+        const loaded = await loadContent();
 
-    // Reduced motion means no crossfade — and with no fade to wait out, the
-    // swap is just "new text appears" as soon as the spec is in hand. Don't add
-    // the class either: a 0ms fade still costs a paint.
-    const fade = !reducedMotion();
+        teardownSite();
+        await renderSite(loaded);
 
-    if (fade) html.classList.add("site-swapping");
+        // initTabs' first show() lands the new render at the top; put the
+        // reader back where they were — this is a text swap, not navigation.
+        // Same frame as the render, so the jump is never painted.
+        scrollInstantTo(scrollY);
 
-    const [loaded] = await Promise.all([
-        loading,
-        fade ? new Promise((resolve) => setTimeout(resolve, SWAP_FADE_MS)) : null,
-    ]);
-
-    teardownSite();
-    await renderSite(loaded);
-
-    // initTabs' first show() lands the new render at the top; put the reader
-    // back where they were — this is a text swap, not navigation. Same frame as
-    // the render, so the jump is never painted.
-    scrollInstantTo(scrollY);
-
-    if (langHadFocus) {
-        const summary = $("#langSwitcher summary");
-        if (summary) summary.focus({preventScroll: true});
+        if (langHadFocus) {
+            const summary = $("#langSwitcher summary");
+            if (summary) summary.focus({preventScroll: true});
+        }
+    } catch (err) {
+        // A render that throws half-way would otherwise leave a torn-down,
+        // half-built page with dead controls. Fall back to the same calm error
+        // screen a broken spec gets - the page must never blank or stay stuck.
+        console.error("Language switch failed:", err);
+        try {
+            teardownSite();
+            renderErrorState({kind: "render", detail: `Language switch failed: ${err && err.message}`});
+            initInputMode();
+            initTheme();
+            initLang();
+        } catch (fallbackErr) {
+            console.error("Error screen failed too:", fallbackErr);
+        }
+    } finally {
+        // Always release the lock, or one failed swap would disable the
+        // switcher for the rest of the session.
+        localeSwapping = false;
     }
-
-    if (fade) html.classList.remove("site-swapping");
-    localeSwapping = false;
 }
 
 // Wire the header language switcher: a dropdown listing every locale, revealed
@@ -2624,18 +2672,20 @@ function initLang() {
         `<span class="lang-dd__code">${escapeHtml(LOCALE.toUpperCase())}</span>${caret}</summary>` +
         `<ul class="lang-dd__list">${optionsHtml}</ul>`;
 
-    // Prefetch on intent. Reaching for the switcher is a reliable signal that a
-    // spec is about to be needed, and the gap between "hovered/opened" and
-    // "clicked an option" is far longer than the fetch — so by click time the
-    // spec is usually cached and the swap never touches the network. Both
-    // events, because they cover different inputs: hover is the earliest signal
-    // on a pointer, `toggle` is the only one a touch or keyboard user fires.
-    // Cheap and idempotent — SPEC_CACHE collapses repeats into one request.
+    // Prefetch the other locales' specs so the swap never waits on the
+    // network - this is what makes it instant. Primarily at load + idle: the
+    // specs are a few KB, and a touch user can open the dropdown and tap an
+    // option faster than a round-trip, so waiting for intent alone would leave
+    // the first swap cold. Hover / `toggle` stay as a backstop for a click that
+    // beats the idle callback. Cheap and idempotent — SPEC_CACHE collapses
+    // repeats (including a re-render's call) into one request.
     const warmOthers = () => {
         Object.keys(LOCALE_SPECS).forEach((loc) => {
             if (loc !== LOCALE) warmLocale(loc);
         });
     };
+
+    whenLoadedAndIdle(warmOthers);
 
     const summary = details.querySelector("summary");
     if (summary) summary.addEventListener("pointerenter", warmOthers);
@@ -2672,7 +2722,7 @@ function initLang() {
 }
 
 /* ----------------------------------------------------------------------
-   14. MOBILE MENU
+   24. MOBILE MENU
 ---------------------------------------------------------------------- */
 
 function initMobileMenu() {
@@ -2750,12 +2800,7 @@ function initMobileMenu() {
         if (e.matches) close();
     };
 
-    if (mq.addEventListener) {
-        on(mq, "change", onDesktop);
-    } else {
-        mq.addListener(onDesktop);
-        onTeardown(() => mq.removeListener(onDesktop));
-    }
+    on(mq, "change", onDesktop);
 
     // close() hides the scrim on a 220ms delay (it fades first). If a render
     // lands inside that window — closing the drawer is the first thing a locale
@@ -2771,7 +2816,7 @@ function initMobileMenu() {
 }
 
 /* ----------------------------------------------------------------------
-   15. TABS
+   25. TABS
 
    Each section is a tab panel; only one is shown at a time. The URL hash
    drives the active tab, so direct links and browser navigation work. The
@@ -2865,7 +2910,7 @@ function initTabs() {
             rovingKeydown(
                 e,
                 desktopTabs.length,
-                () => desktopTabs.findIndex((t) => t === document.activeElement),
+                () => desktopTabs.findIndex((tab) => tab === document.activeElement),
                 (next) => {
                     const tab = desktopTabs[next];
                     tab.focus();
@@ -2896,7 +2941,7 @@ function initTabs() {
 }
 
 /* ----------------------------------------------------------------------
-   16. HEADER FIT
+   26. HEADER FIT
 ---------------------------------------------------------------------- */
 
 function initHeaderFit() {
@@ -2929,22 +2974,13 @@ function initHeaderFit() {
         if (gap < BUFFER) {
             header.classList.add("force-mobile-nav");
         } else {
+            // Back in desktop mode with the drawer still open: close it through
+            // the toggle, which runs initMobileMenu's real close() - the only
+            // path that also makes the drawer inert and hands focus back. Same
+            // move switchLocale makes.
             const mobileNav = $("#navMobile");
-            if (mobileNav && mobileNav.classList.contains("is-open")) {
-                const menuToggle = $("#menuToggle");
-                const scrim = $("#navScrim");
-                mobileNav.classList.remove("is-open");
-                mobileNav.setAttribute("aria-hidden", "true");
-                document.body.classList.remove("menu-open");
-                if (menuToggle) {
-                    menuToggle.setAttribute("aria-expanded", "false");
-                    menuToggle.setAttribute("aria-label", t("openMenu"));
-                }
-                if (scrim) {
-                    scrim.classList.remove("is-visible");
-                    scrim.hidden = true;
-                }
-            }
+            const menuToggle = $("#menuToggle");
+            if (mobileNav && menuToggle && mobileNav.classList.contains("is-open")) menuToggle.click();
         }
     };
 
@@ -2958,7 +2994,7 @@ function initHeaderFit() {
 }
 
 /* ----------------------------------------------------------------------
-   17. BACKGROUND
+   27. BACKGROUND
 ---------------------------------------------------------------------- */
 
 function initBackground() {
@@ -3042,21 +3078,9 @@ function initBackground() {
 }
 
 /* ----------------------------------------------------------------------
-   18. BOOT
+   28. CONTENT LOADING (spec fetch + session cache)
 ---------------------------------------------------------------------- */
 
-/* Fetch the content JSON. JSON is the single source of truth — there is no
-   inline fallback to merge onto, so this just loads + parses + returns it.
-
-   Returns { data, error }:
-     - data:  the parsed JSON on success, otherwise null.
-     - error: null on success, otherwise { kind, detail } describing why the
-              load failed. init() turns a null/empty result into the error
-              screen.
-
-   Failure shapes:
-     - "fetch" — couldn't load it at all (404 / network / file:// CORS).
-     - "parse" — loaded, but the body wasn't valid JSON. */
 /* Parsed specs, keyed by URL, for the life of the page.
 
    Worth it because the swap's one unavoidable cost is the network: the specs
@@ -3094,14 +3118,26 @@ function warmLocale(locale) {
     if (url) loadContent(url);
 }
 
-async function fetchSpec(DATA_URL) {
+/* Fetch + parse one spec file (the raw request behind loadContent). JSON is the single source of truth — there is no
+   inline fallback to merge onto, so this just loads + parses + returns it.
+
+   Returns { data, error }:
+     - data:  the parsed JSON on success, otherwise null.
+     - error: null on success, otherwise { kind, detail } describing why the
+              load failed. init() turns a null/empty result into the error
+              screen.
+
+   Failure shapes:
+     - "fetch" — couldn't load it at all (404 / network / file:// CORS).
+     - "parse" — loaded, but the body wasn't valid JSON. */
+async function fetchSpec(url) {
     let res;
     try {
-        res = await fetch(DATA_URL, {headers: {Accept: "application/json"}});
+        res = await fetch(url, {headers: {Accept: "application/json"}});
         if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`.trim());
     } catch (err) {
         console.error("Content fetch failed:", err);
-        return {data: null, error: {kind: "fetch", detail: `Could not load ${DATA_URL}: ${err.message}`}};
+        return {data: null, error: {kind: "fetch", detail: `Could not load ${url}: ${err.message}`}};
     }
 
     try {
@@ -3109,9 +3145,13 @@ async function fetchSpec(DATA_URL) {
         return {data, error: null};
     } catch (err) {
         console.error("Content parse failed:", err);
-        return {data: null, error: {kind: "parse", detail: `${DATA_URL} is not valid JSON: ${err.message}`}};
+        return {data: null, error: {kind: "parse", detail: `${url} is not valid JSON: ${err.message}`}};
     }
 }
+
+/* ----------------------------------------------------------------------
+   29. ERROR SCREEN
+---------------------------------------------------------------------- */
 
 /* The visible screen shown when there is nothing to render: the JSON failed
    to load/parse, or loaded but had no usable sections. Plain DOM, themed via
@@ -3180,6 +3220,10 @@ function renderErrorState(reason) {
  * https://github.com/m-remis/static-web-template
  */
 
+/* ----------------------------------------------------------------------
+   30. BOOT (renderSite, init)
+---------------------------------------------------------------------- */
+
 /* Render the whole site from the active locale's spec, and wire the UI to it.
    Called on boot by init() and again by switchLocale() for a language change,
    so it must be safe to run more than once: the render* functions each clear
@@ -3187,7 +3231,8 @@ function renderErrorState(reason) {
    through on() / onTeardown() (see the teardown registry).
 
    `loaded` is an already-resolved loadContent() result; switchLocale passes one
-   so its fetch can run during the fade rather than after it. */
+   so teardown and render run back to back, with no fetch (and so no painted
+   empty frame) between them. */
 async function renderSite(loaded) {
     const {data, error} = loaded || await loadContent();
     SITE = data || {};

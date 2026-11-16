@@ -10,6 +10,11 @@
    Keeping the builder here is what stops the two copies from drifting —
    don't duplicate this logic into either consumer.
 
+   It is also the home of the small PURE helpers more than one of
+   engine.js / generate-static.mjs / launch-check.js needs (URL checks,
+   YouTube id parsing). A rule that the page and the validator must agree
+   on is written once, here, and imported - never copied.
+
    Everything in this file must stay pure and DOM-free (no document/window),
    or the Node consumer breaks. The .mjs extension is required so Node treats
    it as an ES module without a package.json (which the no-build rule forbids);
@@ -26,6 +31,25 @@ export const absoluteUrl = (url, base) => {
     if (!url || isExternalUrl(url) || !base) return url;
     return `${String(base).replace(/\/+$/, "")}/${String(url).replace(/^\/+/, "")}`;
 };
+
+export const YOUTUBE_ID_RE =
+    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/;
+
+/* The 11-character video id from a YouTube link in any share form
+   (watch?v=, youtu.be/, shorts/, live/, embed/), or null. */
+export function youtubeVideoId(url = "") {
+    const m = YOUTUBE_ID_RE.exec(String(url));
+    return m ? m[1] : null;
+}
+
+/* Accepts a bare playlist id (PL…/UU…/UULF…, 13–42 id chars) or any URL
+   carrying a ?list= param, and returns the id, or null. */
+export function youtubePlaylistId(value = "") {
+    const s = String(value).trim();
+    if (/^[A-Za-z0-9_-]{13,42}$/.test(s)) return s;
+    const m = /[?&]list=([A-Za-z0-9_-]{13,42})(?![A-Za-z0-9_-])/.exec(s);
+    return m ? m[1] : null;
+}
 
 export const JSONLD_DAY_NAMES = {
     mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday",

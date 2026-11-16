@@ -20,12 +20,12 @@
         from the spec's sections instead of hand-maintained.
 
      4. sitemap.xml — one <url> for the canonical root, with <lastmod>
-        taken from the spec file's mtime (the spec IS the content, so its
-        last edit is the page's last modification).
+        taken from the spec's last edit (the spec IS the content, so its
+        last edit is the page's last modification) — see specLastModified().
 
    Usage:
-     node generate-static.mjs           # rewrite both artifacts
-     node generate-static.mjs --check   # exit 2 + list if either is stale
+     node generate-static.mjs           # rewrite whichever artifacts are stale
+     node generate-static.mjs --check   # exit 2 + list if any is stale
                                         # (launch-check runs this mode)
 
    Like launch-check.js this is a dev tool: Node built-ins only, never
@@ -36,14 +36,15 @@
    how-this-works note, weekday names) are in the DEFAULT locale (English):
    llms.txt is generated from the default site-spec.json, and the static
    SEO/crawler mirror is single-language by design — the runtime language
-   switch does not restamp it (see AGENTS.md → Internationalization). The
+   switch does not restamp it (see docs/i18n.md). The
    CONTENT all comes from the spec.
    ========================================================= */
 
+import {execFileSync} from "node:child_process";
 import {readFileSync, statSync, writeFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {buildBusinessJsonLd} from "./business-jsonld.mjs";
+import {buildBusinessJsonLd, youtubePlaylistId} from "./business-jsonld.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const CHECK = process.argv.includes("--check");
@@ -205,10 +206,9 @@ function buildLlmsTxt(spec) {
                     // links the playlist page — a bare id gets wrapped into the
                     // canonical playlist URL, a full URL passes through.
                     const label = stripHtml(block.title || block.name || "Video");
+                    const playlistId = block.playlist ? youtubePlaylistId(block.playlist) : null;
                     const target = block.url
-                        || (block.playlist && (/^[A-Za-z0-9_-]{13,42}$/.test(String(block.playlist).trim())
-                            ? `https://www.youtube.com/playlist?list=${String(block.playlist).trim()}`
-                            : block.playlist));
+                        || (playlistId ? `https://www.youtube.com/playlist?list=${playlistId}` : block.playlist);
                     if (target) lines.push(`- Video: [${label}](${target})`, "");
                     break;
                 }
@@ -297,11 +297,8 @@ function buildLcpPreload(html, spec) {
 /* ---- sitemap.xml -----------------------------------------------------------
 
    Single-page site → single <url>, but with a <lastmod> so crawlers can
-   schedule recrawls instead of guessing. The date is the spec file's mtime
-   (day granularity): the spec is the only content source, so its last write
-   IS the page's last modification. Tradeoff: a fresh git clone resets mtimes,
-   so --check may flag the sitemap stale there — rerun the generator once and
-   it settles; day granularity keeps that churn rare. */
+   schedule recrawls instead of guessing. The spec is the only content source,
+   so its last edit IS the page's last modification. */
 
 /* Format a Date as YYYY-MM-DD in LOCAL time. Deliberately not
    toISOString().slice(0, 10): that converts to UTC first, so an evening edit
@@ -314,10 +311,33 @@ function localDay(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/* The day the spec was last edited, as YYYY-MM-DD.
+
+   A file's mtime is NOT that: a fresh `git clone` stamps every file with the
+   clone time, so an mtime-based <lastmod> changed on every checkout and a
+   clean clone failed launch-check as stale. So: when the spec is committed and
+   unmodified, use the date of the last commit that touched it — the same on
+   every machine. While it has uncommitted edits (or outside a git repo, or
+   without git installed) fall back to the mtime, which is then a real edit
+   time. Any git failure lands in the fallback; this never throws. */
+function specLastModified() {
+    const git = (...args) => execFileSync("git", args, {cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"]}).trim();
+    try {
+        const dirty = git("status", "--porcelain", "--", "site-spec.json");
+        if (!dirty) {
+            const day = git("log", "-1", "--format=%cs", "--", "site-spec.json");
+            if (/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
+        }
+    } catch {
+        // not a git checkout, or git is not installed
+    }
+    return localDay(statSync(SPEC_PATH).mtime);
+}
+
 function buildSitemapXml(spec) {
     const domain = String((spec.meta || {}).domain || "").replace(/\/+$/, "");
     if (!domain) return null;
-    const lastmod = localDay(statSync(SPEC_PATH).mtime);
+    const lastmod = specLastModified();
     return [
         `<?xml version="1.0" encoding="UTF-8"?>`,
         `<!-- GENERATED from site-spec.json (node generate-static.mjs) — do not edit by hand. -->`,
@@ -369,6 +389,13 @@ const outputs = [
     ...(sitemapNext != null ? [{path: SITEMAP_PATH, name: "sitemap.xml", next: sitemapNext}] : []),
 ];
 
+/* --check compares everything byte for byte EXCEPT the sitemap's <lastmod>
+   date: a date that is merely older or newer than this machine would stamp
+   is not a content mismatch, and failing on it made the gate depend on where
+   and when the repo was checked out. A normal (writing) run still refreshes
+   it. */
+const comparable = (text) => (CHECK ? text.replace(/<lastmod>[^<]*<\/lastmod>/g, "<lastmod/>") : text);
+
 const stale = outputs.filter((o) => {
     let current = "";
     try {
@@ -376,7 +403,7 @@ const stale = outputs.filter((o) => {
     } catch {
         // missing file counts as stale
     }
-    return current !== o.next;
+    return comparable(current) !== comparable(o.next);
 });
 
 if (CHECK) {

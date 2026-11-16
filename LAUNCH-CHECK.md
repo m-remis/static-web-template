@@ -3,7 +3,7 @@
 Documentation for `launch-check.js` — the pre-launch validator for sites built
 on this engine.
 
-> Companion to `AGENTS.md` (how the engine works) and `CLIENT-CHECKLIST.md`
+> Companion to `AGENTS.md` + `docs/` (how the engine works) and `CLIENT-CHECKLIST.md`
 > (what to fill in per client). This file documents one thing: the preflight
 > script that tells you whether a site is safe to ship.
 
@@ -21,9 +21,13 @@ you run by hand (or in CI) before delivering a site.
 
 Design constraints, all intentional:
 
-- **Zero dependencies.** Node built-ins only (`fs`, `path`, `process`). No npm
-  install, no `package.json` needed.
+- **Zero dependencies.** Node built-ins only (`fs`, `path`, `url`,
+  `child_process`). No npm install, no `package.json` needed.
 - **CommonJS**, not ES modules — runs with plain `node`, no `"type": "module"`.
+  The one thing it loads besides built-ins is the project's own
+  `business-jsonld.mjs`, via a dynamic `import()`, for pure helpers the engine
+  uses too (e.g. the YouTube link parser) - so the validator and the page can't
+  disagree about what is valid.
 - **Offline and deterministic.** No network calls, no live-URL crawling. It
   inspects local files only, so it's fast (~tens of ms) and never flaky.
 - **Heuristic, not exhaustive.** It pattern-matches "does this look fake / left
@@ -39,6 +43,7 @@ From the project root:
 node launch-check.js                 # human-readable report
 node launch-check.js --json          # machine-readable JSON (for CI/tooling)
 node launch-check.js --strict        # treat warnings as blocking failures too
+node launch-check.js --template      # checking the unfilled template itself (see below)
 node launch-check.js --help          # usage
 ```
 
@@ -52,6 +57,15 @@ Other flags (all optional):
 --max-css-kb <n>        Warn when a CSS file exceeds n KB. Default: 250
 --max-js-kb <n>         Warn when a JS file exceeds n KB. Default: 250
 ```
+
+**`--template`** is for working on the template/engine repo itself, where the
+spec is deliberately unfilled. It keeps six expected findings from failing the
+run: `EMAIL_FAKE`, `PHONE_FAKE`, `OG_IMAGE_MISSING`, `DOMAIN_PLACEHOLDER`,
+`SITEMAP_PLACEHOLDER`, `ROBOTS_PLACEHOLDER`. They are still counted and listed
+in a note under the report (and as `templateSuppressed` in `--json`), and every
+other check runs unchanged, so `PASS` there means "nothing is broken beyond
+the placeholders a client will replace". **Never use it on a client site** -
+there each of those six is a real launch blocker.
 
 It must be run **from the repo root** (or pointed at a folder with `--root`) —
 it inspects files on disk relative to that root.
@@ -133,8 +147,8 @@ live in the structure (a phone in a `links` block, an IČO in a `table` row).
 ### Required files (presence)
 
 Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
-`site.webmanifest`, `robots.txt`, `sitemap.xml`, and a runtime script
-(`engine.js` or `script.js`).
+`site.webmanifest`, `robots.txt`, `sitemap.xml`, and the runtime script
+`engine.js`.
 
 ### `site-spec.json`
 
@@ -144,18 +158,22 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
   **blocks**, not sections.
 - **Block types** — each block's `type` must be one the engine knows
   (`hero, text, cards, links, map, slideshow, table, faq, gallery, photo, hours,
-  review`). An unknown type is flagged because the engine silently skips it. The
-  known list is `BLOCK_RULES` near the top of `launch-check.js` — keep it in sync
-  with `BLOCK_RENDERERS` in `engine.js` when you add a block type.
+  review, video`). An unknown type is flagged because the engine silently skips
+  it. The known list is the `BLOCK_RULES` map near the top of `launch-check.js`,
+  which maps each type to its check function (it is the dispatch too - there is
+  no separate `switch`); keep it in sync with `BLOCK_RENDERERS` in `engine.js`
+  when you add a block type.
 - **Block-type registry drift** (`BLOCK_TYPE_DRIFT`) — cross-checks the four
   places the type list is stated: `BLOCK_RENDERERS` in `engine.js`,
   `BLOCK_RULES` here, the `type` enum in `site-spec.schema.json`, and the
-  block-types table in `AGENTS.md`. Any mismatch is a hard failure, so adding
+  block-types table in `docs/spec-format.md`. Any mismatch is a hard failure, so adding
   or removing a type without updating all four is caught before it ships.
 - **Generated artifacts freshness** (`GENERATED_STALE`) — runs
   `generate-static.mjs --check`, which byte-compares `llms.txt`, `sitemap.xml`
   and the stamped tags in `index.html` (the static JSON-LD and the LCP-image
-  preload) against what the current spec would generate. A spec edit without a
+  preload) against what the current spec would generate. The one thing it
+  does not compare is the sitemap's `<lastmod>` date, so the result does not
+  depend on when or where the repo was checked out. A spec edit without a
   re-run (or a hand edit of an artifact) is a hard failure — run
   `node generate-static.mjs` to refresh them.
 - **Geo coordinates** (`GEO_INVALID`) — if `business.geo` is set, `lat`/`lng`
@@ -164,13 +182,16 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
 - **Table flags** (warnings) — `accentValue` and `offerCatalog` must be real
   booleans when present (`TABLE_ACCENT_VALUE_NOT_BOOL`,
   `TABLE_OFFER_CATALOG_NOT_BOOL`).
-- **Block required fields** — `table` needs `headings` + `rows`; `cards` and
-  `links` need `items`; `slideshow` needs `slides`; `gallery` needs `images`
+- **Block required fields** — `table` needs `headings` + `rows`; `cards` needs
+  `items`; `links` needs `use` refs or `items` (a row with no `label` is only
+  warned about when it also lacks a kind line, i.e. has neither `kind` nor
+  `icon`, or has no `handle`); `slideshow` needs `slides`; `gallery` needs `images`
   (and `columns`, if set, must be 2–4 — the only values the engine and CSS
   honor); `photo` needs `src`; `map` needs `url`
   or `embed`; `faq` needs `items` (each with `q` + `a`); `review` needs `items`
   (each with `label` + `url`); `hours` reads `business.hours` rather than its own
-  fields; etc. (a builder returns nothing on bad input, so these would vanish).
+  fields; `video` needs a recognizable YouTube `url` or `playlist`; etc. (a
+  builder returns nothing on bad input, so these would vanish).
 - **Placeholder text** — scans every string for filler markers (`lorem`,
   `bla bla`, `nejaky`, `tbd`, `placeholder`, …) and reports the JSON path.
 - **Contact data** — emails (fake/invalid patterns like `r@r.sk`), phones (too
@@ -178,9 +199,11 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
   when present.
 - **Content quality** (warnings) — very short hero lead; a pricing-looking
   section with no price-like content.
-- **Image alt / accessibility** (errors in the `accessibility` category) —
-  slideshow slides, gallery images, and photos with no `title`/`caption`/`text`
-  to derive alt text from.
+- **Image alt / accessibility** (`IMAGE_MISSING_TEXT`, `accessibility`
+  category) — an image with no `title`/`caption`/`text` to derive alt text
+  from. An error for a `photo` and for `gallery` images (nothing else carries
+  their meaning), a warning for `slideshow` slides. There is no `alt` field:
+  the engine never reads one.
 
 ### `index.html`
 
@@ -207,12 +230,23 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
 - **Soft fields** (warnings) — `short_name`, `theme_color`, `background_color`;
   `theme_color` drifting from `meta.themeColor`.
 
+### Brand name mirrors (`BRAND_MIRROR_STALE`, warning)
+
+The business name lives in `brand`, but is also typed as plain text where the
+engine never rewrites it: `site.webmanifest` `name` / `short_name`, the
+`og:site_name` fallback and the `<noscript>` heading in `index.html`, and the
+`<title>` plus per-language `docTitle` strings in `404.html`. Each is flagged
+when it neither contains the brand nor is contained in it (so a shortened
+`short_name` passes) - the usual cause is a value left over from the template
+or a previous client.
+
 ### `sitemap.xml`
 
 - Has `<loc>` entries; the `<loc>` matches `meta.domain` (error on mismatch);
   no placeholder domains (`example.com`, `github.io/…`).
 - Note: parsed by regex, not validated as well-formed XML. The file itself is
-  GENERATED by `generate-static.mjs` (`<lastmod>` = the spec file's mtime), so
+  GENERATED by `generate-static.mjs` (`<lastmod>` = the date of the last commit
+  that touched the spec, or the spec's mtime while it has uncommitted edits), so
   don't hand-edit it — the freshness check above would flag it.
 
 ### `robots.txt`
@@ -232,19 +266,19 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
   (`styles.css`, `404.css`) are scanned for `url(...)` references (fonts,
   backgrounds) — a missing one is a `CSS_ASSET_MISSING` error.
 - **Present-but-unused** (warning) — a file on disk nothing references
-  (spec, `index.html`, or a root-level stylesheet). The favicon family and
-  `animation/` are exempt (referenced by convention).
+  (spec, `index.html`, or a root-level stylesheet). The favicon family is
+  exempt (referenced by convention).
 - **Oversized images** (warning, `performance` category) — images larger than
   `--max-image-kb` (default 900 KB), and CSS/JS over `--max-css-kb` /
   `--max-js-kb` (default 250 KB), so heavy media gets compressed before ship.
 
 ### Locale specs (`site-spec.<lang>.json`)
 
-The runtime language switch loads one spec per locale (see `AGENTS.md` →
-"Internationalization"). The default run validates the alternate-locale files
-**structurally** against the default `site-spec.json` (the main content/asset/SEO
-checks run on the default spec only — that's the single-language SEO mirror by
-design):
+The runtime language switch loads one spec per locale (see `docs/i18n.md`).
+Each is a full copy of the spec, so everything untranslated is duplicated. The
+default run compares that duplicated data against the default `site-spec.json`
+and checks each locale's asset paths (the content/contact/SEO checks still run
+on the default spec only — that's the single-language SEO mirror by design):
 
 - **Invalid locale spec** (`LOCALE_SPEC_INVALID`, `spec`) — a
   `site-spec.<lang>.json` is not valid JSON.
@@ -253,6 +287,15 @@ design):
 - **Section drift** (`LOCALE_SECTION_DRIFT`, `content`) — a locale's section
   `id`s differ from the default's, so a translation is missing or renaming a
   section (the current tab is preserved across a switch by id).
+- **Data drift** (`LOCALE_DATA_DRIFT`, `content`, warning) — something that must
+  be identical in every locale differs from the default spec: `meta.domain`,
+  `meta.themeColor`, `meta.ogImage`, `brandImage`, `business.phone` / `email` /
+  `ico` / `dic` / `mapUrl` / `mapEmbed` / `geo`, the `socials` list (icon + url,
+  in order), `backgrounds`, or the block types inside a section (a block added
+  to one language only).
+- **Missing asset** (`LOCALE_ASSET_MISSING`, `assets`, error) — a locale spec
+  points at a file that isn't there. Files only a locale spec uses also count
+  as referenced for the unused-asset warning.
 
 To run the **full** content/contact/SEO pass on a specific locale, point the
 validator at it: `node launch-check.js --site-spec site-spec.sk.json`. (Expect
@@ -285,7 +328,7 @@ items — placeholder hero copy, template contact values, a not-yet-made
 
 - **It validates inputs, not the rendered result.** It can't tell you the site
   *looks* right — only that the spec and metadata aren't obviously broken. The
-  manual checks in `AGENTS.md` (open it, click every tab, test on a real phone)
+  manual checks in `docs/gotchas.md` (open it, click every tab, test on a real phone)
   still matter.
 - **Heuristics false-positive and false-negative.** A real phone number that
   looks odd may be flagged; a placeholder phrase nobody anticipated may pass.

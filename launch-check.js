@@ -7,6 +7,7 @@
 
        node launch-check.js
        node launch-check.js --strict
+       node launch-check.js --template   (in the template repo itself)
        node launch-check.js --json
        node launch-check.js --root ./dist
 
@@ -20,7 +21,8 @@
    Warnings -> printed under "Warnings", exit code 0 by default.
                Use --strict to treat warnings as launch blockers.
 
-   Zero npm dependencies. CommonJS. Node built-ins only.
+   Zero npm dependencies. CommonJS. Node built-ins only, plus the project's
+   own business-jsonld.mjs (pure shared helpers), loaded with import().
 
    Built from m-remis/static-web-template
    ========================================================= */
@@ -29,6 +31,13 @@
 
 const fs = require("fs");
 const path = require("path");
+const { pathToFileURL } = require("url");
+
+/* Pure helpers shared with the engine (business-jsonld.mjs is an ES module,
+   so it is loaded with a dynamic import() at the top of main(), before any
+   check runs). Used so a rule the page and the validator must agree on - e.g.
+   which strings count as a YouTube link - exists exactly once. */
+let SHARED = null;
 
 /* ---- CLI ---------------------------------------------------------------- */
 
@@ -55,6 +64,7 @@ const OPTS = {
     json: hasFlag("--json"),
     help: hasFlag("--help") || hasFlag("-h"),
     strict: hasFlag("--strict"),
+    template: hasFlag("--template"),
     noUnusedAssets: hasFlag("--no-unused-assets"),
     root: readOption("--root", process.cwd()),
     siteSpec: readOption("--site-spec", "site-spec.json"),
@@ -75,6 +85,9 @@ Usage:
 Options:
   --json                  Emit a machine-readable JSON report.
   --strict                Treat warnings as blocking failures.
+  --template              Checking the unfilled template itself: do not fail on
+                          the placeholder domain, demo contact data and missing
+                          og:image it ships with. Never use on a client site.
   --root <dir>            Check another folder instead of cwd.
   --site-spec <file>      Use another JSON spec file. Default: site-spec.json
   --no-unused-assets      Do not warn about unused files under assets/.
@@ -99,50 +112,26 @@ function normalizeCliPath(p) {
 
 /* ---- Static contract ----------------------------------------------------- */
 
-/* The block types the engine/template is expected to support.
-   Keep this close to BLOCK_RENDERERS in engine.js. A missing entry here causes
-   false launch failures; a missing renderer in engine.js still means the page
-   cannot render the block. */
+/* The block types the validator accepts, each mapped to the check that knows
+   its required fields. This is the ONE list in this file: a type missing here
+   is reported as UNKNOWN_BLOCK_TYPE, and checkBlockTypeRegistryConsistency()
+   fails when it disagrees with BLOCK_RENDERERS in engine.js, the schema enum
+   or the docs table. Every check is called as (block, where, ctx), where ctx
+   is { section, sectionIds }; the functions are declared further down. */
 const BLOCK_RULES = Object.freeze({
-    hero: {
-        description: "landing hero block",
-    },
-    text: {
-        description: "rich/free text block",
-    },
-    cards: {
-        description: "card grid block",
-    },
-    links: {
-        description: "contact/social links block",
-    },
-    map: {
-        description: "map embed/link block",
-    },
-    slideshow: {
-        description: "carousel/slideshow block",
-    },
-    table: {
-        description: "responsive table block",
-    },
-    faq: {
-        description: "FAQ / accordion block",
-    },
-    photo: {
-        description: "single image/photo block",
-    },
-    gallery: {
-        description: "image gallery/lightbox block",
-    },
-    hours: {
-        description: "opening hours block (reads business.hours)",
-    },
-    review: {
-        description: "leave-a-review CTA block (outbound links, no backend)",
-    },
-    video: {
-        description: "YouTube video embed block (privacy-enhanced player)",
-    },
+    hero: (block, where) => checkHeroBlock(block, where),
+    text: (block, where) => checkTextBlock(block, where),
+    cards: (block, where, ctx) => checkCardsBlock(block, where, ctx.sectionIds),
+    links: (block, where, ctx) => checkLinksBlock(block, where, ctx.sectionIds),
+    map: (block, where) => checkMapBlock(block, where),
+    slideshow: (block, where, ctx) => checkSlideshowBlock(block, where, ctx.section),
+    table: (block, where) => checkTableBlock(block, where),
+    faq: (block, where) => checkFaqBlock(block, where),
+    photo: (block, where, ctx) => checkPhotoBlock(block, where, ctx.section),
+    gallery: (block, where, ctx) => checkGalleryBlock(block, where, ctx.section),
+    hours: (block, where) => checkHoursBlock(block, where),
+    review: (block, where) => checkReviewBlock(block, where),
+    video: (block, where) => checkVideoBlock(block, where),
 });
 
 const KNOWN_BLOCK_TYPES = Object.keys(BLOCK_RULES);
@@ -197,10 +186,25 @@ const warnings = []; // [{ category, code, message }]
 let specBusiness = {};
 let specSocials = [];
 
+/* The errors the template ships with ON PURPOSE: it has no real domain, no
+   real contact data and no share image until a client fills them in. With
+   --template these are counted but do not fail the run, so the validator is a
+   usable gate while working on the engine itself. A client site is checked
+   WITHOUT the flag, where every one of them blocks the launch. */
+const TEMPLATE_EXPECTED_CODES = new Set([
+    "EMAIL_FAKE", "PHONE_FAKE", "OG_IMAGE_MISSING",
+    "DOMAIN_PLACEHOLDER", "SITEMAP_PLACEHOLDER", "ROBOTS_PLACEHOLDER",
+]);
+const templateSuppressed = []; // [{ category, code, message }]
+
 function fail(category, code, message) {
     if (message == null) {
         message = code;
         code = "ERROR";
+    }
+    if (OPTS.template && TEMPLATE_EXPECTED_CODES.has(code)) {
+        templateSuppressed.push({ category, code, message });
+        return;
     }
     errors.push({ category, code, message });
 }
@@ -382,8 +386,8 @@ function checkRequiredFiles() {
         if (!fileExists(f)) fail("missing", "MISSING_FILE", `Missing required file: ${f}`);
     }
 
-    if (!fileExists("script.js") && !fileExists("engine.js")) {
-        fail("missing", "MISSING_RUNTIME", "Missing runtime script: expected script.js or engine.js");
+    if (!fileExists("engine.js")) {
+        fail("missing", "MISSING_RUNTIME", "Missing runtime script: engine.js");
     }
 }
 
@@ -541,52 +545,10 @@ function checkMetaShape(meta) {
 }
 
 /* Per-type required fields. Mirrors what each builder needs to render anything;
-   a builder returning null or empty should be caught here before shipping. */
+   a builder returning null or empty should be caught here before shipping.
+   Unknown types never get here - checkSpecShape reports them first. */
 function checkBlockRequiredFields(block, where, section, sectionIds) {
-    switch (block.type) {
-        case "hero":
-            checkHeroBlock(block, where);
-            break;
-        case "text":
-            checkTextBlock(block, where);
-            break;
-        case "cards":
-            checkCardsBlock(block, where, sectionIds);
-            break;
-        case "links":
-            checkLinksBlock(block, where, sectionIds);
-            break;
-        case "table":
-            checkTableBlock(block, where);
-            break;
-        case "faq":
-            checkFaqBlock(block, where);
-            break;
-        case "slideshow":
-            checkSlideshowBlock(block, where, section);
-            break;
-        case "map":
-            checkMapBlock(block, where);
-            break;
-        case "photo":
-            checkPhotoBlock(block, where, section);
-            break;
-        case "gallery":
-            checkGalleryBlock(block, where, section);
-            break;
-        case "hours":
-            checkHoursBlock(block, where);
-            break;
-        case "review":
-            checkReviewBlock(block, where);
-            break;
-        case "video":
-            checkVideoBlock(block, where);
-            break;
-        default:
-            // Unknown types are handled before dispatch.
-            break;
-    }
+    BLOCK_RULES[block.type](block, where, { section, sectionIds });
 }
 
 function checkHeroBlock(block, where) {
@@ -696,8 +658,14 @@ function checkLinksBlock(block, where, sectionIds) {
             return;
         }
 
+        // The engine prints a kind line ("Instagram", "Phone") above the value,
+        // from an explicit `kind` or from the icon key. A row that has one of
+        // those plus a handle reads fine without a label - don't nag about it.
+        const hasKindLine = hasNonEmptyString(item.kind) || hasNonEmptyString(item.icon);
         if (!hasNonEmptyString(item.label)) {
-            warn("links", "LINK_MISSING_LABEL", `${iw} has no label`);
+            if (!(hasKindLine && hasNonEmptyString(item.handle))) {
+                warn("links", "LINK_MISSING_LABEL", `${iw} has no label`);
+            }
         } else {
             checkDuplicateValue(seenLabels, item.label, "links", "DUPLICATE_LINK_LABEL", `${iw} duplicates link label`);
         }
@@ -861,15 +829,6 @@ function checkMapBlock(block, where) {
     }
 }
 
-/* Mirror YOUTUBE_ID_RE / youtubePlaylistId in engine.js (buildVideo): the
-   source shapes the engine can extract an id from. Kept as copies because
-   this file is plain Node and engine.js is a browser ES module — same
-   precedent as isExternalUrl. */
-const YOUTUBE_VIDEO_URL_RE =
-    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/;
-const YOUTUBE_PLAYLIST_BARE_RE = /^[A-Za-z0-9_-]{13,42}$/;
-const YOUTUBE_PLAYLIST_PARAM_RE = /[?&]list=([A-Za-z0-9_-]{13,42})(?![A-Za-z0-9_-])/;
-
 function checkVideoBlock(block, where) {
     const hasUrl = hasNonEmptyString(block.url);
     const hasPlaylist = hasNonEmptyString(block.playlist);
@@ -889,13 +848,14 @@ function checkVideoBlock(block, where) {
 
         // The engine renders nothing when it can't extract a video id — that's
         // a silent blank spot on the page, so it's a fail, not a warn.
-        if (!YOUTUBE_VIDEO_URL_RE.test(String(block.url))) {
+        // Same parser the engine's buildVideo() uses (SHARED), so "the engine
+        // renders nothing" here is a fact, not a second regex's opinion.
+        if (!SHARED.youtubeVideoId(block.url)) {
             fail("spec", "VIDEO_URL_NOT_YOUTUBE",
                 `${where} (video) url is not a recognizable YouTube video URL (watch?v=, youtu.be/, shorts/, live/, embed/) — the engine renders nothing`);
         }
     } else {
-        const s = String(block.playlist).trim();
-        if (!YOUTUBE_PLAYLIST_BARE_RE.test(s) && !YOUTUBE_PLAYLIST_PARAM_RE.test(s)) {
+        if (!SHARED.youtubePlaylistId(block.playlist)) {
             fail("spec", "VIDEO_PLAYLIST_INVALID",
                 `${where} (video) playlist is neither a playlist id (PL…/UU…/UULF…) nor a URL with ?list= — the engine renders nothing`);
         }
@@ -942,7 +902,9 @@ function checkGalleryBlock(block, where, section) {
         const iw = `${where}.images[${i}]`;
         checkImageLike(img, iw, {
             kind: "Gallery image",
-            requireText: false,
+            // A tile shows no caption, so title/caption/text is the ONLY
+            // source of its alt text and its lightbox caption: required.
+            requireText: true,
             sectionId: section && section.id,
         });
         if (img && img.src) {
@@ -994,8 +956,9 @@ function checkImageLike(node, where, options = {}) {
         warn("assets", "IMAGE_EXTENSION_UNKNOWN", `${where}.src does not look like a supported image file: ${node.src}`);
     }
 
-    const hasDescription = hasNonEmptyString(node.alt) ||
-        hasNonEmptyString(node.title) ||
+    // The engine derives alt text from title/caption/text. There is no `alt`
+    // field: the builders never read one and the schema rejects it.
+    const hasDescription = hasNonEmptyString(node.title) ||
         hasNonEmptyString(node.caption) ||
         hasNonEmptyString(node.text);
 
@@ -1005,7 +968,7 @@ function checkImageLike(node, where, options = {}) {
         severity(
             "accessibility",
             "IMAGE_MISSING_TEXT",
-            `${where} (${kind})${sectionSuffix} has src but no alt/title/caption/text`
+            `${where} (${kind})${sectionSuffix} has src but no title/caption/text to derive alt text from`
         );
     }
 }
@@ -1489,6 +1452,52 @@ function checkMetadataConsistency(spec, html, manifestRes) {
     }
 }
 
+/* ---- Brand name mirrors ---------------------------------------------------
+
+   The business name is typed in the spec (`brand`) but also sits, as plain
+   text, in four places the engine never rewrites: the manifest, the og:site_name
+   fallback and the <noscript> heading in index.html, and the 404 page's titles.
+   They all still "work" with a stale name, so a forgotten one ships silently -
+   hence warnings here. A mirror passes when it contains the brand or the brand
+   contains it (so a shortened manifest short_name is fine). */
+function checkBrandMirrors(spec, html, manifestRes) {
+    const brand = hasNonEmptyString(spec && spec.brand) ? spec.brand.trim() : "";
+    if (!brand) return; // MISSING_BRAND is already reported by checkSpecShape
+
+    const norm = (v) => normalizeDiacritics(String(v || "")).replace(/\s+/g, " ").trim().toLowerCase();
+    const b = norm(brand);
+    const related = (value) => {
+        const v = norm(value);
+        return v !== "" && (v.includes(b) || b.includes(v));
+    };
+    const check = (label, value) => {
+        if (value == null || String(value).trim() === "") return; // absence has its own checks
+        if (!related(value)) {
+            warn("content", "BRAND_MIRROR_STALE", `${label} ("${truncate(value)}") does not match brand ("${truncate(brand)}") - leftover from the template or a previous client?`);
+        }
+    };
+
+    if (manifestRes && manifestRes.ok && manifestRes.data) {
+        check("site.webmanifest name", manifestRes.data.name);
+        check("site.webmanifest short_name", manifestRes.data.short_name);
+    }
+
+    if (html) {
+        check("index.html og:site_name", htmlMeta(html, "og:site_name"));
+        const noscriptHeading = html.match(/<noscript>[\s\S]*?<h1[^>]*>([^<]*)<\/h1>/i);
+        if (noscriptHeading) check("index.html <noscript> heading", noscriptHeading[1]);
+    }
+
+    const notFound = readText("404.html");
+    if (notFound) {
+        check("404.html <title>", htmlTitle(notFound));
+        // The inline script re-titles the page per language (docTitle: "...").
+        for (const m of notFound.matchAll(/docTitle:\s*"([^"]*)"/g)) {
+            check("404.html localized title", m[1]);
+        }
+    }
+}
+
 /* ---- Manifest / assets --------------------------------------------------- */
 
 function checkManifest(manifestRes, referenced) {
@@ -1539,7 +1548,7 @@ function checkManifest(manifestRes, referenced) {
     });
 }
 
-function checkAssets(spec, html, referenced) {
+function checkAssets(spec, html, referenced, localeSpecs = []) {
     const specRefs = collectAssetRefs(spec);
     for (const { ref, path: jp } of specRefs) {
         const norm = normalizeRef(ref);
@@ -1547,6 +1556,18 @@ function checkAssets(spec, html, referenced) {
             fail("assets", "ASSET_MISSING", `Referenced asset does not exist: ${ref} (at ${jp})`);
         }
         referenced.add(norm);
+    }
+
+    // Alternate-locale specs are loaded by the same page, so their asset paths
+    // must exist too, and a file only they use is not "unused".
+    for (const { file, data } of localeSpecs) {
+        for (const { ref, path: jp } of collectAssetRefs(data)) {
+            const norm = normalizeRef(ref);
+            if (!fileExists(norm)) {
+                fail("assets", "LOCALE_ASSET_MISSING", `${file} references an asset that does not exist: ${ref} (at ${jp})`);
+            }
+            referenced.add(norm);
+        }
     }
 
     if (html) {
@@ -1574,7 +1595,7 @@ function checkAssets(spec, html, referenced) {
     // CSS url(...) references (fonts, backgrounds). Same contract as the HTML
     // scan: a local ref must exist on disk, and counts as "used" for the
     // unused-asset sweep. Covers every root-level stylesheet (styles.css,
-    // 404.css) — CSS under animation/ is skipped like its assets are.
+    // 404.css).
     for (const cssFile of walkRootFilesByExt(CSS_EXT)) {
         const css = readText(cssFile);
         if (css == null) continue;
@@ -1614,14 +1635,12 @@ function shouldIgnoreUnusedAsset(rel) {
     return file === "favicon.ico" ||
         file.startsWith("favicon-") ||
         file === "apple-touch-icon.png" ||
-        rel.includes("/.") ||
-        rel.startsWith("animation/");
+        rel.includes("/.");
 }
 
 function checkAssetSizes() {
     const candidates = [
         ...walkDir("assets"),
-        ...walkDir("animation"),
         ...walkRootFilesByExt([...CSS_EXT, ...JS_EXT]),
     ];
 
@@ -1666,34 +1685,6 @@ function formatKb(bytes) {
 
 /* ---- Accessibility/content quality -------------------------------------- */
 
-function checkImageAlt(spec) {
-    for (const sec of spec.sections || []) {
-        for (const block of sec.blocks || []) {
-            if (!block || typeof block !== "object") continue;
-
-            if (block.type === "slideshow" && Array.isArray(block.slides)) {
-                block.slides.forEach((s, i) => {
-                    if (s && s.src && !s.title && !s.caption && !s.text && !s.alt) {
-                        warn("accessibility", "SLIDE_MISSING_TEXT", `Slide ${i} in section "${sec.id}" has no title/caption/alt — image may get weak fallback alt text`);
-                    }
-                });
-            }
-
-            if (block.type === "photo" && block.src && !block.title && !block.caption && !block.text && !block.alt) {
-                fail("accessibility", "PHOTO_MISSING_TEXT", `Photo in section "${sec.id}" has no title/caption/alt/text`);
-            }
-
-            if (block.type === "gallery" && Array.isArray(block.images)) {
-                block.images.forEach((img, i) => {
-                    if (img && img.src && !img.title && !img.caption && !img.text && !img.alt) {
-                        fail("accessibility", "GALLERY_IMAGE_MISSING_TEXT", `Gallery image ${i} in section "${sec.id}" has no title/caption/alt/text`);
-                    }
-                });
-            }
-        }
-    }
-}
-
 function checkContentQuality(spec) {
     const hasContactishSection = (spec.sections || []).some((sec) => {
         const blob = `${sec.id || ""} ${sec.label || ""} ${sec.title || ""}`.toLowerCase();
@@ -1737,7 +1728,7 @@ function checkContentQuality(spec) {
      1. engine.js   BLOCK_RENDERERS         — what actually renders
      2. launch-check.js KNOWN_BLOCK_TYPES   — what this validator accepts
      3. site-spec.schema.json  block type enum — what the editor allows
-     4. AGENTS.md   block-types table       — what agents are told exists
+     4. docs/spec-format.md block-types table — what agents are told exists
    When they disagree, a block can render but fail validation (or validate but
    not render, or be flagged invalid in the IDE, or an agent is documented into
    the wrong world). This check parses the other three sources and fails loudly
@@ -1782,19 +1773,21 @@ function checkBlockTypeRegistryConsistency() {
         }
     }
 
-    // --- AGENTS.md block-types table rows ---
+    // --- docs/spec-format.md block-types table rows ---
     // Rows look like: | `hero` | `buildHero` | … | — the backticked type in
     // column 1 next to a backticked build* function in column 2.
-    const agentsSrc = readText("AGENTS.md");
-    if (agentsSrc) {
+    // Skipped when the file is absent (e.g. --root pointed at a deploy
+    // folder that ships without the docs).
+    const docsSrc = readText("docs/spec-format.md");
+    if (docsSrc) {
         const docTypes = new Set(
-            [...agentsSrc.matchAll(/^\|\s*`(\w+)`\s*\|\s*`build\w+`/gm)].map((x) => x[1])
+            [...docsSrc.matchAll(/^\|\s*`(\w+)`\s*\|\s*`build\w+`/gm)].map((x) => x[1])
         );
         if (docTypes.size === 0) {
-            warn("spec", "AGENTS_BLOCK_TABLE_UNREADABLE",
-                "Could not locate the block-types table in AGENTS.md to cross-check block types");
+            warn("spec", "DOCS_BLOCK_TABLE_UNREADABLE",
+                "Could not locate the block-types table in docs/spec-format.md to cross-check block types");
         } else {
-            diffBlockSets("AGENTS.md block-types table", docTypes, known);
+            diffBlockSets("docs/spec-format.md block-types table", docTypes, known);
         }
     }
 }
@@ -1878,17 +1871,25 @@ function hasBlockingProblems() {
     return errors.length > 0 || (OPTS.strict && warnings.length > 0);
 }
 
+function printTemplateNote() {
+    if (!templateSuppressed.length) return;
+    const codes = [...new Set(templateSuppressed.map((f) => f.code))].join(", ");
+    console.log(`\n--template: ${templateSuppressed.length} expected placeholder finding(s) not counted (${codes}).\nThese all block a real client site - run without --template there.`);
+}
+
 function printReport() {
     const strictSuffix = OPTS.strict ? " (--strict)" : "";
 
     if (errors.length === 0 && warnings.length === 0) {
         console.log(`PASS${strictSuffix}\n\nNo launch problems found.`);
+        printTemplateNote();
         return;
     }
 
     console.log(hasBlockingProblems() ? `FAIL${strictSuffix}` : `PASS${strictSuffix}`);
     printGroup("Errors", errors);
     printGroup("Warnings", warnings);
+    printTemplateNote();
 }
 
 function printReportJson() {
@@ -1897,6 +1898,7 @@ function printReportJson() {
         status: blocking ? "fail" : "pass",
         ok: !blocking,
         strict: OPTS.strict,
+        template: OPTS.template,
         root: ROOT,
         siteSpec: SPEC_FILE,
         checkedAt: new Date().toISOString(),
@@ -1904,9 +1906,11 @@ function printReportJson() {
             errors: errors.length,
             warnings: warnings.length,
             blocking: errors.length + (OPTS.strict ? warnings.length : 0),
+            templateSuppressed: templateSuppressed.length,
         },
         errors,
         warnings,
+        templateSuppressed,
     };
     console.log(JSON.stringify(report, null, 2));
 }
@@ -1920,34 +1924,71 @@ function report() {
 
 /* ---- i18n locale specs ----------------------------------------------------
    The runtime language switch loads one spec per locale: the default
-   site-spec.json plus alternates named site-spec.<lang>.json. This validates
-   the alternates structurally against the default (they're only loaded at
-   runtime, so the main asset/SEO checks — which run on the default spec — never
-   see them). For a full content pass on a locale, run this validator with
+   site-spec.json plus alternates named site-spec.<lang>.json. Each alternate
+   is a FULL copy of the spec, so everything that is not translated (domain,
+   contact data, socials, images, the block structure) is duplicated - and can
+   silently drift, because the main content/SEO checks only run on the spec
+   named by --site-spec. checkLocales compares those untranslated parts against
+   the default; checkAssets (via readLocaleSpecs) verifies each locale's asset
+   paths. For a full content pass on one locale, run this validator with
    --site-spec site-spec.<lang>.json. */
-function checkLocales(defaultSpec) {
+
+/* Every alternate-locale spec on disk, parsed: [{ file, data }]. Invalid JSON
+   is reported here once and the file is left out. site-spec.json (default) and
+   site-spec.schema.json do not match the two-letter language pattern. */
+function readLocaleSpecs() {
     let entries;
     try {
         entries = fs.readdirSync(ROOT);
     } catch {
-        return;
+        return [];
     }
 
-    // site-spec.json (default) and site-spec.schema.json are excluded by the
-    // two-letter language pattern; only alternates like site-spec.sk.json match.
-    const localeFiles = entries.filter((f) => /^site-spec\.[a-z]{2}\.json$/.test(f)).sort();
-    if (!localeFiles.length) return;
-
-    const baseIds = (defaultSpec.sections || []).map((s) => s && s.id).filter(Boolean).join(",");
-
-    localeFiles.forEach((file) => {
+    const out = [];
+    entries.filter((f) => /^site-spec\.[a-z]{2}\.json$/.test(f)).sort().forEach((file) => {
+        if (file === SPEC_FILE) return; // it is the spec under test - nothing to compare
         const res = readJson(file);
         if (!res.ok) {
             fail("spec", "LOCALE_SPEC_INVALID", `${file} is not valid JSON: ${res.error}`);
             return;
         }
-        const data = res.data;
+        if (res.data && typeof res.data === "object") out.push({ file, data: res.data });
+    });
+    return out;
+}
 
+/* The parts of a spec that must be IDENTICAL in every locale, as a list of
+   [label, value] pairs. Translated text is deliberately absent. */
+function localeInvariants(spec) {
+    const meta = spec.meta || {};
+    const biz = (spec.business && typeof spec.business === "object") ? spec.business : {};
+    const socials = Array.isArray(spec.socials) ? spec.socials : [];
+    const sections = Array.isArray(spec.sections) ? spec.sections : [];
+    return [
+        ["meta.domain", meta.domain],
+        ["meta.themeColor", meta.themeColor],
+        ["meta.ogImage", meta.ogImage],
+        ["brandImage", spec.brandImage],
+        ["business.phone", biz.phone],
+        ["business.email", biz.email],
+        ["business.ico", biz.ico],
+        ["business.dic", biz.dic],
+        ["business.mapUrl", biz.mapUrl],
+        ["business.mapEmbed", biz.mapEmbed],
+        ["business.geo", biz.geo],
+        ["socials (icon + url, in order)", socials.map((x) => x && [x.icon, x.url])],
+        ["backgrounds", spec.backgrounds],
+        ["block types per section", sections.map((sec) => sec && [sec.id, (sec.blocks || []).map((bl) => bl && bl.type)])],
+    ];
+}
+
+function checkLocales(defaultSpec, localeSpecs) {
+    if (!localeSpecs.length) return;
+
+    const baseIds = (defaultSpec.sections || []).map((s) => s && s.id).filter(Boolean).join(",");
+    const base = localeInvariants(defaultSpec);
+
+    localeSpecs.forEach(({ file, data }) => {
         if (!data.meta || !hasNonEmptyString(data.meta.lang)) {
             warn("spec", "LOCALE_LANG_MISSING", `${file}: missing meta.lang (needed for <html lang> and the switcher)`);
         }
@@ -1956,11 +1997,24 @@ function checkLocales(defaultSpec) {
         if (ids !== baseIds) {
             warn("content", "LOCALE_SECTION_DRIFT",
                 `${file} section ids [${ids}] differ from ${SPEC_FILE} [${baseIds}] — a translation may be missing or renaming a section`);
+            return; // the block-structure comparison below would only repeat this
         }
+
+        const theirs = localeInvariants(data);
+        base.forEach(([label, value], i) => {
+            const a = JSON.stringify(value === undefined ? null : value);
+            const b = JSON.stringify(theirs[i][1] === undefined ? null : theirs[i][1]);
+            if (a !== b) {
+                warn("content", "LOCALE_DATA_DRIFT",
+                    `${file}: ${label} differs from ${SPEC_FILE} (${truncate(b, 60)} vs ${truncate(a, 60)}) — untranslated data must be the same in every locale spec`);
+            }
+        });
     });
 }
 
-function main() {
+async function main() {
+    SHARED = await import(pathToFileURL(path.join(__dirname, "business-jsonld.mjs")).href);
+
     checkRequiredFiles();
 
     const specRes = readJson(SPEC_FILE);
@@ -1978,6 +2032,8 @@ function main() {
     const html = readText("index.html");
     const manifestRes = readJson("site.webmanifest");
 
+    const localeSpecs = readLocaleSpecs();
+
     const referenced = new Set();
     [
         "assets/favicon.ico",
@@ -1989,7 +2045,6 @@ function main() {
         "sitemap.xml",
         "styles.css",
         "engine.js",
-        "script.js",
     ].forEach((f) => referenced.add(f));
 
     checkSpecShape(spec);
@@ -2000,16 +2055,19 @@ function main() {
     checkSeo(html, spec);
     checkDomainConsistency(spec, html);
     checkMetadataConsistency(spec, html, manifestRes);
+    checkBrandMirrors(spec, html, manifestRes);
     checkManifest(manifestRes, referenced);
-    checkAssets(spec, html, referenced);
-    checkImageAlt(spec);
+    checkAssets(spec, html, referenced, localeSpecs);
     checkContentQuality(spec);
-    checkLocales(spec);
+    checkLocales(spec, localeSpecs);
 
     report();
     process.exit(hasBlockingProblems() ? 1 : 0);
 }
 
-main();
+main().catch((err) => {
+    console.error("launch-check crashed:", err);
+    process.exit(1);
+});
 
 /* Built from m-remis/static-web-template */

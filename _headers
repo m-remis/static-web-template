@@ -11,6 +11,10 @@
 # Browser may cache briefly but revalidates, so a push shows up fast.
 /site-spec.json
   Cache-Control: public, max-age=0, must-revalidate
+# One entry per alternate-locale spec (site-spec.<lang>.json) - add a line
+# here when you add a language, or its content edits lag behind the default's.
+/site-spec.sk.json
+  Cache-Control: public, max-age=0, must-revalidate
 /llms.txt
   Cache-Control: public, max-age=300, must-revalidate
 /sitemap.xml
@@ -38,7 +42,7 @@
   Cache-Control: public, max-age=2592000, immutable
 
 # Icons / manifest art and any loose photos under /assets/.
-# Three extensions because the slides mix .jpg and .jpeg (see site-spec.json).
+# All three extensions, so a client's .jpeg or .png drops in without a rule change.
 /assets/*.png
   Cache-Control: public, max-age=2592000, immutable
 /assets/*.jpg

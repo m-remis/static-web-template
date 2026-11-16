@@ -113,6 +113,20 @@
     --carousel-chip-text: #f4f5f8;
 }
 
+/* Browser-drawn UI (the root scrollbar that scrollbar-gutter keeps permanently
+   visible, form controls, the canvas before the stylesheet paints) follows
+   `color-scheme` on the ROOT element, not our tokens. data-theme sits on
+   <body>, so the root is reached with :has(). Dark is the default theme, hence
+   the bare rule; index.html / 404.html repeat it in a <meta name="color-scheme">
+   so the very first paint is right too. */
+html {
+    color-scheme: dark;
+}
+
+html:has(body[data-theme="light"]) {
+    color-scheme: light;
+}
+
 /* Dark (default) — only tokens that DIFFER from light live here. Shared,
    theme-independent tokens (brand/on-image/dot/chip/panel-blur) are in :root. */
 [data-theme="dark"] {
@@ -144,9 +158,9 @@
     --header-bg: rgba(14, 15, 19, 0.82);
 
     /* — Monochrome icon/logo inversion —
-       Card icons and the optional header logo are black PNGs on transparent
-      .  Black art is invisible on the dark
-       theme, so dark inverts it to white; light leaves it untouched. */
+       Card icons and the optional header logo are black PNGs on transparent.
+       Black art is invisible on the dark theme, so dark inverts it to white;
+       light leaves it untouched. */
     --mono-icon-filter: invert(1);
 }
 
@@ -247,34 +261,20 @@ html.site-ready body {
     transition: opacity 100ms ease;
 }
 
-/* Language swap (switchLocale): only the regions whose text actually changes
-   fade out and back in — the page copy and the desktop tabs. The background, the
-   brand, the header controls, the theme and the scroll position all stay put, so
-   switching language reads as a soft crossfade of the copy rather than the
-   full-page blink a reload gives.
-   Deliberately NOT applied to #navMobile: the drawer owns its own transform
-   transition for opening/closing, and it is closed before a swap anyway.
-   The duration must match SWAP_FADE_MS in engine.js — the fade-out has to have
-   finished before the DOM underneath it is rebuilt.
+/* Language swap (switchLocale) has NO CSS on purpose: the copy is replaced in
+   place within a single frame, with no fade. Don't add a transition on #main or
+   the nav for it - a fade-out is dead time the new text has to wait behind. */
 
-   #siteFooter is deliberately NOT in either rule. It's one short line pinned
-   under the content, so fading it doesn't read as a crossfade — it reads as the
-   footer blinking out of the page and back. Its text is simply replaced in
-   place, under the cover of the fade happening above it.
-
-   NOTE for sites that give `.section` a visible surface (a card: background,
-   border, blur): fading `#main` fades that surface too, so the page background
-   flashes through where the card was. Those builds should fade the card's
-   CHILDREN instead — `#main > .section > *` — which is what m-remis.github.io
-   does. The plain template has no card, so `#main` is correct here. */
-#main,
-#navDesktop {
-    transition: opacity 90ms ease;
-}
-
-html.site-swapping #main,
-html.site-swapping #navDesktop {
-    opacity: 0;
+/* Theme switch (the toggle in initTheme): every element changes color in the
+   same frame. Components carry their own color/border/background transitions
+   for hover and press feedback, and with those running a theme flip would
+   ripple across the page at different speeds. The engine sets this class on
+   <html> for the one frame in which data-theme changes, then removes it. */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
 }
 
 /* Fallback for older browsers that do not support scrollbar-gutter.
@@ -373,6 +373,35 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     border-color: var(--accent);
 }
 
+/* ---- Frosted panels ----------------------------------------------------
+   Every translucent surface blurs what is behind it by --panel-blur. Declared
+   ONCE here, with the -webkit- prefix Safari before 18 still needs - add a new
+   frosted surface to this list instead of repeating the pair in its own rule.
+   Rules that must opt out set `backdrop-filter: none` themselves (see the
+   collapsible table and the mobile table stack). */
+.site-header,
+.theme-toggle,
+.menu-toggle,
+.lang-dd__current,
+.lang-dd__list,
+.nav-mobile,
+.nav-mobile__close,
+.card,
+.link-list a,
+.table-scroll,
+.table-block--collapsible,
+.table-cards__item,
+.faq__item,
+.map-card,
+.carousel,
+.carousel__caption,
+.gallery__item,
+.hours__list,
+.review__cta {
+    -webkit-backdrop-filter: blur(var(--panel-blur));
+    backdrop-filter: blur(var(--panel-blur));
+}
+
 /* ---- Background ------------------------------------------------------- */
 .bg,
 .bg-overlay {
@@ -435,7 +464,10 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     top: -3rem;
     transform: translateX(-50%);
     background: var(--accent);
-    color: #fff;
+    /* The page background is the one token guaranteed to contrast with the
+       accent in both themes (dark text on the light dark-theme accent, white
+       on the dark light-theme accent). */
+    color: var(--bg-base);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-sm);
     z-index: 100;
@@ -456,8 +488,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     gap: 1rem;
     padding: 0.9rem var(--gutter);
     background: var(--header-bg);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     border-bottom: 1px solid var(--border);
 }
 
@@ -551,7 +581,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     height: 2.5rem;
     border: 1px solid var(--border);
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
     color: var(--text);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -587,8 +616,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     padding: 0 0.7rem;
     border: 1px solid var(--border);
     background-color: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     color: var(--text);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -630,8 +657,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background-color: var(--bg-panel-solid);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.55);
 }
 
@@ -830,8 +855,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     gap: 0.25rem;
     /* Frosted, like the header — translucent panel + blur instead of solid. */
     background: var(--header-bg);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     border-left: 1px solid var(--border);
     transform: translateX(105%);
     transition: transform var(--transition);
@@ -852,8 +875,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     color: var(--text);
     font-size: 1.4rem;
     line-height: 1;
@@ -928,17 +949,19 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     width: 100%;
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: clamp(2rem, 6vw, 3rem) var(--gutter) 3rem;
+    /* Bottom: the same gap that separates two blocks, so the last block sits
+       one block-gap above the footer line. */
+    padding: clamp(2rem, 6vw, 3rem) var(--gutter) var(--block-gap);
     outline: none;
     flex: 1 0 auto;
 }
 
+/* Sections are tab panels: exactly one is visible at a time, so they carry no
+   outer margin of their own. (A bottom margin here stacked on top of .content's
+   padding and left a large empty band above the footer - and :last-child could
+   not cancel it, because the visible panel is rarely the last one in the DOM.) */
 .section {
-    margin-bottom: clamp(3rem, 8vw, 5rem);
-}
-
-.section:last-child {
-    margin-bottom: 0;
+    margin: 0;
 }
 
 /* Tab panels: hidden ones are removed; active one fades in gently */
@@ -1109,7 +1132,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 .card {
     padding: 1.35rem 1.4rem;
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
     border: 2px solid var(--border);
     border-radius: var(--radius);
     /* transform uses a short ease-OUT (fast start, gentle settle) so the 3px
@@ -1265,7 +1287,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
     color: var(--text);
     transition: border-color var(--transition), transform var(--transition);
 }
@@ -1414,19 +1435,18 @@ article.card .card__meta {
    squashing columns or forcing the whole page wider.
 
    On mobile (<= 640px) the table is restructured into stacked row-cards — see
-   the stacking block inside the responsive section near the bottom. The base
+   "Table on mobile" right below the .table-cards rules. The base
    rules here are the DESKTOP table; do not put display:block / card styling
    here or it leaks onto desktop. */
 
 /* Scroll container: holds the panel frame and clips the corners. On desktop a
    very wide table can scroll sideways here; on mobile this is neutralized and
-   the rows stack instead (see responsive section). */
+   the rows stack instead (see "Table on mobile" below). */
 .table-scroll {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow-x: auto;
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
 }
 
 /* Collapsible table (opt-in via `collapsible: true` in the spec): styled like
@@ -1439,8 +1459,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     overflow: hidden;
 }
 
@@ -1523,15 +1541,6 @@ article.card .card__meta {
     font-weight: 600;
 }
 
-/* Gentle row highlight on hover, matching the link-list/card feel. */
-.data-table tbody tr {
-    transition: background var(--transition);
-}
-
-.data-table tbody tr:hover {
-    /* background: var(--menu-hover-bg); */
-}
-
 /* ---- Wide-table mobile accordion (.table-cards) ----------------------- */
 /* The mobile mirror of a 3+ column table, built by buildTable alongside the
    <table>. Hidden by default; the mobile @media swaps the two. Each item is a
@@ -1545,8 +1554,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     overflow: hidden;
 }
 
@@ -1598,6 +1605,125 @@ article.card .card__meta {
     font-weight: 600;
 }
 
+/* ---- Table on mobile (<= 640px) ---------------------------------------- */
+/* Kept right after the desktop table + .table-cards rules it overrides (it
+   must come AFTER them in the file to win at equal specificity). */
+@media (max-width: 640px) {
+    /* Long-text tables (e.g. Podmienky servisu) are unreadable as a
+       side-scrolling 2-column grid on a narrow screen. Instead of scrolling
+       horizontally, turn each row into a self-contained card with cells
+       stacked vertically. Works off source order, no JS change needed.
+
+       This is the ONLY place the card/stacking treatment lives — the base
+       .data-table rules above stay a normal desktop table. */
+    /* Neutralize the scroll frame: the cards carry their own borders now. */
+    .table-scroll {
+        overflow-x: visible;
+        border: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        min-width: 0;
+    }
+
+    /* Collapse the table structure to blocks so rows/cells stack. min-width:0
+       lets them shrink below their intrinsic content width — this is what stops
+       a long sentence (e.g. the skladovanie row) from forcing a sideways scroll. */
+    .data-table,
+    .data-table thead,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Visually hide the header row — each stacked row is self-explanatory in
+       source order (e.g. condition then detail, or task/description/price). Kept in
+       the DOM for screen readers. */
+    .data-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /* Stacked rows fuse into ONE continuous panel, like .hours__list: the
+       tbody carries the frame (border/radius/background), rows carry only a
+       divider — so there are no doubled borders and no gaps between rows. */
+    .data-table tbody {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-panel);
+        backdrop-filter: blur(var(--panel-blur));
+        -webkit-backdrop-filter: blur(var(--panel-blur));
+        overflow: hidden;
+    }
+
+    .data-table tbody tr {
+        padding: 0.5rem 1.25rem;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Stacked cards keep the original left-aligned, wrapping value cell —
+       the desktop right-align/nowrap treatment is a column concept and the
+       columns don't exist here. */
+    .data-table td.data-table__value {
+        text-align: left;
+        white-space: normal;
+    }
+
+    /* Inside a collapsible table the outer block already carries the frame —
+       strip the stacked-card tbody's own frame so it doesn't double up. */
+    .table-block--collapsible .data-table tbody {
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .data-table tbody tr:first-child {
+        border-top: 0;
+    }
+
+    /* Cells stack inside the row; a divider sits between them, none after
+       the last. The cell divider is a FADED version of the row divider
+       (derived from --border like --accent-soft is from --accent), so row
+       boundaries read stronger than cell boundaries inside the fused panel.
+       overflow-wrap/word-break guarantee even an unbroken string can't push
+       the row wider than the screen. */
+    .data-table tbody td {
+        padding: 0.55rem 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .data-table tbody tr td:last-child {
+        border-bottom: none;
+    }
+
+    /* ---- Wide tables become a row accordion on mobile ------------------ */
+    /* A 3+ column table can't stack readably (see .table-cards below), so on a
+       narrow screen swap the <table> out for its accordion mirror. Both are
+       built by buildTable; hiding one with display:none also drops it from the
+       a11y tree, so only the visible representation is ever announced. */
+    .data-table--multicol {
+        display: none;
+    }
+
+    .table-cards {
+        display: grid;
+        gap: 0.5rem;
+    }
+}
+
 /* ---- FAQ / accordion -------------------------------------------------- */
 /* Rendered by buildFaq() in engine.js from a `faq` block: optional name +
    blurb, then `items` of { q, a }. Each row is a native <button> (the
@@ -1614,8 +1740,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     overflow: hidden;
 }
 
@@ -1752,7 +1876,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
     padding: 1.35rem 1.4rem;
 }
 
@@ -1774,11 +1897,6 @@ article.card .card__meta {
 /* The Open-in-Maps button row is shared by both map modes. */
 .map-open-row {
     margin: 0.75rem 0 0;
-}
-
-/* In embed mode the row sits just under the framed map. */
-.map-embed + .map-open-row {
-    margin-top: 0.75rem;
 }
 
 .map-open-row a {
@@ -1834,8 +1952,8 @@ article.card .card__meta {
 /* ---- Carousel / slideshow --------------------------------------------- */
 /* Reusable image slideshow rendered by buildCarousel() in engine.js. Used by
    a `slideshow` block. One slide = a plain framed image (.carousel--single, no
-   controls); two or more = manual carousel with prev/next buttons, dots, and an
-   "n / total" chip. Colors come from the theme tokens above so it re-themes and
+   controls); two or more = manual carousel with prev/next buttons and dots.
+   Colors come from the theme tokens above so it re-themes and
    matches cards/map automatically. */
 
 .carousel {
@@ -1844,7 +1962,6 @@ article.card .card__meta {
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-panel);
-    backdrop-filter: blur(var(--panel-blur));
 
     /* One canonical IMAGE shape. The chin (caption) is no longer a hardcoded
        height: slides are grid-stacked in the viewport below, so the frame is
@@ -1865,7 +1982,7 @@ article.card .card__meta {
     overflow: hidden;
 
     /* Horizontal belongs to initSwipe, vertical stays the browser's page
-       scroll. Load-bearing — see the swipe gotcha in AGENTS.md: drop this and
+       scroll. Load-bearing — see the swipe gotcha in docs/gotchas.md: drop this and
        the browser can claim the whole gesture, so the swipe never fires. */
     touch-action: pan-y;
 }
@@ -1941,12 +2058,6 @@ article.card .card__meta {
     visibility: hidden;
 }
 
-/* Number counter hidden: dots are the indicator. Keeping both is visual noise
-   and increases the chance of overlapping real image content. */
-.carousel__counter {
-    display: none;
-}
-
 /* Caption / chin.
    Uses normal site theme tokens, not hardcoded photo-overlay colors.
 
@@ -1970,9 +2081,6 @@ article.card .card__meta {
     background: var(--bg-panel);
     color: var(--text);
     border-top: 1px solid var(--border);
-
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
 }
 
 .carousel__title {
@@ -2101,7 +2209,6 @@ article.card .card__meta {
 @media (max-width: 640px) {
     .carousel {
         --carousel-ratio: 4 / 3;
-        /* --carousel-caption-height removed — the chin is content-sized now */
     }
 
     .carousel__nav {
@@ -2150,8 +2257,6 @@ article.card .card__meta {
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     cursor: zoom-in;
     transition: transform var(--transition), border-color var(--transition);
 }
@@ -2257,8 +2362,6 @@ article.card .card__meta {
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
 }
 
 .hours__row {
@@ -2318,8 +2421,6 @@ article.card .card__meta {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-panel);
-    -webkit-backdrop-filter: blur(var(--panel-blur));
-    backdrop-filter: blur(var(--panel-blur));
     color: var(--text);
     text-decoration: none;
     transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
@@ -2486,133 +2587,6 @@ span.footer__count {
     .link-list a {
         padding: 1rem 1.1rem;
     }
-
-    /* ---- Stack data tables on mobile ---------------------------------- */
-    /* Long-text tables (e.g. Podmienky servisu) are unreadable as a
-       side-scrolling 2-column grid on a narrow screen. Instead of scrolling
-       horizontally, turn each row into a self-contained card with cells
-       stacked vertically. Works off source order, no JS change needed.
-
-       This is the ONLY place the card/stacking treatment lives — the base
-       .data-table rules above stay a normal desktop table. */
-    /* Neutralize the scroll frame: the cards carry their own borders now. */
-    .table-scroll {
-        overflow-x: visible;
-        border: none;
-        background: transparent;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        min-width: 0;
-    }
-
-    /* Collapse the table structure to blocks so rows/cells stack. min-width:0
-       lets them shrink below their intrinsic content width — this is what stops
-       a long sentence (e.g. the skladovanie row) from forcing a sideways scroll. */
-    .data-table,
-    .data-table thead,
-    .data-table tbody,
-    .data-table tr,
-    .data-table td {
-        display: block;
-        width: 100%;
-        min-width: 0;
-    }
-
-    /* Visually hide the header row — each stacked row is self-explanatory in
-       source order (e.g. condition then detail, or task/description/price). Kept in
-       the DOM for screen readers. */
-    .data-table thead {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        clip-path: inset(50%);
-        white-space: nowrap;
-    }
-
-    /* Stacked rows fuse into ONE continuous panel, like .hours__list: the
-       tbody carries the frame (border/radius/background), rows carry only a
-       divider — so there are no doubled borders and no gaps between rows. */
-    .data-table tbody {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: var(--bg-panel);
-        backdrop-filter: blur(var(--panel-blur));
-        -webkit-backdrop-filter: blur(var(--panel-blur));
-        overflow: hidden;
-    }
-
-    .data-table tbody tr {
-        padding: 0.5rem 1.25rem;
-        border-top: 1px solid var(--border);
-    }
-
-    /* Stacked cards keep the original left-aligned, wrapping value cell —
-       the desktop right-align/nowrap treatment is a column concept and the
-       columns don't exist here. */
-    .data-table td.data-table__value {
-        text-align: left;
-        white-space: normal;
-    }
-
-    /* Inside a collapsible table the outer block already carries the frame —
-       strip the stacked-card tbody's own frame so it doesn't double up. */
-    .table-block--collapsible .data-table tbody {
-        border: none;
-        border-radius: 0;
-        background: transparent;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-    }
-
-    .data-table tbody tr:first-child {
-        border-top: 0;
-    }
-
-    /* Cells stack inside the row; a divider sits between them, none after
-       the last. The cell divider is a FADED version of the row divider
-       (derived from --border like --accent-soft is from --accent), so row
-       boundaries read stronger than cell boundaries inside the fused panel.
-       overflow-wrap/word-break guarantee even an unbroken string can't push
-       the row wider than the screen. */
-    .data-table tbody td {
-        padding: 0.55rem 0;
-        border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-
-    .data-table tbody tr td:last-child {
-        border-bottom: none;
-    }
-
-    /* Price/value cell: drop the right-align + nowrap so it reads as a normal
-       value inside the stacked row. Keeps the accent color + weight. */
-    .data-table td.data-table__value {
-        text-align: left;
-        white-space: normal;
-    }
-
-    /* No sticky hover-fill on the stacked cards. */
-    .data-table tbody tr:hover {
-        background: var(--bg-panel);
-    }
-
-    /* ---- Wide tables become a row accordion on mobile ------------------ */
-    /* A 3+ column table can't stack readably (see .table-cards below), so on a
-       narrow screen swap the <table> out for its accordion mirror. Both are
-       built by buildTable; hiding one with display:none also drops it from the
-       a11y tree, so only the visible representation is ever announced. */
-    .data-table--multicol {
-        display: none;
-    }
-
-    .table-cards {
-        display: grid;
-        gap: 0.5rem;
-    }
 }
 
 /* Mobile drawer is fixed/overlayed.
@@ -2629,12 +2603,25 @@ body.menu-open {
 /* ---- Lightbox (expanded image view) ----------------------------------- */
 /* A single shared overlay (created once in JS) reused by every carousel.
    Shows the full image letterboxed (object-fit: contain) so each image keeps
-   its own aspect ratio inside one uniform frame — nothing is cropped. */
+   its own aspect ratio inside one uniform frame — nothing is cropped.
+
+   It is a native modal <dialog> (getLightbox calls showModal()), so it lives in
+   the top layer - no z-index - and the browser makes the page behind it inert.
+   The first rule resets the dialog defaults (centered, size-capped, bordered,
+   padded box) to a full-viewport sheet; the veil is the dialog's own
+   background, so ::backdrop is switched off rather than styled. */
 .lightbox {
     position: fixed;
     inset: 0;
-    z-index: 200;
-    display: flex;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    overflow: hidden;
+    /* Wheel / trackpad scrolling over the overlay must not chain to the page. */
+    overscroll-behavior: contain;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -2651,6 +2638,18 @@ body.menu-open {
        down = close). Page scroll behind is already locked by .lightbox-open,
        so the only thing given up here is pinch-zoom on the expanded image. */
     touch-action: none;
+}
+
+/* `display` only while open: set unconditionally it would override the closed
+   dialog's display:none and leave an invisible sheet over the page. */
+.lightbox[open] {
+    display: flex;
+}
+
+.lightbox::backdrop {
+    background: transparent;
+    overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 .lightbox.is-open {
@@ -2765,7 +2764,10 @@ body.menu-open {
     }
 }
 
-/* Lock page scroll behind the open lightbox. */
+/* Lock page scroll behind the open lightbox. overscroll-behavior on the dialog
+   covers browsers that honor it on a non-scrolling box; this covers the rest.
+   No layout shift from the scrollbar disappearing: html reserves its gutter
+   (scrollbar-gutter: stable). */
 body.lightbox-open {
     overflow: hidden;
 }

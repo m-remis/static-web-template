@@ -37,7 +37,14 @@ what the site says, edit `site-spec.json` — not the HTML or the JS.
 ├── LICENSE
 │
 ├── README.md               # this file
-├── AGENTS.md               # architecture / how the engine works — read before changing behavior
+├── AGENTS.md               # agent router: hard rules + which doc to read for which task
+├── docs/                   # the agent docs AGENTS.md routes to
+│   ├── workflows.md        # what each kind of change obligates (A-G)
+│   ├── spec-format.md      # site-spec.json shape + every block type
+│   ├── engine-internals.md # key functions, teardown registry, header fit, background
+│   ├── theming.md          # theme tokens
+│   ├── i18n.md             # the runtime language switch
+│   └── gotchas.md          # load-bearing behaviors + how to verify by hand
 ├── CLIENT-CHECKLIST.md     # per-client setup checklist (incl. §1d: adding a language)
 ├── LAUNCH-CHECK.md         # what launch-check.js checks, and how to run it
 ├── _block-template.md      # copyable skeleton for adding a new block type
@@ -45,7 +52,7 @@ what the site says, edit `site-spec.json` — not the HTML or the JS.
 │
 └── assets/
     ├── favicon.ico
-    ├── background/          # cycled at random per visit — list the paths in site-spec.json → "backgrounds"
+    ├── background/          # crossfaded in list order on a timer — list the paths in site-spec.json → "backgrounds"
     │   ├── background.jpg
     │   ├── background_2.jpg
     │   └── background_3.jpg
@@ -107,8 +114,10 @@ node launch-check.js
 
 - **`CLIENT-CHECKLIST.md`** — what to fill in for a new client site, file by
   file (content, metadata, assets, deploy).
-- **`AGENTS.md`** — how the engine works (the block system, theming, the tricky
-  bits). Read this before changing behavior or adding a block type.
+- **`AGENTS.md`** — the agent router: hard rules, the file map, and which
+  `docs/` file to read for which task. Start here before changing behavior or
+  adding a block type; the detail (block system, theming, the tricky bits)
+  lives in `docs/`.
 - **`LAUNCH-CHECK.md`** — the `launch-check.js` preflight validator: what it
   checks and how to run it.
 - **`site-spec.schema.json`** — JSON Schema for `site-spec.json`; gives live

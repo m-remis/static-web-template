@@ -1,6 +1,6 @@
 {
-  "name": "Company",
-  "short_name": "Company",
+  "name": "Static Web Template",
+  "short_name": "Static Web Template",
   "description": "A small, fast, static site rendered from a single JSON spec.",
   "start_url": "./",
   "scope": "./",

@@ -11,6 +11,10 @@
     <meta name="description" content="A small, fast static site engine: one site-spec.json renders the whole page — no framework, no build step, no dependencies."/>
     <meta name="author" content="Static Web Template"/>
     <meta name="theme-color" content="#0e0f13"/>
+    <!-- Lets the browser paint its own UI (canvas, scrollbar) dark from the
+         first frame, before styles.css loads. Dark first = the default theme;
+         styles.css sets the real color-scheme per theme. -->
+    <meta name="color-scheme" content="dark light"/>
 
     <!-- Open Graph / social -->
     <meta property="og:type" content="website"/>
@@ -131,7 +135,7 @@
          explains the situation and points at the plain-text mirror. -->
     <noscript>
         <div class="block">
-            <h1>Company</h1>
+            <h1>Static Web Template</h1>
             <p>This website requires JavaScript for rendering the content.</p>
             <p><a href="llms.txt">Text version of the site</a></p>
         </div>
