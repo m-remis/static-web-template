@@ -338,6 +338,16 @@
           "text": "Farby žijú ako CSS custom properties v <strong>styles.css</strong>, zoskupené pod tmavým a svetlým blokom; zmena týchto premenných preskinuje celý web vrátane 404 stránky a farby prehliadačovej lišty. Tmavý režim je predvolený. Fonty (Inter a Oswald) sú self-hostované, takže žiadna požiadavka na Google Fonts - a web môže cez voliteľný objekt <em>theme</em> v spec-u prepísať tokeny značky pre konkrétneho klienta."
         },
         {
+          "type": "links",
+          "items": [
+            {
+              "label": "Živý editor vzhľadu",
+              "handle": "Otvoriť",
+              "url": "?tweak"
+            }
+          ]
+        },
+        {
           "type": "text",
           "name": "Kam ďalej",
           "text": "Prečítaj si <strong>README.md</strong> pre ľudský rýchly štart, <strong>AGENTS.md</strong> pre architektúru a ako pridať typ bloku, a <strong>CLIENT-CHECKLIST.md</strong> pre zoznam vyplnenia na klienta. Toto demo bolo postavené z <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."

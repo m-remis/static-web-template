@@ -120,6 +120,11 @@ match the builder's real behavior.
    never an inline hex in a rule. (Exception: per-platform social brand colors,
    which are intentionally identical across themes and live as `--brand-*`
    tokens in `:root` - see `docs/theming.md`.)
+   **A shared token whose value reads a per-theme token** (e.g.
+   `var(--accent)`) goes in the shared `[data-theme]` block, **not** `:root`:
+   a `var()` inside a custom property resolves where it is declared, and the
+   per-theme tokens only exist on `<body>`. In `:root` it silently resolves
+   to nothing (this is what once hid the keyboard focus ring).
 2. **If you changed dark `--bg-base`,** update its mirrors: `index.html`
    `theme-color`, `404.html` `theme-color`, `site.webmanifest` `theme_color`
    **and** `background_color`, and `meta.themeColor` in **every** spec file -

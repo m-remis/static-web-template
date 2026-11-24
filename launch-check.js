@@ -1809,6 +1809,58 @@ function diffBlockSets(sourceLabel, sourceSet, known) {
     });
 }
 
+/* ---- Theme token blocks (styles.css) -------------------------------------- */
+
+/* The design tokens live in four blocks: :root (shared), [data-theme="dark"]
+   and [data-theme="light"] (per theme, declared on <body>), and the shared
+   [data-theme] block for shared tokens that read a per-theme one. Two
+   mistakes render without any error, so they are checked here:
+   - a :root token whose value reads a per-theme token. A var() inside a
+     custom property resolves where it is declared, and :root has no per-theme
+     tokens, so it silently resolves to nothing (this once hid the focus ring);
+   - a token declared in one theme block but not the other, so it is unset
+     whenever the other theme is active. */
+function checkThemeTokens() {
+    const css = readText("styles.css");
+    if (css == null) return;
+
+    const block = (selector) => {
+        const re = new RegExp(`^${selector.replace(/[[\]"=.*]/g, "\\$&")}\\s*\\{([\\s\\S]*?)^\\}`, "m");
+        const m = css.match(re);
+        if (!m) return null;
+        const body = m[1].replace(/\/\*[\s\S]*?\*\//g, "");
+        return new Map([...body.matchAll(/^\s*(--[\w-]+)\s*:\s*([^;]+);/gm)].map((x) => [x[1], x[2].trim()]));
+    };
+
+    const root = block(":root");
+    const dark = block('[data-theme="dark"]');
+    const light = block('[data-theme="light"]');
+    if (!root || !dark || !light) {
+        warn("styles", "THEME_BLOCKS_UNREADABLE",
+            'Could not find the :root / [data-theme="dark"] / [data-theme="light"] token blocks in styles.css');
+        return;
+    }
+
+    const perTheme = new Set([...dark.keys(), ...light.keys()]);
+    for (const [name, value] of root) {
+        const reads = [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]).filter((r) => perTheme.has(r));
+        if (reads.length) {
+            fail("styles", "THEME_TOKEN_SCOPE",
+                `styles.css :root ${name} reads per-theme ${reads.join(", ")}, which only exists on <body> - ` +
+                "it resolves to nothing. Move it to the shared [data-theme] block.");
+        }
+    }
+
+    for (const [have, other, otherName] of [[dark, light, "light"], [light, dark, "dark"]]) {
+        for (const name of have.keys()) {
+            if (!other.has(name)) {
+                warn("styles", "THEME_TOKEN_UNPAIRED",
+                    `styles.css ${name} is set for one theme but missing from the ${otherName} block`);
+            }
+        }
+    }
+}
+
 /* ---- Generated artifacts freshness --------------------------------------- */
 
 /* llms.txt, sitemap.xml and the static JSON-LD tag in index.html are
@@ -2049,6 +2101,7 @@ async function main() {
 
     checkSpecShape(spec);
     checkBlockTypeRegistryConsistency();
+    checkThemeTokens();
     checkGeneratedArtifacts();
     checkPlaceholders(spec);
     checkContactData(spec);

@@ -141,6 +141,8 @@ Getting your own site live takes about five minutes.
 
 Colors live as CSS custom properties in styles.css, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request - and a site can override brand tokens per-client via an optional theme object in the spec.
 
+- [Live theme editor](?tweak)
+
 ### Where to go next
 
 Read README.md for the human quick-start, AGENTS.md for the architecture and how to add a block type, and CLIENT-CHECKLIST.md for the per-client fill-in list. This demo was built from m-remis/static-web-template.

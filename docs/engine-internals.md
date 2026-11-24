@@ -82,8 +82,10 @@ one sequence when adding a section, and add it to the index.
   `docs/spec-format.md`).
 - `renderTheme()` - writes `SITE.theme` brand tokens (`accent`, `rootScale`,
   `contentWidth`, `radius`, `fontSans`, `fontHeading`, `fontBrand`,
-  `socialColors`) as `:root` CSS custom properties; omitted tokens keep their
-  `styles.css` defaults.
+  `socialColors`) as `:root` CSS custom properties - except `accent`, which
+  goes on `<body>` because both theme blocks declare `--accent` there (on
+  `:root` it would be shadowed); it then applies to both themes. Omitted
+  tokens keep their `styles.css` defaults.
 - `renderJsonLd()` - upserts a schema.org `Store` JSON-LD script into
   `<head>` from `SITE.business` + `SITE.meta` + `brand` + `socials` +
   flagged tables. Hours in `H:MM–H:MM`
@@ -130,7 +132,10 @@ one sequence when adding a section, and add it to the index.
   place" in this file - this is a rule, not a convenience.
 - `initTabs()` - section-as-tab switching, hash routing, keyboard arrows on the
   desktop tablist, and scroll-position control (see the scroll gotcha in
-  `docs/gotchas.md`).
+  `docs/gotchas.md`). The switch is instant by design: no panel fade, no
+  transition on the nav links' active state, and a primary mouse button
+  switches on `pointerdown` rather than `click` (touch and keyboard still go
+  through `click`). Don't add a fade back - it reads as lag.
 - `initMobileMenu()` - frosted drawer; injects its own close (`×`) button,
   scrim, Escape-to-close, close-on-link-tap, and auto-close when resized up to
   desktop.
@@ -139,8 +144,8 @@ one sequence when adding a section, and add it to the index.
   When the header grows back to desktop mode with the drawer still open, it
   closes the drawer by clicking `#menuToggle`, so `initMobileMenu()`'s real
   `close()` runs (inert + focus hand-off) - don't re-implement the close here.
-- `initBackground()` - dual-layer crossfading background with Ken Burns drift
-  (see "Background" in this file).
+- `initBackground()` - dual-layer crossfading background; the motion on each
+  layer comes from the `--bg-motion*` tokens (see "Background" in this file).
 - `getLightbox()` - shared image-preview overlay reused by the slideshow, the
   `gallery`, and `photo` (all feed it via `toLightboxSlides()`). It is a native
   modal `<dialog>` opened with `showModal()`: the browser puts it in the top
@@ -274,6 +279,8 @@ Things that must stay consistent or this breaks:
 `index.html` has two layers, `#bg` and `#bg2`. `initBackground()` preloads each
 image, sets it on the back layer, then crossfades by toggling `.is-active`
 (opacity), cycling through `SITE.backgrounds` in order on a timer (`HOLD`). Each
-active layer runs the `bg-drift` Ken Burns zoom. With only one layer present it
-degrades to a single static image; missing image files fail silently to the
-plain background. `prefers-reduced-motion` disables the drift.
+active layer runs the animation named by `--bg-motion` (default `bg-drift`, a
+Ken Burns zoom; see `docs/theming.md` for the others), and the crossfade takes
+`--bg-fade`. With only one layer present it degrades to a single static image;
+missing image files fail silently to the plain background.
+`prefers-reduced-motion` disables the motion.

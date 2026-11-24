@@ -54,7 +54,7 @@ and show the error screen - serve locally with `python3 -m http.server 8000`.
   },
   "theme": {                 // optional per-client brand tokens; renderTheme() writes them as :root
                              // CSS vars at boot, overriding the styles.css defaults (omitted = CSS value)
-    "accent": "#8ab4ff",
+    "accent": "#8ab4ff",     // set on <body>, so it wins over BOTH themes - check contrast in light mode
     "rootScale": "100%", "contentWidth": "56rem", "radius": "…",
     "fontSans": "…", "fontHeading": "…", "fontBrand": "…",  // font stacks
     "socialColors": { "instagram": "#e1306c", "youtube": "#ff0000" }  // → --brand-<key>

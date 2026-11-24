@@ -401,8 +401,18 @@ don't run JS see the static values - keep them roughly matching `meta`:
 All color lives in **two token blocks**: `[data-theme="dark"]` and
 `[data-theme="light"]`, grouped by comment (Backgrounds, Text, Menu/nav,
 Accents & lines, Background-image overlay & header, Monochrome icon
-inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the whole site
-- both themes, the 404 page, the browser chrome - happens here and nowhere else.
+inversion). Tokens identical in both themes sit once in `:root` - or in the
+shared `[data-theme]` block when their value reads a per-theme token (see
+`docs/theming.md`). Re-skinning the whole site - both themes, the 404 page,
+the browser chrome - happens here and nowhere else.
+
+**Fastest way through this section:** serve the site locally and open it with
+`?tweak` (e.g. `http://localhost:8000/?tweak`). The tweaker panel edits every
+token below live, in both themes, with phone / tablet previews, then writes
+the result into `styles.css` ("Save to styles.css", Chrome / Edge) or gives
+you the CSS to paste. It does not update the dark `--bg-base` mirrors - do
+those by hand. Remove the demo's "Live theme editor" link (the `?tweak` row in
+the Get started section) unless the client should have it.
 
 - [ ] **`--accent`** (both themes) - carries most of the brand feel; the
   fastest high-impact change. `--accent-soft` is derived from it
@@ -410,7 +420,8 @@ inversion). Tokens identical in both themes sit once in `:root`. Re-skinning the
   CSS edit, but applies to both themes.)
 - [ ] **`--bg-base`** (both themes) - page background. If you change the dark
   one, update its mirrors: `index.html` theme-color, `404.html` theme-color,
-  and `site.webmanifest` `theme_color` + `background_color` (§3).
+  `site.webmanifest` `theme_color` + `background_color` (§3), and
+  `meta.themeColor` in every `site-spec*.json`.
 - [ ] Remaining tokens (text, menu, border, overlays) - adjust to taste;
   defaults are a sane neutral.
 - [ ] **Do NOT** inline hex into individual rules - add a named variable to

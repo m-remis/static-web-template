@@ -338,6 +338,16 @@
           "text": "Colors live as CSS custom properties in <strong>styles.css</strong>, grouped under a dark and a light block; changing those variables re-skins the whole site, including the 404 page and the browser chrome color. Dark is the default. Fonts (Inter and Oswald) are self-hosted, so there's no Google Fonts request - and a site can override brand tokens per-client via an optional <em>theme</em> object in the spec."
         },
         {
+          "type": "links",
+          "items": [
+            {
+              "label": "Live theme editor",
+              "handle": "Open",
+              "url": "?tweak"
+            }
+          ]
+        },
+        {
           "type": "text",
           "name": "Where to go next",
           "text": "Read <strong>README.md</strong> for the human quick-start, <strong>AGENTS.md</strong> for the architecture and how to add a block type, and <strong>CLIENT-CHECKLIST.md</strong> for the per-client fill-in list. This demo was built from <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."

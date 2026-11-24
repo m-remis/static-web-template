@@ -76,12 +76,38 @@
     --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Interaction tokens - theme-independent (same in light + dark).
-       Keyboard focus ring (only shown after real keyboard nav) and the
-       subtle "press" shrink shared by every button-like control. */
-    --focus-ring: 2px solid var(--accent);
+       Gap between an element and its keyboard focus ring (only shown after
+       real keyboard nav). The ring itself, --focus-ring, reads --accent, so
+       it lives in the shared [data-theme] block below the theme blocks. */
     --focus-offset: 3px;
 
     --unicode-arrow: "\2192"; /* Unicode for → */
+
+    /* Background image motion (the two .bg layers). --bg-motion names one of
+       the bg-* @keyframes in the Background section (bg-drift, bg-zoom,
+       bg-pan, bg-breathe, bg-float), or `none` for a still image. --bg-fade is
+       the crossfade between images. */
+    --bg-motion: bg-drift;
+    --bg-motion-duration: 15s;
+    --bg-motion-easing: ease-in-out;
+    --bg-motion-direction: alternate;
+    --bg-fade: 1200ms;
+
+    /* Desktop header tabs. Width 0 = no border (the default look). */
+    --tab-radius: var(--radius-sm);
+    --tab-border-width: 0px;
+
+    /* Active-tab marker: the bar drawn on the active desktop tab. Default is
+       a 2px underline as wide as the label. Full width: --tab-indicator-width
+       100%. Dot: width = height, radius 50%. Overline: set the top, bottom
+       auto. Off: height 0 (pair with --tab-active-bg for a filled pill).
+       Its color and the active fill read --accent, so they live in the shared
+       [data-theme] block. */
+    --tab-indicator-width: calc(100% - 1.7rem);
+    --tab-indicator-height: 2px;
+    --tab-indicator-radius: 2px;
+    --tab-indicator-top: auto;
+    --tab-indicator-bottom: 0.15rem;
 
     /* Theme-independent tokens - identical in light + dark, so defined once
        here instead of duplicated in both [data-theme] blocks.
@@ -199,6 +225,23 @@ html:has(body[data-theme="light"]) {
     /* - Monochrome icon/logo inversion -
        Black art already reads on the white theme - no filter. */
     --mono-icon-filter: none;
+}
+
+/* Shared tokens that READ a per-theme token. A var() inside a custom property
+   is resolved on the element that declares it, and the per-theme tokens
+   (--accent, --border, ...) only exist on <body>, the [data-theme] element.
+   Declared in :root these would resolve to nothing (that is what broke the
+   keyboard focus ring). So they are declared once here: same definition in
+   both themes, resolved against whichever theme is active. */
+[data-theme] {
+    --focus-ring: 2px solid var(--accent);
+    --tab-border-color: var(--border); /* only drawn when --tab-border-width > 0 */
+    --tab-indicator-color: var(--accent);
+    --tab-active-bg: transparent; /* active tab fill; e.g. var(--accent-soft) for a pill */
+    /* Desktop tab hover. Default to the menu tokens, which the mobile drawer
+       also uses - set these to restyle the desktop tabs alone. */
+    --tab-hover-bg: var(--menu-hover-bg);
+    --tab-hover-text: var(--menu-text-active);
 }
 
 /* ---- Reset-ish -------------------------------------------------------- */
@@ -418,29 +461,68 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
 
 /* Two stacked background layers so we can crossfade between images without a
    flash. JS toggles .is-active to fade one in while the other fades out, and
-   each active layer runs a slow Ken Burns drift/zoom. */
+   each active layer runs a slow motion loop picked by the --bg-motion* tokens
+   in :root (default: Ken Burns drift). */
 .bg {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     opacity: 0;
-    transition: opacity 1200ms ease;
-    /* Continuous, seamless drift - zoom in and back out forever, no snap.
-       Runs on both layers always; opacity (.is-active) decides which shows. */
-    /* Ken Burns drift - toggle by commenting line below. */
-    animation: bg-drift 15s ease-in-out infinite alternate;
+    transition: opacity var(--bg-fade) ease;
+    /* Continuous, seamless loop - with `alternate` it plays forward then back
+       forever, no snap. Runs on both layers always; opacity (.is-active)
+       decides which shows. `--bg-motion: none` = still image. */
+    animation: var(--bg-motion) var(--bg-motion-duration) var(--bg-motion-easing) infinite var(--bg-motion-direction);
 }
 
 .bg.is-active {
     opacity: 1;
 }
 
+/* Background motion styles, picked by --bg-motion. Each one starts scaled
+   above 1 (or zooms up from 1) so a translate never exposes the layer edge. */
 @keyframes bg-drift {
     from {
         transform: scale(1.02) translate(0, 0);
     }
     to {
         transform: scale(1.12) translate(-1.5%, -1.5%);
+    }
+}
+
+@keyframes bg-zoom {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.15);
+    }
+}
+
+@keyframes bg-pan {
+    from {
+        transform: scale(1.12) translateX(-4%);
+    }
+    to {
+        transform: scale(1.12) translateX(4%);
+    }
+}
+
+@keyframes bg-breathe {
+    from {
+        transform: scale(1.02);
+    }
+    to {
+        transform: scale(1.06);
+    }
+}
+
+@keyframes bg-float {
+    from {
+        transform: scale(1.08) translateY(-2%);
+    }
+    to {
+        transform: scale(1.08) translateY(2%);
     }
 }
 
@@ -538,14 +620,22 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     padding: 0.45rem 0.85rem;
     font-size: 0.95rem;
     color: var(--menu-text);
-    border-radius: var(--radius-sm);
-    transition: color var(--transition), background var(--transition);
+    border: var(--tab-border-width) solid var(--tab-border-color);
+    border-radius: var(--tab-radius);
+    /* No color/background transition: the active-tab highlight must move in the
+       same frame as the panel swap, not trail it by --transition. */
+}
+
+/* Active-tab fill (transparent by default). Kept BEFORE the hover rule, same
+   specificity, so hovering the active tab still shows the hover highlight. */
+.nav-desktop a.is-active {
+    background: var(--tab-active-bg);
 }
 
 @media (hover: hover) {
     .nav-desktop a:hover {
-        color: var(--menu-text-active);
-        background: var(--menu-hover-bg);
+        color: var(--tab-hover-text);
+        background: var(--tab-hover-bg);
     }
 }
 
@@ -553,15 +643,18 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     color: var(--menu-text-active);
 }
 
+/* Shape and position come from the --tab-indicator-* tokens in :root. */
 .nav-desktop a.is-active::after {
     content: "";
     position: absolute;
-    left: 0.85rem;
-    right: 0.85rem;
-    bottom: 0.15rem;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 2px;
+    left: 50%;
+    top: var(--tab-indicator-top);
+    bottom: var(--tab-indicator-bottom);
+    width: var(--tab-indicator-width);
+    height: var(--tab-indicator-height);
+    transform: translateX(-50%);
+    background: var(--tab-indicator-color);
+    border-radius: var(--tab-indicator-radius);
 }
 
 .header-actions {
@@ -896,7 +989,7 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     font-size: 1.1rem;
     color: var(--menu-text);
     border-radius: var(--radius-sm);
-    transition: color var(--transition), background var(--transition);
+    /* No transition - see .nav-desktop a. */
 }
 
 .nav-mobile a.is-active {
@@ -965,7 +1058,9 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     margin: 0;
 }
 
-/* Tab panels: hidden ones are removed; active one fades in gently */
+/* Tab panels: hidden ones are removed. The swap is deliberately instant - no
+   fade-in on the new panel. Any animation here is time the new content spends
+   not fully visible, and tab switches should feel immediate. */
 .content > .section[hidden] {
     display: none;
 }
@@ -1001,24 +1096,6 @@ a, button, [role="tab"], .menu-toggle, .theme-toggle {
     pointer-events: none;
 }
 
-.section--active {
-    animation: panel-in 90ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes panel-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .section--active {
-        animation: none;
-    }
-}
 
 /* ---- Block layout: uniform spacing ----------------------------------- */
 /* Every rendered block is wrapped by JS in a .block element. This is the

@@ -150,6 +150,17 @@ Fails if any are missing: `index.html`, `styles.css`, `site-spec.json`,
 `site.webmanifest`, `robots.txt`, `sitemap.xml`, and the runtime script
 `engine.js`.
 
+### `styles.css` theme tokens
+
+- **Token scope** (`THEME_TOKEN_SCOPE`, error) - a token in `:root` whose value
+  reads a per-theme token (one declared in `[data-theme="dark"]` /
+  `[data-theme="light"]`). A `var()` inside a custom property resolves where
+  it is declared, and the per-theme tokens only exist on `<body>`, so it
+  silently resolves to nothing. Move it to the shared `[data-theme]` block
+  (see `docs/theming.md`).
+- **Unpaired token** (`THEME_TOKEN_UNPAIRED`, warning) - a token declared in
+  one theme block but not the other, so it is unset in that theme.
+
 ### `site-spec.json`
 
 - **Valid JSON** - a parse error is a hard fail and stops the run.

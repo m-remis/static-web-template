@@ -89,7 +89,7 @@ credit was explicitly requested):
 - Markdown: `<!-- Built from m-remis/static-web-template -->`
 
 These strings currently live in `index.html`, `engine.js`, `styles.css`,
-`business-jsonld.mjs`, `generate-static.mjs`, `launch-check.js`, `README.md`,
+`business-jsonld.mjs`, `generate-static.mjs`, `launch-check.js`, `tweaker.js`, `README.md`,
 `CLIENT-CHECKLIST.md`, `LAUNCH-CHECK.md`, `_block-template.md`, the `docs/`
 files, and this file. (`404.html` does not carry it directly - it shares
 `styles.css`, which does.) Preserve them when rewriting any of those, and add
@@ -150,6 +150,7 @@ runtime. Before editing markup or CSS, check whether the request is actually a
 | `_headers`                                      | Cloudflare Pages response headers: security, caching policy, 103 Early Hints preloads | caching rules; adding an always-loaded asset |
 | `llms.txt`                                      | Plain-text site summary for AI crawlers - **GENERATED** from the spec by `generate-static.mjs`; never edit by hand | regenerate after any content edit |
 | `business-jsonld.mjs`                           | Pure, DOM-free shared module: the spec→JSON-LD builder (used by `engine.js` and `generate-static.mjs`) plus small helpers the engine, generator and validator must agree on (URL checks, YouTube id parsing) | JSON-LD shape changes; a rule two of those files share |
+| `tweaker.js`                                    | Dev-only live design-token panel (sliders, color pickers, presets, undo, Save to styles.css / Copy CSS); loaded by `engine.js` only when the URL has `?tweak`. Reads the tokens from `styles.css` itself | a new token's label / tab / slider range; a section preset |
 | `generate-static.mjs`                           | Dev-only generator: stamps `llms.txt`, `sitemap.xml` + the static JSON-LD and LCP-image preload in `index.html` from the spec; `--check` mode is run by `launch-check` | adding a generated artifact         |
 | `site-spec.<lang>.json`                         | Alternate-locale content (e.g. `site-spec.sk.json`); a full self-contained spec, loaded at runtime by the language switch | translating content; adding a language |
 | `assets/`                                       | favicon, `background/` images, `slides/` images, `fonts/` woff2 | swapping media; changing fonts     |

@@ -2275,7 +2275,8 @@ async function renderVisitorCount(target, url, label) {
 
    Brand-defining design tokens live in SITE.theme so one engine can produce
    differently-branded sites from config alone. This writes them as :root
-   custom properties at boot; styles.css holds the defaults, so any token the
+   custom properties at boot (accent on <body> - see below); styles.css holds
+   the defaults, so any token the
    spec omits simply keeps its CSS value. Structural CSS is NOT touched here -
    only the brand knobs (accent, fonts, sizing, social tints).
 ---------------------------------------------------------------------- */
@@ -2284,13 +2285,15 @@ function renderTheme() {
     const theme = SITE.theme;
     if (!theme || typeof theme !== "object") return;
 
-    const root = document.documentElement.style;
-    const setVar = (name, value) => {
+    const setVar = (name, value, el = document.documentElement) => {
         if (value === undefined || value === null || value === "") return;
-        root.setProperty(name, String(value));
+        el.style.setProperty(name, String(value));
     };
 
-    setVar("--accent", theme.accent);
+    // --accent is a per-theme token: both [data-theme] blocks on <body>
+    // declare it, so a value on :root would be shadowed and do nothing. Set
+    // on <body> it wins over both themes (same accent in dark and light).
+    setVar("--accent", theme.accent, document.body);
     setVar("--root-scale", theme.rootScale);
     setVar("--content-width", theme.contentWidth);
     setVar("--radius", theme.radius);
@@ -2853,8 +2856,6 @@ function initTabs() {
         }
     };
 
-    let firstShow = true;
-
     const show = (rawId, {focusPanel = false, push = true, scrollTop = true} = {}) => {
         const id = normalize(rawId);
 
@@ -2869,12 +2870,7 @@ function initTabs() {
             // A panel may still be inert from the embed warm-up
             // (warmUpIframes) - the shown panel must never stay that way.
             if (active) p.inert = false;
-
-            // Do not animate the initial render. Only animate real tab changes.
-            p.classList.toggle("section--active", active && !firstShow);
         });
-
-        firstShow = false;
 
         links.forEach((link) => setActiveLink(link, id));
 
@@ -2895,6 +2891,18 @@ function initTabs() {
     // Click / tap. The links themselves are rebuilt by every renderNav(), so
     // their listeners are collected with them - no teardown needed here.
     links.forEach((link) => {
+        // Mouse: switch on press, not release - saves the ~100ms a click spends
+        // held down, which is most of what makes a tab switch feel slow. Mouse
+        // only: on touch, pointerdown also starts every scroll of the drawer.
+        // Modifier clicks are left alone. The click that follows calls show()
+        // again for the same id, which is a no-op swap (no history push, the
+        // page is already at the top).
+        link.addEventListener("pointerdown", (e) => {
+            if (e.pointerType !== "mouse" || e.button !== 0) return;
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            show(link.getAttribute("data-nav"));
+        });
+
         link.addEventListener("click", (e) => {
             e.preventDefault();
             show(link.getAttribute("data-nav"));
@@ -3301,6 +3309,12 @@ async function init() {
         await renderSite();
     } finally {
         reveal();
+    }
+
+    // Dev-only: `?tweak` in the URL loads the live design-token panel
+    // (tweaker.js, see docs/theming.md). Never fetched without the flag.
+    if (new URLSearchParams(location.search).has("tweak")) {
+        import("./tweaker.js").catch((err) => console.warn("tweaker.js failed to load:", err));
     }
 }
 

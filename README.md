@@ -26,6 +26,7 @@ what the site says, edit `site-spec.json` - not the HTML or the JS.
 │
 ├── generate-static.mjs     # dev tool: regenerates the mirrors below from the spec (Node built-ins only)
 ├── launch-check.js         # dev tool: pre-deploy validator (placeholders, fake data, broken assets…)
+├── tweaker.js              # dev tool: live design-token panel, loaded only with ?tweak in the URL
 ├── llms.txt                # GENERATED - plain-text mirror of the site for AI crawlers
 ├── sitemap.xml             # GENERATED - SEO sitemap
 │
@@ -109,6 +110,13 @@ artifacts:
 ```bash
 node launch-check.js
 ```
+
+To restyle visually, open the local site with `?tweak` in the URL (e.g.
+`http://localhost:8000/?tweak`): a floating panel lets you change colors (both
+themes), sizes, radius, fonts, header tabs and the background animation live,
+with undo and saved presets. "Save to styles.css" writes the result into the
+file (Chrome / Edge); "Copy CSS" gives it to you to paste. Details in
+`docs/theming.md`.
 
 ## Docs
 
