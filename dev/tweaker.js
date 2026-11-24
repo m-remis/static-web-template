@@ -1,6 +1,6 @@
 /* Built from m-remis/static-web-template */
 /*
-  tweaker.js - DEV-ONLY live design-token tweaker.
+  dev/tweaker.js - DEV-ONLY live design-token tweaker.
 
   Loaded only when the page URL carries `?tweak` (see init() in engine.js), so
   normal visitors never fetch it. It reads the design tokens straight out of
@@ -468,235 +468,9 @@ function discover() {
 }
 
 /* ---- panel styles ----------------------------------------------------- */
-
-const PANEL_CSS = `
-:host { all: initial; }
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-
-.panel {
-    position: fixed; top: 16px; left: 16px;
-    width: 400px; min-width: 330px; max-width: min(720px, calc(100vw - 16px));
-    max-height: calc(100vh - 32px);
-    display: flex; flex-direction: column;
-    background: #16171b; color: #e4e6eb;
-    border: 1px solid #2c2f37; border-radius: 12px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.3);
-    font: 12.5px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    color-scheme: dark; overflow: hidden; resize: horizontal;
-}
-.panel.is-collapsed .body { display: none; }
-.panel.is-collapsed { resize: none; }
-
-/* -- header bar -- */
-.bar {
-    display: flex; align-items: center; gap: 4px;
-    padding: 6px 6px 6px 12px; background: #1c1e23; border-bottom: 1px solid #2c2f37;
-    cursor: grab; user-select: none; touch-action: none;
-}
-.bar:active { cursor: grabbing; }
-.bar__title { font-weight: 650; letter-spacing: 0.01em; margin-right: 4px; }
-.bar__spacer { flex: 1; }
-.badge {
-    height: 18px; min-width: 18px; padding: 0 6px; border-radius: 9px; border: 0;
-    background: #f5a524; color: #1a1300; font: 700 11px/18px system-ui, sans-serif; cursor: pointer;
-}
-.bar button.reset-all { color: #f5a524; width: 22px; height: 22px; }
-
-/* -- generic controls -- */
-button, select, input { font: inherit; color: inherit; }
-button {
-    background: #262930; border: 1px solid #353943; border-radius: 6px;
-    padding: 3px 10px; cursor: pointer; white-space: nowrap; height: 26px;
-}
-button:hover:not(:disabled) { background: #30343d; }
-button:disabled { opacity: 0.35; cursor: default; }
-button.primary { background: #2f62c0; border-color: #3f74d4; color: #fff; }
-button.primary:hover:not(:disabled) { background: #3a6fcf; }
-button.ghost { background: transparent; border-color: transparent; }
-button.ghost:hover:not(:disabled) { background: #2a2d35; }
-button.icon { width: 26px; padding: 0; display: inline-grid; place-items: center; flex: none; font-size: 14px; }
-input[type="text"], input[type="search"], input[type="number"], select {
-    background: #0f1013; border: 1px solid #353943; border-radius: 6px;
-    padding: 3px 7px; min-width: 0; height: 26px;
-}
-input[type="number"] { width: 62px; flex: none; text-align: right; padding-right: 4px; }
-input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid #5b9dff; outline-offset: 1px; }
-input[type="range"] { flex: 1; min-width: 40px; margin: 0; height: 18px; accent-color: #5b9dff; }
-
-.body { display: flex; flex-direction: column; min-height: 0; flex: 1; position: relative; }
-/* Only the list may shrink (and scroll). Everything else keeps its height -
-   the tab strip especially: it scrolls sideways, which drops its minimum
-   height to 0, so with a long list it used to get squashed flat. */
-.bar, .tabs, .toolbar, .foot { flex: none; }
-
-/* -- tabs + toolbar -- */
-.tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid #2c2f37; overflow-x: auto; scrollbar-width: none; }
-.tab {
-    background: transparent; border: 0; border-radius: 6px 6px 0 0; height: 28px; padding: 0 9px;
-    color: #9ba1ad; border-bottom: 2px solid transparent;
-}
-.tab:hover:not(:disabled) { background: transparent; color: #e4e6eb; }
-.tab.is-active { color: #fff; border-bottom-color: #5b9dff; }
-.tab--changed { color: #f5a524; }
-.toolbar { display: flex; gap: 6px; padding: 8px; align-items: center; }
-.toolbar input[type="search"] { flex: 1; }
-.pin {
-    max-width: 45%; overflow: hidden; text-overflow: ellipsis;
-    background: rgba(91, 157, 255, 0.16); border-color: rgba(91, 157, 255, 0.4);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
-}
-
-/* -- list + sections -- */
-.list { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: 8px; }
-.empty { padding: 18px 14px; color: #7f8592; }
-.sec__head {
-    position: sticky; top: 0; z-index: 2;
-    display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 10px 4px 14px;
-    background: #16171b; border-bottom: 1px solid #23262d;
-}
-.sec__title { flex: 1; color: #9ba1ad; font-size: 11px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
-.sec__head select { height: 24px; max-width: 160px; }
-.sec__cols { display: flex; gap: 6px; margin-right: 26px; color: #6f7581; font-size: 13px; }
-.sec__cols span { width: 30px; text-align: center; }
-.sec__cols .is-active { color: #e4e6eb; }
-
-/* -- rows -- */
-.row {
-    position: relative; display: grid; align-items: center; gap: 8px;
-    grid-template-columns: minmax(0, 1fr) auto 18px;
-    min-height: 34px; padding: 4px 10px 4px 14px;
-}
-.row--wide { grid-template-columns: minmax(96px, 38%) minmax(0, 1fr) 18px; }
-.row:hover { background: #1c1e23; }
-.row.is-changed::before {
-    content: ""; position: absolute; left: 5px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
-    border-radius: 50%; background: #f5a524;
-}
-.row.hl { background: rgba(91, 157, 255, 0.18); box-shadow: inset 2px 0 0 #5b9dff; }
-.row.hl-soft { background: rgba(91, 157, 255, 0.07); }
-.row__text { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
-.row__label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e4e6eb; }
-.row__note { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #737987; font-size: 11px; }
-.row.is-linked .ctl { opacity: 0.55; }
-.row.is-linked .ctl:hover, .row.is-linked .ctl:focus-within { opacity: 1; }
-.tag { flex: none; font-size: 10px; padding: 0 5px; border-radius: 4px; background: #3a2f12; color: #f5c46a; }
-.reset {
-    width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: #f5a524;
-    visibility: hidden; font-size: 13px; line-height: 1;
-}
-.reset:hover:not(:disabled) { background: transparent; color: #ffc15e; }
-.row.is-changed .reset { visibility: visible; }
-
-.ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.line { display: flex; gap: 6px; align-items: center; min-width: 0; }
-.line > input[type="text"], .line > select { flex: 1; width: 0; }
-.unit { color: #737987; min-width: 18px; flex: none; font-size: 11px; }
-.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-
-/* -- color chips -- */
-.chips { display: flex; gap: 6px; justify-content: flex-end; }
-.chip {
-    position: relative; width: 30px; height: 22px; padding: 0; border-radius: 6px; overflow: hidden;
-    border: 1px solid #454955;
-    background: conic-gradient(#8a8a8a 25%, #cfcfcf 0 50%, #8a8a8a 0 75%, #cfcfcf 0) 0 0 / 8px 8px;
-}
-.chip:hover:not(:disabled) { border-color: #8b92a1; background: conic-gradient(#8a8a8a 25%, #cfcfcf 0 50%, #8a8a8a 0 75%, #cfcfcf 0) 0 0 / 8px 8px; }
-.chip.is-open { outline: 2px solid #5b9dff; outline-offset: 1px; }
-.chip__fill { position: absolute; inset: 0; }
-.chip.is-changed::after {
-    content: ""; position: absolute; right: 2px; top: 2px; width: 6px; height: 6px;
-    border-radius: 50%; background: #f5a524; box-shadow: 0 0 0 1px #16171b;
-}
-.chip.is-linked::before {
-    content: "="; position: absolute; left: 3px; bottom: -1px; z-index: 1;
-    font: 700 10px/1 system-ui, sans-serif; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000;
-}
-
-/* -- color popover -- */
-.pop {
-    position: fixed; z-index: 3; width: 250px; padding: 10px;
-    display: grid; gap: 8px;
-    background: #1d1f25; border: 1px solid #3a3e48; border-radius: 10px;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
-    font: 12.5px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #e4e6eb; color-scheme: dark;
-}
-.pop__head { display: flex; align-items: baseline; gap: 6px; }
-.pop__title { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pop__scope { color: #9ba1ad; font-size: 11px; }
-.pop__name { color: #737987; font: 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: -6px; }
-.pop__swatch {
-    position: relative; width: 44px; height: 44px; flex: none; border-radius: 8px; overflow: hidden;
-    border: 1px solid #454955; cursor: pointer;
-    background: conic-gradient(#8a8a8a 25%, #cfcfcf 0 50%, #8a8a8a 0 75%, #cfcfcf 0) 0 0 / 10px 10px;
-}
-.pop__swatch span { position: absolute; inset: 0; }
-.pop__swatch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; cursor: pointer; }
-.pop__val { display: grid; gap: 6px; flex: 1; min-width: 0; }
-.pop label { display: flex; gap: 8px; align-items: center; color: #9ba1ad; font-size: 11px; }
-.pop label select { flex: 1; }
-.pop__alpha { width: 34px; text-align: right; color: #c9cdd6; }
-
-/* -- footer -- */
-.foot { display: flex; align-items: center; gap: 6px; padding: 8px; border-top: 1px solid #2c2f37; background: #1a1c21; }
-.status { flex: 1; min-width: 0; color: #b9bec9; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* -- menus (presets, help) -- */
-.menu {
-    position: absolute; z-index: 4; right: 8px; width: 290px; max-height: 70%; overflow: auto;
-    display: grid; gap: 8px; padding: 10px;
-    background: #1d1f25; border: 1px solid #3a3e48; border-radius: 10px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
-}
-.menu h4 { margin: 0; color: #9ba1ad; font-size: 11px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
-.menu p { margin: 0; color: #c9cdd6; }
-.menu kbd {
-    font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 0 4px; border-radius: 4px;
-    background: #2a2d35; border: 1px solid #3a3e48;
-}
-.menu hr { width: 100%; border: 0; border-top: 1px solid #2c2f37; margin: 2px 0; }
-.menu__row { display: flex; gap: 6px; align-items: center; }
-.menu__row > input[type="text"] { flex: 1; }
-.menu__preset { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; }
-.menu__empty { color: #7f8592; }
-.menu label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
-.danger { color: #ff8b7b; }
-
-.modal { position: absolute; inset: 0; z-index: 5; background: rgba(10, 11, 14, 0.94); display: flex; flex-direction: column; gap: 8px; padding: 12px; }
-.modal textarea {
-    flex: 1; resize: none; background: #0f1013; color: #e4e6eb; border: 1px solid #353943; border-radius: 6px;
-    padding: 8px; font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-/* -- phone / tablet preview -- */
-.preview { position: fixed; inset: 0; background: rgba(12, 13, 16, 0.95); }
-.preview__bar {
-    position: absolute; top: 12px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
-    font: 12.5px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #e4e6eb; color-scheme: dark;
-}
-.preview__sep { width: 12px; }
-.preview__stage { position: absolute; display: flex; align-items: flex-start; justify-content: center; }
-.device { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.device__screen {
-    position: relative; overflow: hidden; border-radius: 14px; background: #000;
-    border: 1px solid #3a3e48; box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55);
-}
-.device iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #fff; }
-.device__cap { color: #9ba1ad; font: 11px system-ui, sans-serif; white-space: nowrap; }
-
-/* -- page overlays -- */
-.outline {
-    position: fixed; display: none; pointer-events: none;
-    border: 2px solid #5b9dff; border-radius: 3px; background: rgba(91, 157, 255, 0.1);
-}
-.outline__label, .uses__tag {
-    position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px;
-    padding: 1px 6px; border-radius: 3px; white-space: nowrap;
-    background: #5b9dff; color: #08101f; font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.outline.label-inside .outline__label { bottom: auto; top: 0; margin: 0; }
-.uses { position: fixed; pointer-events: none; border: 2px dashed #f5a524; border-radius: 3px; }
-.uses__tag { position: fixed; bottom: auto; margin: 0; background: #f5a524; color: #1a1300; pointer-events: none; }
-`;
+// The panel's CSS is its own file, next to this script (dev/tweaker.css).
+// It is loaded into the panel's Shadow DOM with a <link> (see boot()).
+const PANEL_CSS_URL = new URL("./tweaker.css", import.meta.url).href;
 
 /* ---- boot ------------------------------------------------------------- */
 
@@ -897,7 +671,20 @@ function boot() {
     host.style.cssText = "all: initial; position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 2147483000;";
     document.body.append(host);
     const root = host.attachShadow({mode: "open"});
-    root.append(h("style", {text: PANEL_CSS}));
+    // Panel styles come from dev/tweaker.css. Keep the panel invisible until
+    // they arrive (no flash of unstyled controls), then re-measure: the first
+    // placement ran before the panel had its real size and position.
+    const panelCss = h("link", {rel: "stylesheet", href: PANEL_CSS_URL});
+    host.style.visibility = "hidden";
+    panelCss.addEventListener("load", () => {
+        host.style.visibility = "";
+        if (ui.x !== null) placePanel(ui.x, ui.y);
+    });
+    panelCss.addEventListener("error", () => {
+        host.style.visibility = "";
+        console.warn("[tweaker] dev/tweaker.css failed to load - the panel will be unstyled");
+    });
+    root.append(panelCss);
 
     const iconBtn = (text, title, onclick) =>
         h("button", {class: "icon ghost", type: "button", text, title, "aria-label": title, onclick});

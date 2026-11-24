@@ -21,8 +21,8 @@
    Adding a section? Keep the numbers in one sequence and add it here.
    ========================================================= */
 
-// Pure, DOM-free logic shared with the dev tools (generate-static.mjs,
-// launch-check.js) so the runtime, the static mirror and the validator can't
+// Pure, DOM-free logic shared with the dev tools (dev/generate-static.mjs,
+// dev/launch-check.js) so the runtime, the static mirror and the validator can't
 // drift: the spec→JSON-LD derivation, URL helpers, YouTube id parsing.
 import {
     isExternalUrl, absoluteUrl, buildBusinessJsonLd, youtubeVideoId, youtubePlaylistId,
@@ -93,7 +93,7 @@ import {
    Two layers are internationalized:
      1. CONTENT - one full spec file per locale (LOCALE_SPECS). The default
         locale's file is the canonical `site-spec.json` that the dev tools
-        (generate-static.mjs, launch-check.js) and the static crawler mirror
+        (dev/generate-static.mjs, dev/launch-check.js) and the static crawler mirror
         target; alternate locales are runtime-only.
      2. CHROME - the engine's own strings (aria-labels, error screen, weekday
         names, the language switcher) live in the UI table below, keyed by
@@ -2401,7 +2401,7 @@ function renderHead() {
    <script type="application/ld+json"> tag, built entirely from data that
    already lives in the spec (SITE.business + SITE.meta + brand). The
    builder lives in business-jsonld.mjs, SHARED with the dev-only
-   generate-static.mjs, which stamps the same object statically into
+   dev/generate-static.mjs, which stamps the same object statically into
    index.html for crawlers that don't run JS. The static copy can't drift:
    it's generated from the same code, and launch-check fails when it's
    stale. At runtime this upserts the very tag the generator wrote (same
@@ -3312,9 +3312,9 @@ async function init() {
     }
 
     // Dev-only: `?tweak` in the URL loads the live design-token panel
-    // (tweaker.js, see docs/theming.md). Never fetched without the flag.
+    // (dev/tweaker.js, see docs/theming.md). Never fetched without the flag.
     if (new URLSearchParams(location.search).has("tweak")) {
-        import("./tweaker.js").catch((err) => console.warn("tweaker.js failed to load:", err));
+        import("./dev/tweaker.js").catch((err) => console.warn("dev/tweaker.js failed to load:", err));
     }
 }
 

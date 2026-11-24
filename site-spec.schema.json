@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/site-spec.schema.json",
   "title": "Site spec",
-  "description": "Single source of truth for a site rendered by engine.js. Every block has a \"type\" that maps to one builder in BLOCK_RENDERERS. Edit this file, not the engine. Validated at ship time by launch-check.js; this schema gives editing-time validation + autocomplete in the IDE.",
+  "description": "Single source of truth for a site rendered by engine.js. Every block has a \"type\" that maps to one builder in BLOCK_RENDERERS. Edit this file, not the engine. Validated at ship time by dev/launch-check.js; this schema gives editing-time validation + autocomplete in the IDE.",
   "type": "object",
   "additionalProperties": false,
   "required": ["brand", "meta", "sections"],
@@ -179,7 +179,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique section id; used in the URL hash (#/id) and as the tab id. Letters, numbers, - and _ (same rule launch-check.js applies).",
+          "description": "Unique section id; used in the URL hash (#/id) and as the tab id. Letters, numbers, - and _ (same rule dev/launch-check.js applies).",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
         },
         "label": { "type": "string", "description": "Nav tab label (defaults to id if omitted)." },
@@ -303,7 +303,7 @@
     "blockMap": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Map block. mode:\"embed\" (default) live iframe, or mode:\"static\" themed address card. url/embed are optional here - when omitted the engine falls back to business.mapUrl / business.mapEmbed (SSOT). launch-check.js flags a map that resolves to nothing.",
+      "description": "Map block. mode:\"embed\" (default) live iframe, or mode:\"static\" themed address card. url/embed are optional here - when omitted the engine falls back to business.mapUrl / business.mapEmbed (SSOT). dev/launch-check.js flags a map that resolves to nothing.",
       "required": ["type"],
       "properties": {
         "type": { "const": "map" },

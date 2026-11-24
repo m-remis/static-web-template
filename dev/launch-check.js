@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /* =========================================================
-   launch-check.js - static-site launch preflight
+   dev/launch-check.js - static-site launch preflight
 
    A dev-only tool. NOT loaded by the page. Run before shipping
    a client site:
 
-       node launch-check.js
-       node launch-check.js --strict
-       node launch-check.js --template   (in the template repo itself)
-       node launch-check.js --json
-       node launch-check.js --root ./dist
+       node dev/launch-check.js
+       node dev/launch-check.js --strict
+       node dev/launch-check.js --template   (in the template repo itself)
+       node dev/launch-check.js --json
+       node dev/launch-check.js --root ./dist
 
    It inspects the current static-site folder and validates the
    things that silently ship wrong: placeholder text, fake contact
@@ -66,7 +66,9 @@ const OPTS = {
     strict: hasFlag("--strict"),
     template: hasFlag("--template"),
     noUnusedAssets: hasFlag("--no-unused-assets"),
-    root: readOption("--root", process.cwd()),
+    // Default: the site this script belongs to (it lives in dev/), so it
+    // works from any working directory.
+    root: readOption("--root", path.join(__dirname, "..")),
     siteSpec: readOption("--site-spec", "site-spec.json"),
     maxImageKb: Number(readOption("--max-image-kb", "900")),
     maxCssKb: Number(readOption("--max-css-kb", "250")),
@@ -77,10 +79,10 @@ const ROOT = path.resolve(OPTS.root);
 const SPEC_FILE = normalizeCliPath(OPTS.siteSpec);
 
 if (OPTS.help) {
-    console.log(`launch-check.js - static-site launch preflight
+    console.log(`dev/launch-check.js - static-site launch preflight
 
 Usage:
-  node launch-check.js [options]
+  node dev/launch-check.js [options]
 
 Options:
   --json                  Emit a machine-readable JSON report.
@@ -1726,7 +1728,7 @@ function checkContentQuality(spec) {
 /* Drift guard. The set of supported block types is stated in four independent
    places that must agree, or sites break in confusing ways:
      1. engine.js   BLOCK_RENDERERS         - what actually renders
-     2. launch-check.js KNOWN_BLOCK_TYPES   - what this validator accepts
+     2. dev/launch-check.js KNOWN_BLOCK_TYPES   - what this validator accepts
      3. site-spec.schema.json  block type enum - what the editor allows
      4. docs/spec-format.md block-types table - what agents are told exists
    When they disagree, a block can render but fail validation (or validate but
@@ -1801,11 +1803,11 @@ function diffBlockSets(sourceLabel, sourceSet, known) {
 
     missingFromKnown.forEach((t) => {
         fail("spec", "BLOCK_TYPE_DRIFT",
-            `Block type "${t}" is in ${sourceLabel} but not in launch-check.js KNOWN_BLOCK_TYPES - add it to BLOCK_RULES`);
+            `Block type "${t}" is in ${sourceLabel} but not in dev/launch-check.js KNOWN_BLOCK_TYPES - add it to BLOCK_RULES`);
     });
     missingFromSource.forEach((t) => {
         fail("spec", "BLOCK_TYPE_DRIFT",
-            `Block type "${t}" is in launch-check.js but not in ${sourceLabel} - the four sources must agree`);
+            `Block type "${t}" is in dev/launch-check.js but not in ${sourceLabel} - the four sources must agree`);
     });
 }
 
@@ -1864,14 +1866,14 @@ function checkThemeTokens() {
 /* ---- Generated artifacts freshness --------------------------------------- */
 
 /* llms.txt, sitemap.xml and the static JSON-LD tag in index.html are
-   GENERATED from the spec by generate-static.mjs - a hand edit, or a spec
+   GENERATED from the spec by dev/generate-static.mjs - a hand edit, or a spec
    change without a re-run, makes them lie to crawlers. The generator owns the
    byte-level comparison; this just runs its --check mode (exit 2 = stale). */
 function checkGeneratedArtifacts() {
-    const script = path.join(ROOT, "generate-static.mjs");
+    const script = path.join(ROOT, "dev/generate-static.mjs");
     if (!fs.existsSync(script)) {
         warn("spec", "GENERATOR_MISSING",
-            "generate-static.mjs not found - cannot verify llms.txt / sitemap.xml / static JSON-LD freshness");
+            "dev/generate-static.mjs not found - cannot verify llms.txt / sitemap.xml / static JSON-LD freshness");
         return;
     }
 
@@ -1882,10 +1884,10 @@ function checkGeneratedArtifacts() {
     if (res.status === 0) return;
     if (res.status === 2) {
         fail("spec", "GENERATED_STALE",
-            (res.stderr || "").trim() || "llms.txt / sitemap.xml / index.html static JSON-LD are stale - run `node generate-static.mjs`");
+            (res.stderr || "").trim() || "llms.txt / sitemap.xml / index.html static JSON-LD are stale - run `node dev/generate-static.mjs`");
     } else {
         warn("spec", "GENERATOR_FAILED",
-            `generate-static.mjs --check did not run cleanly: ${(res.stderr || res.stdout || "").trim()}`);
+            `dev/generate-static.mjs --check did not run cleanly: ${(res.stderr || res.stdout || "").trim()}`);
     }
 }
 
@@ -2065,7 +2067,7 @@ function checkLocales(defaultSpec, localeSpecs) {
 }
 
 async function main() {
-    SHARED = await import(pathToFileURL(path.join(__dirname, "business-jsonld.mjs")).href);
+    SHARED = await import(pathToFileURL(path.join(__dirname, "..", "business-jsonld.mjs")).href);
 
     checkRequiredFiles();
 

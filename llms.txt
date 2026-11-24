@@ -51,7 +51,7 @@ Three failure modes - the spec fails to load, fails to parse, or has no usable s
 
 ### Built for machines too
 
-Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text llms.txt, a sitemap.xml, and a schema.org JSON-LD block - all stamped by generate-static.mjs so they can never drift from what visitors actually see. A dev-only launch-check.js validator refuses to let an inconsistent site ship.
+Because the page is JavaScript-rendered, the engine also mirrors the spec into formats a non-JS crawler can read: a plain-text llms.txt, a sitemap.xml, and a schema.org JSON-LD block - all stamped by dev/generate-static.mjs so they can never drift from what visitors actually see. A dev-only dev/launch-check.js validator refuses to let an inconsistent site ship.
 
 ### What's in the project
 
@@ -61,8 +61,8 @@ The files you touch, and the ones the engine owns.
 - engine.js: The runtime: block builders, rendering and all UI logic
 - styles.css: Styling, layout and the two theme token blocks
 - index.html: The shell - header skeleton and an empty main, filled by JS
-- generate-static.mjs: Stamps llms.txt, sitemap.xml and the static JSON-LD
-- launch-check.js: Pre-launch validator - the gate before you deploy
+- dev/generate-static.mjs: Stamps llms.txt, sitemap.xml and the static JSON-LD
+- dev/launch-check.js: Pre-launch validator - the gate before you deploy
 
 ### Architecture FAQ
 
@@ -133,8 +133,8 @@ Getting your own site live takes about five minutes.
 
 - **Edit the spec** - Open site-spec.json and change the brand, tabs, blocks and contact details.
 - **Add your images** - Drop backgrounds and photos into the assets folder and point the spec at them.
-- **Refresh the mirrors** - Run node generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.
-- **Run the gate** - Run node launch-check.js and fix every error it reports - stray demo text, fake contact data, broken assets.
+- **Refresh the mirrors** - Run node dev/generate-static.mjs to rebuild llms.txt, the sitemap and the JSON-LD.
+- **Run the gate** - Run node dev/launch-check.js and fix every error it reports - stray demo text, fake contact data, broken assets.
 - **Deploy** - Push the folder to GitHub Pages, Netlify, Vercel, Cloudflare Pages or any static host.
 
 ### Theming
@@ -145,7 +145,7 @@ Colors live as CSS custom properties in styles.css, grouped under a dark and a l
 
 ### Where to go next
 
-Read README.md for the human quick-start, AGENTS.md for the architecture and how to add a block type, and CLIENT-CHECKLIST.md for the per-client fill-in list. This demo was built from m-remis/static-web-template.
+Read README.md for the human quick-start, AGENTS.md for the architecture and how to add a block type, and dev/CLIENT-CHECKLIST.md for the per-client fill-in list. This demo was built from m-remis/static-web-template.
 
 - [Email](mailto:name@example.com)
 - [Phone](tel:+10000000000)
@@ -163,4 +163,4 @@ The same links block, laid out as tiles with brand-tinted icons - here pointing 
 - [Web](https://example.com/): main page (content rendered by JavaScript from site-spec.json)
 - [site-spec.json](https://example.com/site-spec.json): the full site content in machine-readable JSON
 
-<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->
+<!-- GENERATED from site-spec.json (node dev/generate-static.mjs) - do not edit by hand. -->

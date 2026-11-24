@@ -23,12 +23,12 @@ your task below and do the whole row, not just the first cell.
 | a builder's accepted fields (no new type) | **C - Block fields change** |
 | colors / theme tokens | **D - Theme/color edit** |
 | domain, title, description, OG, metadata | **E - Metadata/domain edit** |
-| a `launch-check.js` rule or category | **F - Validator change** |
+| a `dev/launch-check.js` rule or category | **F - Validator change** |
 | any engine behavior (tabs, menu, header-fit, …) | **G - Behavior change** |
 
 Every workflow ends with the same gate: run the validation commands from Hard
 Rule 4 in `AGENTS.md` and reach `launch-check` `PASS` (or only-expected
-warnings). In this template repo that is `node launch-check.js --template`,
+warnings). In this template repo that is `node dev/launch-check.js --template`,
 which does not count the placeholder domain and demo contact data the template
 ships with; on a client site run it without the flag.
 
@@ -39,7 +39,7 @@ handle, a slideshow image, a social link.
 
 1. Edit `site-spec.json` only. Nothing in `engine.js`/`styles.css`/`index.html`
    should need to move for a pure content change.
-2. Run `node generate-static.mjs` - it refreshes the derived artifacts
+2. Run `node dev/generate-static.mjs` - it refreshes the derived artifacts
    (`llms.txt`, `sitemap.xml`, plus the static JSON-LD and the LCP-image
    preload in `index.html`) from the spec.
    Skipping this makes `launch-check` fail with `GENERATED_STALE`.
@@ -55,7 +55,7 @@ handle, a slideshow image, a social link.
 removing/renaming an existing type. This is the one content task that is real
 code, and it touches **five places that must agree**.
 
-> **Start from the skeleton:** `_block-template.md` has every piece (builder,
+> **Start from the skeleton:** `dev/_block-template.md` has every piece (builder,
 > CSS, comment line, validator check, schema, docs row) pre-written to the
 > house style -
 > copy it and rename `example` → your type rather than hand-writing from
@@ -68,7 +68,7 @@ code, and it touches **five places that must agree**.
 3. **Engine docs (in-file):** add the block's shape to the `BLOCK TYPES` comment
    at the top of `engine.js`.
 4. **Validator:** write a `checkXBlock()` for its required fields in
-   `launch-check.js` and add `yourtype: (block, where) => checkXBlock(block,
+   `dev/launch-check.js` and add `yourtype: (block, where) => checkXBlock(block,
    where)` to the `BLOCK_RULES` map (the one list of known types - there is no
    separate `switch` to extend). **Skipping this makes
    `launch-check` falsely flag every use of the new type as unknown.**
@@ -79,7 +79,7 @@ code, and it touches **five places that must agree**.
 6. **Docs:** add a row to the block-types table in `docs/spec-format.md` and,
    if it's a notable function, the "Key functions" list in
    `docs/engine-internals.md`.
-7. **CLIENT-CHECKLIST.md:** if the type is something clients will commonly fill
+7. **dev/CLIENT-CHECKLIST.md:** if the type is something clients will commonly fill
    in, add it to the §1c per-block list.
 
 **Ripple checklist - a new block type is not done until:** `BLOCK_RENDERERS`,
@@ -100,12 +100,12 @@ block of the new type renders, and `launch-check` doesn't warn "unknown type".
 1. **Engine:** change `buildX()` to read the field.
 2. **Engine docs:** update that block's line in the `BLOCK TYPES` comment.
 3. **Validator:** if the field is required, or has a constraint (range, enum),
-   reflect it in the block's `checkXBlock()` in `launch-check.js`.
+   reflect it in the block's `checkXBlock()` in `dev/launch-check.js`.
 4. **Schema:** add or remove the field in the block's subschema in
    `site-spec.schema.json`. Every block subschema is
    `additionalProperties: false`, so **a field the schema doesn't list shows
    up as an error in the editor** even though the engine renders it.
-5. **`docs/spec-format.md` / `CLIENT-CHECKLIST.md`:** update the block's
+5. **`docs/spec-format.md` / `dev/CLIENT-CHECKLIST.md`:** update the block's
    documented shape if the field is author-facing.
 
 **Done when:** the `BLOCK TYPES` comment, the schema and any validator rule
@@ -158,7 +158,7 @@ browser chrome color matches in both themes.
    `twitter:image` (the share-image fallbacks are absolute URLs - scrapers
    don't reliably resolve relative ones - so they carry the full host,
    currently `example.com`), and `CNAME` if present.
-   `sitemap.xml` `<loc>` is GENERATED - `node generate-static.mjs` refreshes
+   `sitemap.xml` `<loc>` is GENERATED - `node dev/generate-static.mjs` refreshes
    it from `meta.domain`.
 
 **Ripple - the domain is stated in ~5 places plus each locale spec, and
@@ -167,19 +167,19 @@ mirrors is a hard failure; a locale spec that disagrees with the default is a
 warning.
 **Done when:** `launch-check` reports no domain/metadata mismatch.
 
-### Workflow F - Validator change (`launch-check.js`)
+### Workflow F - Validator change (`dev/launch-check.js`)
 
 **Trigger:** adding/changing a check, a category, a flag, or an error code.
 
 1. **Code:** add the `checkX()` and call it from `main()`; reuse an existing
    category (`missing, spec, content, links, seo, manifest, assets,
    accessibility, performance`) and give the finding a stable uppercase `code`.
-2. **Docs:** update `LAUNCH-CHECK.md` - the "What it checks" list, and the
+2. **Docs:** update `dev/LAUNCH-CHECK.md` - the "What it checks" list, and the
    category/flag/code references if you touched those.
 3. **Keep it dependency-free, offline, CommonJS.** If a check needs a parser,
    network, or npm package, it doesn't belong here.
 
-**Ripple:** a new category or flag must appear in `LAUNCH-CHECK.md`, not just
+**Ripple:** a new category or flag must appear in `dev/LAUNCH-CHECK.md`, not just
 the code. **Done when:** the script runs, and its docs describe what it now does.
 
 ### Workflow G - Behavior change (engine internals)

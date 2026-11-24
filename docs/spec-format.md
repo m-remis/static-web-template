@@ -160,7 +160,7 @@ task that is real code, and it touches five places that must stay in agreement
 (engine renderer, validator rules, the `BLOCK TYPES` comment,
 `site-spec.schema.json`, and the table above). The full step-by-step -
 including the ripple checklist that keeps those five in sync - is **Workflow B**
-in `docs/workflows.md`, and `_block-template.md` is the copyable skeleton to
+in `docs/workflows.md`, and `dev/_block-template.md` is the copyable skeleton to
 start from. Follow them rather than ad-hoc editing.
 
 Engine behavior worth knowing while you do: unknown block types are skipped with

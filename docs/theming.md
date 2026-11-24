@@ -95,8 +95,10 @@ default to `var(--menu-hover-bg)` / `var(--menu-text-active)` - change them to
 restyle the desktop tabs without touching the mobile drawer, or change the
 `--menu-*` tokens to restyle both.
 
-**Live tweaker (`tweaker.js`, dev-only).** Open the site with `?tweak` in the
-URL and `init()` imports `tweaker.js`; without the flag it is never fetched.
+**Live tweaker (`dev/tweaker.js`, dev-only).** Open the site with `?tweak` in the
+URL and `init()` imports `dev/tweaker.js`; without the flag it is never fetched.
+The panel's own styles are `dev/tweaker.css`, loaded into its Shadow DOM (so
+they can't affect the site, and the site's CSS can't affect the panel).
 It discovers tokens by reading the `:root`, shared `[data-theme]`,
 `[data-theme="dark"]` and `[data-theme="light"]` blocks in `styles.css`, so a
 new token shows up in the panel automatically. The tables at the top of the

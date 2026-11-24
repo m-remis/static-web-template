@@ -19,10 +19,10 @@ load them all, and don't guess from filenames.
 4. After any change, validate, in this order:
    1. `node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"`
    2. `node --check engine.js`
-   3. `node generate-static.mjs` (refreshes the generated `llms.txt`,
+   3. `node dev/generate-static.mjs` (refreshes the generated `llms.txt`,
       `sitemap.xml`, and the static JSON-LD + LCP preload in `index.html`)
-   4. `node launch-check.js --template` in **this template repo**, or
-      `node launch-check.js` on a **client site**. `--template` only stops the
+   4. `node dev/launch-check.js --template` in **this template repo**, or
+      `node dev/launch-check.js` on a **client site**. `--template` only stops the
       template's own placeholders (example.com domain, demo phone/email, no
       share image) from failing the run; everything else is checked the same.
       Drive it to `PASS`.
@@ -37,15 +37,15 @@ load them all, and don't guess from filenames.
 | If your task is… | Read |
 |---|---|
 | **Changing what the site says** - text, tabs, contact, prices, images, socials, metadata | `docs/workflows.md` (Workflow A). It's almost always a `site-spec.json` edit; see "The golden rule" below. |
-| **Adding / removing / renaming a block *type*** | `docs/workflows.md` (Workflow B) + `docs/spec-format.md`; start from `_block-template.md` |
+| **Adding / removing / renaming a block *type*** | `docs/workflows.md` (Workflow B) + `docs/spec-format.md`; start from `dev/_block-template.md` |
 | **Changing a block's accepted fields** | `docs/workflows.md` (Workflow C) + `docs/spec-format.md` |
 | **Colors / theme tokens** | `docs/workflows.md` (Workflow D) + `docs/theming.md` |
 | **Domain, title, description, OG, metadata** | `docs/workflows.md` (Workflow E) |
-| **A `launch-check.js` rule or category** | `docs/workflows.md` (Workflow F) + `LAUNCH-CHECK.md` |
+| **A `dev/launch-check.js` rule or category** | `docs/workflows.md` (Workflow F) + `dev/LAUNCH-CHECK.md` |
 | **Engine behavior** - tabs, menu, header-fit, background, lightbox, scroll | `docs/workflows.md` (Workflow G) + `docs/engine-internals.md`, then `docs/gotchas.md` |
 | **Language switch / adding a locale** | `docs/i18n.md` |
-| **Setting up a brand-new client site** | `CLIENT-CHECKLIST.md` (the per-client fill-in list, file by file) |
-| **Checking a site is safe to ship** | run `node launch-check.js`; details in `LAUNCH-CHECK.md` |
+| **Setting up a brand-new client site** | `dev/CLIENT-CHECKLIST.md` (the per-client fill-in list, file by file) |
+| **Checking a site is safe to ship** | run `node dev/launch-check.js`; details in `dev/LAUNCH-CHECK.md` |
 | **Anything touching scroll, swipe, header-fit, or the embed warm-up** | `docs/gotchas.md` **first** - several behaviors are load-bearing and look like dead code |
 
 **Always read `docs/workflows.md` for your task before editing.** Most mistakes
@@ -89,8 +89,8 @@ credit was explicitly requested):
 - Markdown: `<!-- Built from m-remis/static-web-template -->`
 
 These strings currently live in `index.html`, `engine.js`, `styles.css`,
-`business-jsonld.mjs`, `generate-static.mjs`, `launch-check.js`, `tweaker.js`, `README.md`,
-`CLIENT-CHECKLIST.md`, `LAUNCH-CHECK.md`, `_block-template.md`, the `docs/`
+`business-jsonld.mjs`, `dev/generate-static.mjs`, `dev/launch-check.js`, `dev/tweaker.js`, `dev/tweaker.css`, `README.md`,
+`dev/CLIENT-CHECKLIST.md`, `dev/LAUNCH-CHECK.md`, `dev/_block-template.md`, the `docs/`
 files, and this file. (`404.html` does not carry it directly - it shares
 `styles.css`, which does.) Preserve them when rewriting any of those, and add
 an equivalent comment to any new major source/doc file. Do not add them to the
@@ -105,7 +105,7 @@ the document `<head>` metadata are all rendered from `site-spec.json` by JS at
 runtime. Before editing markup or CSS, check whether the request is actually a
 `site-spec.json` edit.
 
-> **Spinning up a new client site?** Follow `CLIENT-CHECKLIST.md` - the
+> **Spinning up a new client site?** Follow `dev/CLIENT-CHECKLIST.md` - the
 > exhaustive per-client change list (every spec field, the multi-file domain
 > and `#0e0f13` mirrors, the pre-deploy audit). This file (`AGENTS.md`) plus
 > `docs/` cover *how the project works*; that file covers *what to fill in per
@@ -142,16 +142,17 @@ runtime. Before editing markup or CSS, check whether the request is actually a
 | `index.html`                                    | Shell only; header skeleton + empty `#main`/`#siteFooter` + fallback meta | rarely (font links, fallback meta) |
 | `404.html` / `404.css`                          | Not-found page; **inherits theme tokens from `styles.css`**   | layout of 404 only                 |
 | `docs/*.md`                                     | The agent docs this router points at (see Doc map above)      | when the fact you changed lives there |
-| `CLIENT-CHECKLIST.md`                           | Per-client replacement + deploy checklist                     | client-site handoff rules          |
-| `launch-check.js` / `LAUNCH-CHECK.md`           | Pre-launch validator (dev-only, never served) + its docs      | before shipping; adding a block type|
-| `_block-template.md`                            | Copyable skeleton for a new block type (not served)           | adding a block type (Workflow B)   |
+| `dev/CLIENT-CHECKLIST.md`                       | Per-client replacement + deploy checklist                     | client-site handoff rules          |
+| `dev/`                                          | **Development tools and their docs** - nothing in it is part of the running site (the page only ever fetches `dev/tweaker.js` + `dev/tweaker.css`, and only with `?tweak`) | - |
+| `dev/launch-check.js` / `dev/LAUNCH-CHECK.md`   | Pre-launch validator (dev-only, never loaded by the page) + its docs | before shipping; adding a block type|
+| `dev/_block-template.md`                        | Copyable skeleton for a new block type (not served)           | adding a block type (Workflow B)   |
 | `site.webmanifest`, `robots.txt`                | PWA + SEO; `robots.txt` also carries the explicit AI-crawler opt-in stanza | domain/name changes                |
-| `sitemap.xml`                                   | SEO - **GENERATED** by `generate-static.mjs` (`<lastmod>` = the spec's last commit date, or its mtime while it has uncommitted edits); never edit by hand | regenerate after any content edit |
+| `sitemap.xml`                                   | SEO - **GENERATED** by `dev/generate-static.mjs` (`<lastmod>` = the spec's last commit date, or its mtime while it has uncommitted edits); never edit by hand | regenerate after any content edit |
 | `_headers`                                      | Cloudflare Pages response headers: security, caching policy, 103 Early Hints preloads | caching rules; adding an always-loaded asset |
-| `llms.txt`                                      | Plain-text site summary for AI crawlers - **GENERATED** from the spec by `generate-static.mjs`; never edit by hand | regenerate after any content edit |
-| `business-jsonld.mjs`                           | Pure, DOM-free shared module: the spec→JSON-LD builder (used by `engine.js` and `generate-static.mjs`) plus small helpers the engine, generator and validator must agree on (URL checks, YouTube id parsing) | JSON-LD shape changes; a rule two of those files share |
-| `tweaker.js`                                    | Dev-only live design-token panel (sliders, color pickers, presets, undo, Save to styles.css / Copy CSS); loaded by `engine.js` only when the URL has `?tweak`. Reads the tokens from `styles.css` itself | a new token's label / tab / slider range; a section preset |
-| `generate-static.mjs`                           | Dev-only generator: stamps `llms.txt`, `sitemap.xml` + the static JSON-LD and LCP-image preload in `index.html` from the spec; `--check` mode is run by `launch-check` | adding a generated artifact         |
+| `llms.txt`                                      | Plain-text site summary for AI crawlers - **GENERATED** from the spec by `dev/generate-static.mjs`; never edit by hand | regenerate after any content edit |
+| `business-jsonld.mjs`                           | Pure, DOM-free shared module: the spec→JSON-LD builder (used by `engine.js` and `dev/generate-static.mjs`) plus small helpers the engine, generator and validator must agree on (URL checks, YouTube id parsing) | JSON-LD shape changes; a rule two of those files share |
+| `dev/tweaker.js` / `dev/tweaker.css`            | Dev-only live design-token panel (sliders, color pickers, presets, undo, phone / tablet preview, Save to styles.css / Copy CSS) and its styles; loaded by `engine.js` only when the URL has `?tweak`. Reads the tokens from `styles.css` itself | a new token's label / tab / slider range; a section preset; panel look (`tweaker.css`) |
+| `dev/generate-static.mjs`                       | Dev-only generator: stamps `llms.txt`, `sitemap.xml` + the static JSON-LD and LCP-image preload in `index.html` from the spec; `--check` mode is run by `launch-check` | adding a generated artifact         |
 | `site-spec.<lang>.json`                         | Alternate-locale content (e.g. `site-spec.sk.json`); a full self-contained spec, loaded at runtime by the language switch | translating content; adding a language |
 | `assets/`                                       | favicon, `background/` images, `slides/` images, `fonts/` woff2 | swapping media; changing fonts     |
 

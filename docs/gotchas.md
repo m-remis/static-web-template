@@ -98,12 +98,12 @@ There are no tests and no build. After editing:
       fail and shows the **error screen** (not a blank page); this catches it
       fast with a line/column.
     - `node --check engine.js` to catch JS syntax errors.
-    - `node generate-static.mjs` to refresh the generated mirrors.
-    - Run `node launch-check.js` for a fuller preflight (placeholders, fake
+    - `node dev/generate-static.mjs` to refresh the generated mirrors.
+    - Run `node dev/launch-check.js` for a fuller preflight (placeholders, fake
       contact data, broken/missing/unused assets, SEO, domain/metadata
       consistency); drive it to `PASS`. In this template repo add
       `--template`, which does not count the placeholder domain and demo
-      contact data the template ships with. See `LAUNCH-CHECK.md` for flags
+      contact data the template ships with. See `dev/LAUNCH-CHECK.md` for flags
       and the full check list.
 2. Serve and open the site - prefer `python3 -m http.server 8000` over
    `file://` (the page fetches `site-spec.json`; `file://` fails CORS and shows

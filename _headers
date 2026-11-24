@@ -62,7 +62,7 @@
 # spec. NOT engine.js (a module - `as=script` preload uses a different
 # credential mode and would double-fetch; the <link rel="modulepreload"> in
 # index.html covers it) and NOT the LCP image (spec-derived - it would drift;
-# generate-static.mjs stamps that preload into index.html instead).
+# dev/generate-static.mjs stamps that preload into index.html instead).
 /
   Cache-Control: public, max-age=0, must-revalidate
   Link: </styles.css>; rel=preload; as=style, </site-spec.json>; rel=preload; as=fetch; crossorigin,</assets/fonts/oswald-latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/oswald-latin-ext.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/inter-latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/fonts/inter-latin-ext.woff2>; rel=preload; as=font; type=font/woff2; crossorigin

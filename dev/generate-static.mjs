@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* =========================================================
    Static site template
-   generate-static.mjs - dev-only generator for the static AI/crawler mirrors
+   dev/generate-static.mjs - dev-only generator for the static AI/crawler mirrors
 
    Derives four artifacts from site-spec.json (the single source of truth):
 
@@ -24,11 +24,11 @@
         last edit is the page's last modification) - see specLastModified().
 
    Usage:
-     node generate-static.mjs           # rewrite whichever artifacts are stale
-     node generate-static.mjs --check   # exit 2 + list if any is stale
+     node dev/generate-static.mjs           # rewrite whichever artifacts are stale
+     node dev/generate-static.mjs --check   # exit 2 + list if any is stale
                                         # (launch-check runs this mode)
 
-   Like launch-check.js this is a dev tool: Node built-ins only, never
+   Like dev/launch-check.js this is a dev tool: Node built-ins only, never
    served, run by hand (or by launch-check) - it does not violate the
    no-build rule; the runtime site stays plain static files.
 
@@ -44,9 +44,10 @@ import {execFileSync} from "node:child_process";
 import {readFileSync, statSync, writeFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {buildBusinessJsonLd, youtubePlaylistId} from "./business-jsonld.mjs";
+import {buildBusinessJsonLd, youtubePlaylistId} from "../business-jsonld.mjs";
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+// This script lives in dev/; the site it generates for is one level up.
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const CHECK = process.argv.includes("--check");
 
 const SPEC_PATH = join(ROOT, "site-spec.json");
@@ -238,7 +239,7 @@ function buildLlmsTxt(spec) {
         out.push("");
     }
 
-    out.push("<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->");
+    out.push("<!-- GENERATED from site-spec.json (node dev/generate-static.mjs) - do not edit by hand. -->");
     return out.join("\n") + "\n";
 }
 
@@ -289,7 +290,7 @@ function buildLcpPreload(html, spec) {
         "\n</head>",
         "\n    <!-- Preload of the default tab's first image (the likely LCP element),\n" +
         "         so it downloads in parallel with engine.js instead of waiting for\n" +
-        "         the render. GENERATED - do not edit: run `node generate-static.mjs`. -->\n" +
+        "         the render. GENERATED - do not edit: run `node dev/generate-static.mjs`. -->\n" +
         `    ${tag}\n</head>`
     );
 }
@@ -340,7 +341,7 @@ function buildSitemapXml(spec) {
     const lastmod = specLastModified();
     return [
         `<?xml version="1.0" encoding="UTF-8"?>`,
-        `<!-- GENERATED from site-spec.json (node generate-static.mjs) - do not edit by hand. -->`,
+        `<!-- GENERATED from site-spec.json (node dev/generate-static.mjs) - do not edit by hand. -->`,
         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
         `    <url>`,
         `        <loc>${domain}/</loc>`,
@@ -369,7 +370,7 @@ function buildIndexHtml(html, spec) {
     return html.replace(
         "\n</head>",
         "\n    <!-- Static mirror of the runtime JSON-LD for crawlers that don't run JS.\n" +
-        "         GENERATED - do not edit: run `node generate-static.mjs`. The engine\n" +
+        "         GENERATED - do not edit: run `node dev/generate-static.mjs`. The engine\n" +
         "         upserts this same tag (by its data-jsonld marker) at boot. -->\n" +
         `    ${tag}\n</head>`
     );
@@ -408,7 +409,7 @@ const stale = outputs.filter((o) => {
 
 if (CHECK) {
     if (stale.length) {
-        console.error(`STALE: ${stale.map((o) => o.name).join(", ")} - run \`node generate-static.mjs\``);
+        console.error(`STALE: ${stale.map((o) => o.name).join(", ")} - run \`node dev/generate-static.mjs\``);
         process.exit(2);
     }
     console.log("generated artifacts up to date");

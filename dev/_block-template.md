@@ -7,7 +7,7 @@ type lives in **five places that must agree**:
 |---|---|---|
 | 1 | the renderer map `BLOCK_RENDERERS` | `engine.js` |
 | 2 | the `BLOCK TYPES` comment at the top | `engine.js` |
-| 3 | the validator map `BLOCK_RULES` | `launch-check.js` |
+| 3 | the validator map `BLOCK_RULES` | `dev/launch-check.js` |
 | 4 | the `block` type enum + a `blockX` subschema | `site-spec.schema.json` |
 | 5 | the block-types table | `docs/spec-format.md` |
 
@@ -36,17 +36,17 @@ noun: `hours`, `faq`, `cta`, `steps`.
 - [ ] **3. Engine comment** - add the shape to the `BLOCK TYPES` comment at the
   top of `engine.js` (Piece 3).
 - [ ] **4. Validator** - add `checkExampleBlock()` and one entry in the
-  `BLOCK_RULES` map in `launch-check.js` (Piece 4). *Skipping this makes
+  `BLOCK_RULES` map in `dev/launch-check.js` (Piece 4). *Skipping this makes
   `launch-check` flag every use of the new type as unknown.*
 - [ ] **5. Schema** - add a `blockExample` subschema to `site-spec.schema.json`,
   register it in `block.oneOf` and the `type` enum (Piece 5). *Skipping this
   makes the IDE flag every use of the new type as invalid.*
 - [ ] **6. Docs + use it** - add a row to the block table in
-  `docs/spec-format.md`, add to `CLIENT-CHECKLIST.md` §1c if clients fill it
+  `docs/spec-format.md`, add to `dev/CLIENT-CHECKLIST.md` §1c if clients fill it
   in, then use `{ "type": "example", ... }` in `site-spec.json` (Piece 6).
 
 **Done when** all five places list the type; `node --check engine.js` passes; a
-test block renders; and `node launch-check.js --template` reports no
+test block renders; and `node dev/launch-check.js --template` reports no
 `UNKNOWN_BLOCK_TYPE` and no `BLOCK_TYPE_DRIFT`.
 
 ---
@@ -207,7 +207,7 @@ others so the shape is documented where builders live:
 
 ---
 
-## Piece 4 - Validator (`launch-check.js`)
+## Piece 4 - Validator (`dev/launch-check.js`)
 
 Two edits, both mirroring the existing block checks.
 
@@ -260,7 +260,7 @@ const BLOCK_RULES = Object.freeze({
 ```
 
 If you changed what the validator checks in a way a user should know about,
-add a line to `LAUNCH-CHECK.md` too (Workflow F).
+add a line to `dev/LAUNCH-CHECK.md` too (Workflow F).
 
 ---
 
@@ -321,7 +321,7 @@ two cells in the same backticked form as the other rows:
 | `example`    | `buildExample`   | one-line description of what it renders     |
 ```
 
-**6b.** If clients commonly fill this in, add it to `CLIENT-CHECKLIST.md` §1c
+**6b.** If clients commonly fill this in, add it to `dev/CLIENT-CHECKLIST.md` §1c
 (the per-block placeholder list).
 
 **6c.** Use it in `site-spec.json` (and in every `site-spec.<lang>.json`, which
@@ -344,8 +344,8 @@ are full copies of the spec):
 ```bash
 node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"
 node --check engine.js
-node generate-static.mjs
-node launch-check.js --template   # drop --template on a client site
+node dev/generate-static.mjs
+node dev/launch-check.js --template   # drop --template on a client site
 ```
 
 Then serve the site (`python3 -m http.server 8000`) and confirm the block

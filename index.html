@@ -23,7 +23,7 @@
     <meta property="og:description" content="A small, fast static site engine: one site-spec.json renders the whole page - no framework, no build step, no dependencies."/>
     <meta property="og:url" content="https://example.com/"/>
     <!-- Add an og:image once you have one (see meta.ogImage in site-spec.json);
-         the engine + generate-static.mjs will stamp og:image/twitter:image then. -->
+         the engine + dev/generate-static.mjs will stamp og:image/twitter:image then. -->
     <meta name="twitter:card" content="summary"/>
 
     <link rel="canonical" href="https://example.com/"/>
@@ -60,12 +60,12 @@
     </noscript>
 
     <!-- Static mirror of the runtime JSON-LD for crawlers that don't run JS.
-         GENERATED - do not edit: run `node generate-static.mjs`. The engine
+         GENERATED - do not edit: run `node dev/generate-static.mjs`. The engine
          upserts this same tag (by its data-jsonld marker) at boot. -->
     <script type="application/ld+json" data-jsonld="business">{"@context":"https://schema.org","@type":"Store","name":"Static Web Template","legalName":"Static Web Template","telephone":"+1 (000) 000-0000","email":"name@example.com","description":"A small, fast static site engine: one site-spec.json renders the whole page - no framework, no build step, no dependencies.","url":"https://example.com/","address":{"@type":"PostalAddress","streetAddress":"123 Example Street","addressLocality":"Anytown","postalCode":"00000","addressCountry":"Country"},"hasMap":"https://www.google.com/maps/search/?api=1&query=Times%20Square%2C%20New%20York%2C%20NY","sameAs":["https://instagram.com/","https://youtube.com/","https://spotify.com/","https://github.com/","https://linkedin.com/"],"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":"Monday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Tuesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Wednesday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Thursday","opens":"09:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"09:00","closes":"17:00"}]}</script>
     <!-- Preload of the default tab's first image (the likely LCP element),
          so it downloads in parallel with engine.js instead of waiting for
-         the render. GENERATED - do not edit: run `node generate-static.mjs`. -->
+         the render. GENERATED - do not edit: run `node dev/generate-static.mjs`. -->
     <link rel="preload" data-preload="lcp" as="image" href="assets/slides/mountains.jpg" fetchpriority="high"/>
 </head>
 <body data-theme="dark">

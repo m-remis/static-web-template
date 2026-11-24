@@ -24,9 +24,6 @@ what the site says, edit `site-spec.json` - not the HTML or the JS.
 ├── site-spec.sk.json       # Slovak copy - loaded at runtime by the language switch (localStorage)
 ├── site-spec.schema.json   # JSON Schema for the spec → live validation + autocomplete in the editor
 │
-├── generate-static.mjs     # dev tool: regenerates the mirrors below from the spec (Node built-ins only)
-├── launch-check.js         # dev tool: pre-deploy validator (placeholders, fake data, broken assets…)
-├── tweaker.js              # dev tool: live design-token panel, loaded only with ?tweak in the URL
 ├── llms.txt                # GENERATED - plain-text mirror of the site for AI crawlers
 ├── sitemap.xml             # GENERATED - SEO sitemap
 │
@@ -46,10 +43,16 @@ what the site says, edit `site-spec.json` - not the HTML or the JS.
 │   ├── theming.md          # theme tokens
 │   ├── i18n.md             # the runtime language switch
 │   └── gotchas.md          # load-bearing behaviors + how to verify by hand
-├── CLIENT-CHECKLIST.md     # per-client setup checklist (incl. §1d: adding a language)
-├── LAUNCH-CHECK.md         # what launch-check.js checks, and how to run it
-├── _block-template.md      # copyable skeleton for adding a new block type
 ├── CLAUDE.md               # points coding agents at AGENTS.md
+│
+├── dev/                    # development tools + their docs - not part of the running site
+│   ├── CLIENT-CHECKLIST.md # per-client setup checklist (incl. §1d: adding a language)
+│   ├── generate-static.mjs # regenerates llms.txt, sitemap.xml + index.html's static tags from the spec
+│   ├── launch-check.js     # pre-deploy validator (placeholders, fake data, broken assets…)
+│   ├── LAUNCH-CHECK.md     # what launch-check.js checks, and how to run it
+│   ├── tweaker.js          # live design-token panel, loaded only with ?tweak in the URL
+│   ├── tweaker.css         # the panel's styles (loaded into its Shadow DOM)
+│   └── _block-template.md  # copyable skeleton for adding a new block type
 │
 └── assets/
     ├── favicon.ico
@@ -67,7 +70,7 @@ what the site says, edit `site-spec.json` - not the HTML or the JS.
 
 > **Content vs. generated:** you edit `site-spec.json` (and any
 > `site-spec.<lang>.json`); `llms.txt`, `sitemap.xml`, and the JSON-LD + LCP
-> preload inside `index.html` are **generated** from it by `generate-static.mjs`
+> preload inside `index.html` are **generated** from it by `dev/generate-static.mjs`
 > - never by hand. Backgrounds are **listed explicitly** in the spec's
 > `backgrounds` array, not auto-discovered.
 >
@@ -100,7 +103,7 @@ static JSON-LD and the LCP-image preload in `index.html` - all built from the
 spec, never edited by hand):
 
 ```bash
-node generate-static.mjs
+node dev/generate-static.mjs
 ```
 
 And before deploying, run the preflight validator - it catches placeholders,
@@ -108,7 +111,7 @@ fake contact data, broken assets, domain mismatches, and stale generated
 artifacts:
 
 ```bash
-node launch-check.js
+node dev/launch-check.js
 ```
 
 To restyle visually, open the local site with `?tweak` in the URL (e.g.
@@ -120,13 +123,13 @@ file (Chrome / Edge); "Copy CSS" gives it to you to paste. Details in
 
 ## Docs
 
-- **`CLIENT-CHECKLIST.md`** - what to fill in for a new client site, file by
+- **`dev/CLIENT-CHECKLIST.md`** - what to fill in for a new client site, file by
   file (content, metadata, assets, deploy).
 - **`AGENTS.md`** - the agent router: hard rules, the file map, and which
   `docs/` file to read for which task. Start here before changing behavior or
   adding a block type; the detail (block system, theming, the tricky bits)
   lives in `docs/`.
-- **`LAUNCH-CHECK.md`** - the `launch-check.js` preflight validator: what it
+- **`dev/LAUNCH-CHECK.md`** - the `dev/launch-check.js` preflight validator: what it
   checks and how to run it.
 - **`site-spec.schema.json`** - JSON Schema for `site-spec.json`; gives live
   validation + autocomplete in the editor. Not a doc to read, but keep it in
@@ -136,6 +139,6 @@ file (Chrome / Edge); "Copy CSS" gives it to you to paste. Details in
 
 Any static host works (GitHub Pages, Netlify, Vercel, Cloudflare Pages) - point
 it at the folder. `.nojekyll` is included for GitHub Pages. For a custom domain,
-add a `CNAME` file; see `CLIENT-CHECKLIST.md`.
+add a `CNAME` file; see `dev/CLIENT-CHECKLIST.md`.
 
 <!-- Built from m-remis/static-web-template -->

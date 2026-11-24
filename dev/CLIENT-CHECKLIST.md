@@ -1,4 +1,4 @@
-# CLIENT-CHECKLIST.md
+# dev/CLIENT-CHECKLIST.md
 
 Per-client personalization checklist for spinning up a new site from this
 template. This is the **exhaustive** list - every file that contains a
@@ -30,7 +30,7 @@ checklist is the long tail - favicon, manifest, sitemap, robots, colors, deploy
 - the stuff that ships wrong silently because the page works without it.
 
 ```text
-edit site-spec.json  →  node launch-check.js  →  fix every error  →  deploy
+edit site-spec.json  →  node dev/launch-check.js  →  fix every error  →  deploy
 ```
 
 ---
@@ -40,21 +40,21 @@ edit site-spec.json  →  node launch-check.js  →  fix every error  →  deplo
 The real gate is the validator - run it from the repo root:
 
 ```bash
-node launch-check.js
+node dev/launch-check.js
 ```
 
 It catches placeholder text, fake contact data (`name@example.com`,
 `+1 (000) 000-0000`, IČO/DIČ of `0`), broken/missing asset paths, manifest icon paths, a domain that doesn't
 match across files, and a missing `og:image`. Drive it to `PASS` before
 shipping. Full details (every check, the flags, the error codes) are in
-`LAUNCH-CHECK.md`.
+`dev/LAUNCH-CHECK.md`.
 
 A quick grep is still useful as a second pass for stock strings the validator's
 heuristics might not know:
 
 ```bash
 grep -rni "example.com\|m-remis.github.io/static-web-template\|lorem ipsum\|Times Square\|name@example.com" \
-  --exclude-dir=.git --exclude=CLIENT-CHECKLIST.md .
+  --exclude-dir=.git --exclude=dev/CLIENT-CHECKLIST.md .
 ```
 
 Re-run both right before pushing. Do **not** add `m-remis/static-web-template`
@@ -82,9 +82,9 @@ name. Do not treat it as forgotten boilerplate. It is source attribution and a
 searchable marker for sites built from this template. Keep it in source
 comments or documentation; it does not need to be visible in the UI unless a
 visible credit was explicitly requested. It currently lives in `index.html`,
-`engine.js`, `styles.css`, `business-jsonld.mjs`, `generate-static.mjs`,
-`launch-check.js`, `README.md`, `AGENTS.md`, the `docs/` files,
-`LAUNCH-CHECK.md`, `_block-template.md`, and this file. (`404.html` does **not**
+`engine.js`, `styles.css`, `business-jsonld.mjs`, `dev/generate-static.mjs`,
+`dev/launch-check.js`, `README.md`, `AGENTS.md`, the `docs/` files,
+`dev/LAUNCH-CHECK.md`, `dev/_block-template.md`, and this file. (`404.html` does **not**
 carry it directly.) The grep below is the source of truth - run it rather than
 trusting this list.
 
@@ -263,7 +263,7 @@ The site ships a runtime language switch (see `docs/i18n.md`). To offer a second
   registered locale, so any number of languages works with no switcher code to
   touch. Mirror the strings in `404.html`'s inline map, and add a cache rule
   for the new spec file in `_headers` (next to `/site-spec.sk.json`).
-- [ ] **Validate the translation**: `node launch-check.js --site-spec
+- [ ] **Validate the translation**: `node dev/launch-check.js --site-spec
   site-spec.<lang>.json`.
 - [ ] Note the **default locale is the SEO one**: `llms.txt`, `sitemap.xml` and
   the static JSON-LD are generated from `site-spec.json` only. Alternate locales
@@ -283,12 +283,12 @@ class schedule) is the only thing that's ever real code, and it's small:
 - [ ] Add the matching CSS in `styles.css`.
 - [ ] Document the block's fields in the top-of-file `BLOCK TYPES` comment in
   `engine.js` and the block table in `docs/spec-format.md`.
-- [ ] Add a check + a `BLOCK_RULES` entry in `launch-check.js` (so the
+- [ ] Add a check + a `BLOCK_RULES` entry in `dev/launch-check.js` (so the
   validator doesn't false-fail on the new type) and a `blockX` subschema in
   `site-spec.schema.json` (so the editor doesn't either).
 - [ ] Use `{ "type": "yourtype", … }` in any section's `blocks`.
 
-Full walkthrough in `docs/workflows.md` → Workflow B; `_block-template.md` is
+Full walkthrough in `docs/workflows.md` → Workflow B; `dev/_block-template.md` is
 the copyable skeleton. Once built, the
 block is reusable across all future clients - growing a tested block library is
 the real product value.
@@ -347,7 +347,7 @@ don't run JS see the static values - keep them roughly matching `meta`:
 
 ### `sitemap.xml`
 
-- [ ] **Do not edit by hand - run `node generate-static.mjs`.** The `<loc>`
+- [ ] **Do not edit by hand - run `node dev/generate-static.mjs`.** The `<loc>`
   comes from `meta.domain` and `<lastmod>` from the spec's last commit date
   (its mtime while it has uncommitted edits);
   `launch-check` still verifies the `<loc>` matches (error on mismatch) and
@@ -363,7 +363,7 @@ don't run JS see the static values - keep them roughly matching `meta`:
 
 ### `llms.txt`
 
-- [ ] **Do not edit by hand - run `node generate-static.mjs`.** This is a
+- [ ] **Do not edit by hand - run `node dev/generate-static.mjs`.** This is a
   plain-markdown summary of the site for LLM crawlers/agents - important here
   because `index.html` is an empty shell and non-JS crawlers see nothing. It
   is **generated from `site-spec.json`** (along with `sitemap.xml` and the
@@ -454,7 +454,7 @@ the Get started section) unless the client should have it.
 
 - [ ] **Validate + preflight:**
   `node -e "JSON.parse(require('fs').readFileSync('site-spec.json','utf8'))"`,
-  `node --check engine.js`, then `node launch-check.js` to `PASS`. Tip: editing
+  `node --check engine.js`, then `node dev/launch-check.js` to `PASS`. Tip: editing
   `site-spec.json` in VS Code / IntelliJ gives live validation against
   `site-spec.schema.json` (wrong block type or field shows red as you type) -
   the fastest way to catch shape mistakes before the preflight.
@@ -485,9 +485,9 @@ the Get started section) unless the client should have it.
 | `index.html`       | Static meta fallback + canonical + the `<noscript>` heading + optional analytics script (§3) |
 | `404.html`         | `<title>`, the per-language `docTitle` strings in its inline script, theme-color     |
 | `site.webmanifest` | name, short_name, description, background_color, theme_color, icon paths             |
-| `sitemap.xml`      | nothing by hand - GENERATED from `meta.domain` by `generate-static.mjs`              |
+| `sitemap.xml`      | nothing by hand - GENERATED from `meta.domain` by `dev/generate-static.mjs`              |
 | `robots.txt`       | `Sitemap:` URL host (= `meta.domain` host)                                           |
-| `llms.txt`         | nothing by hand - GENERATED from the spec by `generate-static.mjs` (§3)              |
+| `llms.txt`         | nothing by hand - GENERATED from the spec by `dev/generate-static.mjs` (§3)              |
 | `LICENSE`          | copyright name/year (or whole license)                                               |
 | `assets/`          | favicons, PWA icons, backgrounds, slides/gallery images, the `og:image`              |
 | `CNAME`            | create per client (custom domain only)                                               |
@@ -497,7 +497,7 @@ the Get started section) unless the client should have it.
 
 - **Domain** → `meta.domain`, `index.html` (canonical + og:url + the absolute
   og:image/twitter:image URLs), `robots.txt` `Sitemap:`, and `CNAME` if used -
-  plus a `node generate-static.mjs` run for the sitemap `<loc>`.
+  plus a `node dev/generate-static.mjs` run for the sitemap `<loc>`.
   (`launch-check` cross-checks most of these.)
 - **Dark bg `--bg-base`** → `styles.css` (both you change), `index.html`
   theme-color, `404.html` theme-color, `site.webmanifest` `theme_color` +

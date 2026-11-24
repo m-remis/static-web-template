@@ -5,13 +5,13 @@
    ONE implementation, TWO consumers:
      - engine.js (browser) imports it for the runtime <script> tag
        (renderJsonLd), and reuses isExternalUrl/absoluteUrl generally.
-     - generate-static.mjs (Node, dev-only) imports it to stamp the same
+     - dev/generate-static.mjs (Node, dev-only) imports it to stamp the same
        object statically into index.html for crawlers that don't run JS.
    Keeping the builder here is what stops the two copies from drifting -
    don't duplicate this logic into either consumer.
 
    It is also the home of the small PURE helpers more than one of
-   engine.js / generate-static.mjs / launch-check.js needs (URL checks,
+   engine.js / dev/generate-static.mjs / dev/launch-check.js needs (URL checks,
    YouTube id parsing). A rule that the page and the validator must agree
    on is written once, here, and imported - never copied.
 
@@ -69,7 +69,7 @@ export function parseHoursRange(value) {
 
 /* Strip the spec's small inline HTML (<em>, <a>…) - table cells may carry it,
    JSON-LD strings must not. Deliberately minimal; mirrors the fuller
-   stripHtml() in generate-static.mjs for the tag-removal part only. */
+   stripHtml() in dev/generate-static.mjs for the tag-removal part only. */
 const stripTags = (s = "") => String(s).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
 /* Parse a price cell into {price, unit}. Whole prices ("12 €", "9,50 €")

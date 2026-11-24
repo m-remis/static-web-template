@@ -11,9 +11,9 @@ step, no framework, no bundler, no package manager.** It is plain HTML + CSS +
 vanilla JS (ES modules) served as files. Do not introduce npm, bundlers,
 transpilers, TypeScript, frameworks, or a `package.json` for the *runtime site*.
 If a change seems to "need" tooling, it is the wrong change - find the no-build
-way to do it. (The `launch-check.js` preflight script is a dev-only tool run by
+way to do it. (The `dev/launch-check.js` preflight script is a dev-only tool run by
 hand, never loaded by the page, and uses only Node built-ins - see
-`LAUNCH-CHECK.md`.)
+`dev/LAUNCH-CHECK.md`.)
 
 Fonts (Inter, Oswald) are self-hosted variable woff2 files in `assets/fonts/`,
 declared via `@font-face` in `styles.css` and preloaded from `index.html` - no
@@ -76,7 +76,7 @@ one sequence when adding a section, and add it to the index.
   the panel off-screen (`.is-warming`) for the duration - see the embed
   warm-up gotcha in `docs/gotchas.md`, that part is load-bearing.
   The same image is preloaded from `index.html` via a GENERATED
-  `<link rel="preload" data-preload="lcp">` stamped by `generate-static.mjs`,
+  `<link rel="preload" data-preload="lcp">` stamped by `dev/generate-static.mjs`,
   so its download starts at HTML-parse time, before the engine runs.
 - `renderHead()` - writes `<head>` metadata from `SITE.meta` (see
   `docs/spec-format.md`).
@@ -99,7 +99,7 @@ one sequence when adding a section, and add it to the index.
   `UnitPriceSpecification`, `"dohodou"` → offer without price);
   `currenciesAccepted: "EUR"` rides along when any offer states a price.
   Built by the pure `buildBusinessJsonLd(site)`,
-  which lives in `business-jsonld.mjs` - SHARED with `generate-static.mjs`,
+  which lives in `business-jsonld.mjs` - SHARED with `dev/generate-static.mjs`,
   which stamps the same object statically into `index.html` for crawlers
   that don't run JS. The runtime upserts that same tag (matched by its
   `data-jsonld` marker), so browsers always end with the fresh value and
@@ -168,7 +168,7 @@ one sequence when adding a section, and add it to the index.
   the GoatCounter-style JSON count best-effort (any failure leaves the footer
   untouched, never throws). This only *displays* a number; the actual
   *tracking* is a separate analytics `<script>` that the template does not ship
-  by default - add one to `index.html` if you want it (see `CLIENT-CHECKLIST.md`).
+  by default - add one to `index.html` if you want it (see `dev/CLIENT-CHECKLIST.md`).
 - Helpers: `$` (querySelector), `el()` (attribute-aware element builder; skips
   `null`/`false`/`undefined` attrs), `isExternalUrl()`, `escapeHtml()`,
   `youtubeVideoId()` / `youtubePlaylistId()` (imported, like `isExternalUrl()`,

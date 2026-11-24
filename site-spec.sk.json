@@ -113,7 +113,7 @@
         {
           "type": "text",
           "name": "Stavané aj pre stroje",
-          "text": "Keďže sa stránka vykresľuje JavaScriptom, engine tiež zrkadlí spec do formátov, ktoré prečíta aj crawler bez JS: čistý text <strong>llms.txt</strong>, <strong>sitemap.xml</strong> a schema.org <strong>JSON-LD</strong> blok - všetko razí <strong>generate-static.mjs</strong>, takže sa nikdy nerozídu s tým, čo návštevníci reálne vidia. Vývojársky validátor <strong>launch-check.js</strong> odmietne pustiť nekonzistentný web von."
+          "text": "Keďže sa stránka vykresľuje JavaScriptom, engine tiež zrkadlí spec do formátov, ktoré prečíta aj crawler bez JS: čistý text <strong>llms.txt</strong>, <strong>sitemap.xml</strong> a schema.org <strong>JSON-LD</strong> blok - všetko razí <strong>dev/generate-static.mjs</strong>, takže sa nikdy nerozídu s tým, čo návštevníci reálne vidia. Vývojársky validátor <strong>dev/launch-check.js</strong> odmietne pustiť nekonzistentný web von."
         },
         {
           "type": "table",
@@ -126,8 +126,8 @@
             ["engine.js", "Runtime: buildery blokov, vykresľovanie a všetka UI logika"],
             ["styles.css", "Štýly, rozloženie a dva bloky farebných tokenov"],
             ["index.html", "Schránka - kostra hlavičky a prázdny main, ktorý dopĺňa JS"],
-            ["generate-static.mjs", "Razí llms.txt, sitemap.xml a statický JSON-LD"],
-            ["launch-check.js", "Predštartový validátor - brána pred nasadením"]
+            ["dev/generate-static.mjs", "Razí llms.txt, sitemap.xml a statický JSON-LD"],
+            ["dev/launch-check.js", "Predštartový validátor - brána pred nasadením"]
           ]
         },
         {
@@ -327,8 +327,8 @@
           "items": [
             { "title": "Uprav spec", "body": "Otvor site-spec.json a zmeň značku, záložky, bloky a kontaktné údaje.", "meta": "1" },
             { "title": "Pridaj svoje obrázky", "body": "Vlož pozadia a fotky do priečinka assets a nasmeruj na ne spec.", "meta": "2" },
-            { "title": "Obnov zrkadlá", "body": "Spusti node generate-static.mjs, aby sa prestavali llms.txt, sitemap a JSON-LD.", "meta": "3" },
-            { "title": "Spusti bránu", "body": "Spusti node launch-check.js a oprav každú chybu, ktorú nahlási - zvyšný demo text, falošné kontaktné údaje, rozbité assety.", "meta": "4" },
+            { "title": "Obnov zrkadlá", "body": "Spusti node dev/generate-static.mjs, aby sa prestavali llms.txt, sitemap a JSON-LD.", "meta": "3" },
+            { "title": "Spusti bránu", "body": "Spusti node dev/launch-check.js a oprav každú chybu, ktorú nahlási - zvyšný demo text, falošné kontaktné údaje, rozbité assety.", "meta": "4" },
             { "title": "Nasaď", "body": "Nahraj priečinok na GitHub Pages, Netlify, Vercel, Cloudflare Pages alebo ľubovoľný statický hosting.", "meta": "5" }
           ]
         },
@@ -350,7 +350,7 @@
         {
           "type": "text",
           "name": "Kam ďalej",
-          "text": "Prečítaj si <strong>README.md</strong> pre ľudský rýchly štart, <strong>AGENTS.md</strong> pre architektúru a ako pridať typ bloku, a <strong>CLIENT-CHECKLIST.md</strong> pre zoznam vyplnenia na klienta. Toto demo bolo postavené z <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."
+          "text": "Prečítaj si <strong>README.md</strong> pre ľudský rýchly štart, <strong>AGENTS.md</strong> pre architektúru a ako pridať typ bloku, a <strong>dev/CLIENT-CHECKLIST.md</strong> pre zoznam vyplnenia na klienta. Toto demo bolo postavené z <a href=\"https://github.com/m-remis/static-web-template\">m-remis/static-web-template</a>."
         },
         {
           "type": "links",
